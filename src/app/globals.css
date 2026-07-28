@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@plugin '../lib/heroui.ts';
+
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
+
+body {
+    @apply text-foreground relative;
+}
+.radial-bg {
+    background-color: rgb(17, 13, 91) 42.71%;
+    background-image: radial-gradient(58.11% 44.54% at 51.59% -9.61%, rgb(180, 176, 254) 0%, rgb(54, 50, 133) 32.92%, rgb(17, 13, 91) 52.71%, rgb(5, 3, 39) 88.54%);
+}

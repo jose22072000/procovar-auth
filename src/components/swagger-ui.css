@@ -1,0 +1,127 @@
+/* Dark mode overrides for Swagger UI */
+.dark .swagger-ui {
+    color: #e2e8f0;
+}
+
+.dark .swagger-ui .info .title,
+.dark .swagger-ui .info h1,
+.dark .swagger-ui .info h2,
+.dark .swagger-ui .info h3,
+.dark .swagger-ui .info h4,
+.dark .swagger-ui .info h5,
+.dark .swagger-ui .info a {
+    color: #f8fafc;
+}
+
+.dark .swagger-ui .scheme-container {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.dark .swagger-ui .opblock-tag {
+    color: #f1f5f9;
+    border-bottom-color: #334155;
+}
+
+.dark .swagger-ui .opblock .opblock-summary-operation-id,
+.dark .swagger-ui .opblock .opblock-summary-path,
+.dark .swagger-ui .opblock .opblock-summary-path__deprecated {
+    color: #e2e8f0;
+}
+
+.dark .swagger-ui .opblock .opblock-summary-description {
+    color: #cbd5e1;
+}
+
+.dark .swagger-ui .btn {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+.dark .swagger-ui .btn.authorize {
+    color: #22c55e;
+    border-color: #22c55e;
+    background-color: transparent;
+}
+
+.dark .swagger-ui .btn.authorize svg {
+    fill: #22c55e;
+}
+
+.dark .swagger-ui section.models {
+    border-color: #334155;
+}
+
+.dark .swagger-ui section.models h4 {
+    color: #e2e8f0;
+}
+
+.dark .swagger-ui .model-box {
+    background-color: #0f172a;
+}
+
+.dark .swagger-ui .model {
+    color: #e2e8f0;
+}
+
+.dark .swagger-ui .model-title {
+    color: #f8fafc;
+}
+
+/* Modal */
+.dark .swagger-ui .dialog-ux .modal-ux {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+.dark .swagger-ui .dialog-ux .modal-ux-header {
+    border-bottom-color: #334155;
+}
+
+.dark .swagger-ui .dialog-ux .modal-ux-header h3 {
+    color: #f8fafc;
+}
+
+.dark .swagger-ui .dialog-ux .modal-ux-content {
+    background-color: #1e293b;
+}
+
+.dark .swagger-ui label {
+    color: #e2e8f0;
+}
+
+.dark .swagger-ui input[type=text],
+.dark .swagger-ui input[type=password],
+.dark .swagger-ui input[type=email],
+.dark .swagger-ui select,
+.dark .swagger-ui textarea {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+.dark .swagger-ui .opblock-body pre.microlight {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+/* Fix for the "Authorize" modal specifically */
+.dark .swagger-ui .auth-container input[type=text], 
+.dark .swagger-ui .auth-container input[type=password] {
+    background-color: #0f172a;
+    color: white;
+    border: 1px solid #334155;
+}
+
+.dark .swagger-ui .auth-btn-wrapper .btn-done {
+    color: #e2e8f0;
+}
+
+/* Expand/Collapse icons */
+.dark .swagger-ui .expand-methods svg,
+.dark .swagger-ui .expand-operation svg {
+    fill: #e2e8f0;
+}
+
