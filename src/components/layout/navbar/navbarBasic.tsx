@@ -25,10 +25,9 @@ type NavBarBasicProps = Omit<NavbarProps, "children">;
  * Navigation items configuration
  */
 const navItems = [
-    { id: "stays", label: "Find Stays", icon: Icons.bed, href: "https://dozzze.es" },
-    { id: "about", label: "About", icon: Icons.info, href: "https://dozzze.es" },
-    { id: "contact", label: "Contact", icon: Icons.contact, href: "https://dozzze.es" },
-    { id: "property", label: "List your property", icon: Icons.property, href: "https://dozzze.es" },
+    { id: "dashboard", label: "Panel", icon: Icons.system, href: "/dashboard" },
+    { id: "audit", label: "Auditoría", icon: Icons.shieldKey, href: "/audit" },
+    { id: "profile", label: "Perfil", icon: Icons.userCircle, href: "/profile" },
 ];
 
 export const NavBarBasic = (props: NavBarBasicProps) => {
@@ -44,8 +43,8 @@ export const NavBarBasic = (props: NavBarBasicProps) => {
                     />
                 </div>
                 <NavbarBrand as={Link} href="/" className="mr-4 w-fit max-w-fit flex items-center gap-2">
-                    <Image src={logoSrc} alt="DozZze Logo" className="size-6 sm:size-8" />
-                    <span className="font-bold text-lg sm:text-2xl text-white">DozZze</span>
+                    <Image src={logoSrc} alt="ProCovar Auth" className="size-6 sm:size-8" />
+                    <span className="font-bold text-lg sm:text-2xl text-white">ProCovar Auth</span>
                 </NavbarBrand>
                 <NavbarContent justify="center" className="hidden lg:flex gap-0 lg:flex-grow lg:flex-1">
                     {navItems.map((item) => (

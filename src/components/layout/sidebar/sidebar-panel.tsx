@@ -52,7 +52,7 @@ export function SidebarCalendario({ children, menu }: { children: React.ReactNod
                             className="fixed left-0 top-0 w-80 text-foreground pl-4 py-4 z-20 h-screen"
                         >
                             <div className="bg-content2/35 border-2 border-gray-100/10 backdrop-blur-xl h-full overflow-y-auto rounded-xl p-4 shadow-lg">
-                                <div className="text-xl font-bold mb-6 flex items-center"><Link href="/" className="flex items-center gap-2" color="foreground"><LogoAgenda className="size-9" /> AGENDA UC</Link></div>
+                                <div className="text-xl font-bold mb-6 flex items-center"><Link href="/" className="flex items-center gap-2" color="foreground"><LogoAgenda className="size-9" /> ProCovar Auth</Link></div>
                                 {menu}
                             </div>
                         </motion.aside>
@@ -66,7 +66,7 @@ export function SidebarCalendario({ children, menu }: { children: React.ReactNod
                         backdrop="blur"
                     >
                         <DrawerContent className="p-4">
-                            <h2 className="text-xl font-bold mb-6">AGENDA UC</h2>
+                            <h2 className="text-xl font-bold mb-6">ProCovar Auth</h2>
                             {menu}
                         </DrawerContent>
                     </Drawer>
