@@ -206,7 +206,9 @@ export const signOut = async (): Promise<ApiResponse> => {
 
 export const forgotPassword = async (email: string): Promise<ApiResponse> => {
     try {
-        await auth.api.forgetPassword({
+        // better-auth renombro este metodo: en 1.4.x es requestPasswordReset.
+        // Con el nombre viejo el build ni compila.
+        await auth.api.requestPasswordReset({
             body: {
                 email,
                 redirectTo: "/reset-password",

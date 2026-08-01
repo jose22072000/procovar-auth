@@ -1,0 +1,9 @@
+# Lo que se regenera dentro de la imagen o no pinta nada en produccion.
+node_modules
+.next
+.git
+.vscode
+*.log
+.env
+.env.local
+README.md
