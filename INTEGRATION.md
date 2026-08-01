@@ -4,6 +4,13 @@ Documento autocontenido para conectar cualquier app de procovar al **auth centra
 (`procovar-auth`). Cubre: login/sesión (SSO), permisos (RBAC) y auditoría de eventos.
 Base URL del servicio: `https://auth.<tu-dominio>` (dev: `http://localhost:3500`).
 
+> ## ⭐ PRINCIPIO (obligatorio)
+> **El manejo de USUARIOS y la AUTENTICACIÓN pasan a vivir SOLO en `procovar-auth`.**
+> Las apps (PEDIDO, delivery, analitics) **ya NO** crean usuarios, ni tienen login, ni tabla
+> de usuarios, ni JWT propio. Solo **consumen** este servicio: validan la sesión (`verify-session`),
+> leen permisos (`me/permissions` / `authorize`) y registran auditoría (`/api/audit`).
+> Cualquier alta/baja/edición de usuarios, roles y permisos se hace **aquí, una sola vez**.
+
 Cada app se identifica con un **`clientId`**: `pedido` | `delivery` | `analitics` (y los
 que se agreguen). Ese clientId etiqueta la sesión y la auditoría (para saber "quién hizo
 qué y en qué app").

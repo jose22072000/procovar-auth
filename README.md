@@ -5,6 +5,9 @@ lógica de negocio de otros proyectos. Varias apps (PEDIDO, delivery, analitics)
 para no manejar auth cada una por su lado. Incluye **auditoría** (qué hace cada usuario y en qué
 client). Construido sobre [better-auth](https://better-auth.com) (Next.js + Prisma/Postgres).
 
+> **Principio:** el manejo de **usuarios y autenticación** vive SOLO aquí. Las apps ya NO tienen
+> login ni tabla de usuarios propios: solo consumen este servicio (ver `INTEGRATION.md`).
+
 ## Modelo de datos
 - `user`, `session`, `account`, `verification` — auth base.
 - `organization`, `member`, `invitation` — multi-tenant (una org = una **sucursal** en procovar).
