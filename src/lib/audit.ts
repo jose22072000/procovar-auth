@@ -1,6 +1,7 @@
 import { headers, cookies } from "next/headers";
 import { prisma } from "./prisma";
 import { logger } from "./logger";
+import { publishAuditEvent } from "./redis";
 
 export interface AuditEntry {
     userId?: string | null;
@@ -50,10 +51,15 @@ export async function getRequestContext(): Promise<{
     return { clientId, ipAddress, userAgent };
 }
 
-/** Escribe una entrada de auditoría. Best-effort: nunca rompe el flujo de auth. */
+/**
+ * Escribe una entrada de auditoría. Best-effort: nunca rompe el flujo de auth.
+ * Persiste en Postgres (histórico permanente, consultable por día) Y publica el
+ * evento en Redis (stream del día + canal en vivo) para los dashboards.
+ */
 export async function recordAudit(entry: AuditEntry): Promise<void> {
+    let saved: { id: string; createdAt: Date } | null = null;
     try {
-        await prisma.auditLog.create({
+        saved = await prisma.auditLog.create({
             data: {
                 userId: entry.userId ?? null,
                 organizationId: entry.organizationId ?? null,
@@ -66,6 +72,7 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 metadata: (entry.metadata ?? undefined) as any,
             },
+            select: { id: true, createdAt: true },
         });
     } catch (e) {
         logger.error("audit record failed", {
@@ -73,4 +80,16 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
             action: entry.action,
         });
     }
+
+    // Evento a Redis (por día + canal en vivo). No bloquea si Redis no está.
+    await publishAuditEvent({
+        id: saved?.id,
+        createdAt: (saved?.createdAt ?? new Date()).toISOString(),
+        userId: entry.userId ?? null,
+        clientId: entry.clientId ?? null,
+        action: entry.action,
+        resource: entry.resource ?? null,
+        status: entry.status ?? "success",
+        ipAddress: entry.ipAddress ?? null,
+    });
 }

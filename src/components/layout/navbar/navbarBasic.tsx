@@ -26,6 +26,7 @@ type NavBarBasicProps = Omit<NavbarProps, "children">;
  */
 const navItems = [
     { id: "dashboard", label: "Panel", icon: Icons.system, href: "/dashboard" },
+    { id: "roles", label: "Roles", icon: Icons.keyMinimalistic, href: "/roles" },
     { id: "audit", label: "Auditoría", icon: Icons.shieldKey, href: "/audit" },
     { id: "profile", label: "Perfil", icon: Icons.userCircle, href: "/profile" },
 ];

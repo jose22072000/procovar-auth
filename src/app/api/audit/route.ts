@@ -66,11 +66,28 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get("action") || undefined;
     const limit = Math.min(Number(searchParams.get("limit")) || 100, 500);
 
+    // Filtro por DÍA (day=YYYY-MM-DD) o por rango (from / to). Así el super-admin ve
+    // "qué hizo cada quién en cada client app" por día.
+    const day = searchParams.get("day"); // YYYY-MM-DD
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    let createdAt: { gte?: Date; lte?: Date } | undefined;
+    if (day) {
+        const start = new Date(`${day}T00:00:00.000Z`);
+        const end = new Date(`${day}T23:59:59.999Z`);
+        createdAt = { gte: start, lte: end };
+    } else if (from || to) {
+        createdAt = {};
+        if (from) createdAt.gte = new Date(from);
+        if (to) createdAt.lte = new Date(to);
+    }
+
     const logs = await prisma.auditLog.findMany({
         where: {
             ...(clientId ? { clientId } : {}),
             ...(userId ? { userId } : {}),
             ...(action ? { action } : {}),
+            ...(createdAt ? { createdAt } : {}),
         },
         include: { user: { select: { id: true, name: true, email: true } } },
         orderBy: { createdAt: "desc" },

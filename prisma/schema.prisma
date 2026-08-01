@@ -27,6 +27,7 @@ model User {
   members       Member[]
   invitations   Invitation[]
   auditLogs     AuditLog[]
+  userRoles     UserRole[]
 
   @@map("user")
 }
@@ -112,6 +113,7 @@ model Organization {
   updatedAt   DateTime     @updatedAt
   members     Member[]
   invitations Invitation[]
+  roles       Role[]
 
   @@map("organization")
 }
@@ -145,4 +147,39 @@ model Invitation {
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@map("invitation")
+}
+
+// RBAC customizable: un rol es un conjunto de permisos (claves resource.action).
+// Puede ser global (organizationId null) o propio de una organización/sucursal.
+model Role {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String
+  description    String?
+  organizationId String? // null = rol global (disponible en todas las orgs)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions    String[]      @default([]) // ["users.read", "delivery.routes.manage", ...]
+  isSystem       Boolean       @default(false) // roles base que no se pueden borrar
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userRoles      UserRole[]
+
+  @@unique([organizationId, slug])
+  @@map("role")
+}
+
+// Asignación de roles a usuarios (muchos-a-muchos). Un usuario puede tener VARIOS
+// roles; sus permisos efectivos son la UNIÓN de los permisos de todos sus roles.
+model UserRole {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId         String
+  role           Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  organizationId String? // contexto (sucursal) de la asignación, opcional
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@map("user_role")
 }

@@ -1,5 +1,5 @@
 {
-  "name": "qb-auth",
+  "name": "procovar-auth",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,6 +17,7 @@
     "better-auth": "^1.4.6",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.26",
+    "ioredis": "^5.4.1",
     "jose": "^6.1.3",
     "next": "16.1.0",
     "next-swagger-doc": "^0.4.1",
