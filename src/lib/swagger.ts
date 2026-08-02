@@ -19,7 +19,7 @@ export const getApiDocs = async () => {
           CookieAuth: {
              type: "apiKey",
              in: "cookie",
-             name: "qb.session_token"
+             name: "procovar.session_token"
           }
         },
       },

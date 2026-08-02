@@ -27,11 +27,11 @@ client). Construido sobre [better-auth](https://better-auth.com) (Next.js + Pris
   `GET /api/permissions` (catálogo). Gestión: `/api/roles`, `/api/users/:id/roles`.
 
 Ganchos multi-app en `src/lib/auth.ts`: `Session.clientId` (qué app), `Session.revokedAt`,
-`User.isSystemAdmin`, cookie compartida entre subdominios (`ROOT_DOMAIN`, prefijo `qb`).
+`User.isSystemAdmin`, cookie compartida entre subdominios (`ROOT_DOMAIN`, prefijo `procovar`).
 
 ## Cómo conecta una app
 1. **Sesión compartida**: todas bajo un mismo dominio (`auth.`/`pedido.`/`delivery.`/`analitics.`)
-   para compartir la cookie `qb.session_token`. Cada app valida la sesión con
+   para compartir la cookie `procovar.session_token`. Cada app valida la sesión con
    `GET /api/verify-session` (manda la cookie → recibe `session + user`).
 2. **clientId**: al redirigir a auth, la app pasa su `clientId` (flujo `src/lib/flow-state.ts`),
    que queda asociado a la sesión y a la auditoría.

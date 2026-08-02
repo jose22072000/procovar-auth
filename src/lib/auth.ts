@@ -18,7 +18,7 @@ export const auth = betterAuth({
         },
     },
     advanced: {
-        cookiePrefix: 'qb',
+        cookiePrefix: 'procovar',
         useSecureCookies: process.env.NODE_ENV === 'production',
         crossSubDomainCookies: {
             enabled: true,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
-    const sessionCookie = request.cookies.get("qb.session_token");
+    const sessionCookie = request.cookies.get("procovar.session_token");
 
     if (!sessionCookie) {
         return NextResponse.redirect(new URL("/", request.url));

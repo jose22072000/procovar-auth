@@ -42,7 +42,7 @@ export async function handleFlowState(op: string) {
   const options = await decodeFlowOptions(op);
   if (options) {
     const cookieStore = await cookies();
-    cookieStore.set('qb.flow_state', JSON.stringify(options), {
+    cookieStore.set('procovar.flow_state', JSON.stringify(options), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

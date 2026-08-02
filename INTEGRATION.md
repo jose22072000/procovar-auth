@@ -19,7 +19,7 @@ qué y en qué app").
 
 ## 1. Sesión / SSO
 Todas las apps y auth viven bajo un **mismo dominio raíz** (`auth.`, `pedido.`, `delivery.`,
-`analitics.` sobre `<tu-dominio>`) para compartir la cookie `qb.session_token`.
+`analitics.` sobre `<tu-dominio>`) para compartir la cookie `procovar.session_token`.
 
 - **Login/registro/logout**: los maneja auth (`/api/auth/*` de better-auth y las pantallas
   `/`, `/sign-up`, `/forgot-password`). Las apps redirigen a auth para autenticar.

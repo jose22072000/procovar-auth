@@ -16,7 +16,7 @@ export interface AuditEntry {
 }
 
 /**
- * Contexto de la petición actual: de qué client viene (cookie de flujo qb.flow_state,
+ * Contexto de la petición actual: de qué client viene (cookie de flujo procovar.flow_state,
  * que las apps setean con su clientId al redirigir a auth) + ip y user-agent.
  */
 export async function getRequestContext(): Promise<{
@@ -26,7 +26,7 @@ export async function getRequestContext(): Promise<{
 }> {
     let clientId: string | null = null;
     try {
-        const raw = (await cookies()).get("qb.flow_state")?.value;
+        const raw = (await cookies()).get("procovar.flow_state")?.value;
         if (raw) {
             const parsed = JSON.parse(raw) as { clientId?: string };
             clientId = parsed?.clientId ?? null;
