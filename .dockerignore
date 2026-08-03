@@ -1,0 +1,8 @@
+# Lo que se regenera al construir. No excluir src/ ni package-lock.json:
+# el build multi-stage los necesita.
+node_modules
+.next
+.git
+.env
+.env.local
+*.log

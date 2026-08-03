@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Necesario para el Dockerfile multi-stage: deja en .next/standalone un
+  // server.js con solo las dependencias que se usan, en vez de arrastrar todo
+  // node_modules a la imagen final. Sin esto el contenedor no arranca.
+  output: "standalone",
   images: {
     remotePatterns: [
       {
