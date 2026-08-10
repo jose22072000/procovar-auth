@@ -53,12 +53,14 @@ export const NavBarBasic = ({ bookingUrl: bookingUrlProp, panelUrl: panelUrlProp
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const navItems = [
-        { id: "stays", label: t('nav.findStays'), icon: Icons.bed, href: bookingUrl },
-        { id: "about", label: t('nav.about'), icon: Icons.info, href: `${bookingUrl}/aboutUs` },
-        { id: "contact", label: t('nav.contact'), icon: Icons.contact, href: `${bookingUrl}/contact` },
-        { id: "property", label: t('nav.listProperty'), icon: Icons.property, href: panelUrl },
-    ];
+    // Buscar alojamientos, sobre nosotros, contacto y publicar propiedad son de la
+    // web de reservas de QuickBook. Procovar no tiene esa web: apuntaban a un sitio
+    // que aqui no existe.
+    //
+    // Esta pantalla es solo el centro de identidad — se entra, se sale y se
+    // gestiona la cuenta. No hay adonde navegar desde aqui, asi que la barra se
+    // queda con el logo y el menu de la persona.
+    const navItems: Array<{ id: string; label: string; icon: typeof Icons.bed; href: string }> = [];
 
     return (
         <Navbar

@@ -195,20 +195,10 @@ export const UserNavbarBasic = () => {
                                 {t('account.myPersonalProfile')}
                             </DropdownItem>
                         </DropdownSection>
-                        <DropdownSection showDivider className={isAdmin ? "hidden" : undefined}>
-                            <DropdownItem key="invoices" startContent={<Icons.moneyBill className={iconClasses} />} as={NextLink} href="/profile/invoices">
-                                {t('nav.invoices')}
-                            </DropdownItem>
-                            <DropdownItem key="reservations" startContent={<Icons.reservation className={iconClasses} />} as={NextLink} href="/profile/reservations">
-                                {t('nav.reservations')}
-                            </DropdownItem>
-                            <DropdownItem key="services" startContent={<Icons.service className={iconClasses} />} as={NextLink} href="/profile/services">
-                                {t('nav.services')}
-                            </DropdownItem>
-                            <DropdownItem key="vouchers" startContent={<Icons.voucher className={iconClasses} />} as={NextLink} href="/profile/vouchers">
-                                {t('nav.vouchers')}
-                            </DropdownItem>
-                        </DropdownSection>
+                        {/* Facturas, reservas, servicios y bonos son del negocio de
+                            QuickBook (alojamientos). Procovar no los tiene, y esas
+                            paginas llaman a un servidor que aqui no existe: dejarlas
+                            en el menu seria ofrecer puertas que dan error. */}
                         <DropdownSection>
                             <DropdownItem
                                 key="logout"
