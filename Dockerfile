@@ -56,16 +56,23 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 # rompe el build con "not found" sin decir por qué.
 COPY --from=builder --chown=nextjs:nodejs /app/src/generated/prisma ./src/generated/prisma
 
-# El CLI se INSTALA aquí, no se copia del builder.
+# El CLI de Prisma NO va en esta imagen, y las migraciones NO se aplican al
+# arrancar. Dos razones, y las dos pesan:
 #
-# Copiar `node_modules/prisma` y `@prisma` sueltos deja el CLI sin su árbol de
-# dependencias: arranca y muere con `MODULE_NOT_FOUND` dentro de `@prisma/dev`.
-# Se ve tarde, en el arranque del contenedor, no en el build.
+# 1. Se intentó de las dos formas y ninguna sale bien. Copiar `node_modules/
+#    prisma` del builder deja el CLI sin su árbol de dependencias y muere con
+#    MODULE_NOT_FOUND dentro de `@prisma/dev`. Instalarlo con `npm install` en el
+#    build lo baja de la red saltándose el lockfile: sin integridad comprobada y
+#    con las dependencias transitivas sin fijar, en la imagen de un servicio de
+#    IDENTIDAD. Eso no se hace.
 #
-# Instalarlo con npm trae lo que necesita y nada más. La versión va FIJA y tiene
-# que coincidir con la de package.json: un CLI más nuevo que el cliente puede
-# escribir migraciones que el cliente generado no entiende.
-RUN npm install --no-save --omit=dev prisma@7.2.0
+# 2. Migrar al arrancar es mala idea aunque funcione. Con más de una réplica,
+#    varias intentan migrar a la vez sobre la misma base; y un fallo de migración
+#    tumba el arranque en vez de dejarte el servicio viejo en pie.
+#
+# Las migraciones se aplican como paso propio (ver README): `prisma migrate
+# deploy` desde la imagen del build, que sí tiene todo. Es una acción
+# deliberada, que es lo que corresponde al esquema de la identidad.
 
 USER nextjs
 
@@ -75,10 +82,4 @@ ENV HOSTNAME="0.0.0.0"
 
 # migrate deploy (no db push): aplica solo las migraciones versionadas del
 # repo. En un servicio de identidad no se improvisa el esquema.
-# Se llama al CLI por su RUTA, no con `npx prisma`.
-#
-# La salida `standalone` de Next trae solo lo que la aplicación importa, y ahí no
-# entra `node_modules/.bin` — que es el enlace que hace que `prisma` exista como
-# comando. El contenedor arrancaba y moría en bucle con `sh: prisma: not found`,
-# sin llegar a aplicar ni una migración.
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
+CMD ["node", "server.js"]
