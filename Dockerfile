@@ -66,4 +66,10 @@ ENV HOSTNAME="0.0.0.0"
 
 # migrate deploy (no db push): aplica solo las migraciones versionadas del
 # repo. En un servicio de identidad no se improvisa el esquema.
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+# Se llama al CLI por su RUTA, no con `npx prisma`.
+#
+# La salida `standalone` de Next trae solo lo que la aplicación importa, y ahí no
+# entra `node_modules/.bin` — que es el enlace que hace que `prisma` exista como
+# comando. El contenedor arrancaba y moría en bucle con `sh: prisma: not found`,
+# sin llegar a aplicar ni una migración.
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
