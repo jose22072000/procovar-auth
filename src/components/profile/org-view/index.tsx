@@ -1,40 +1,16 @@
 "use client";
 
-import { OwnerKpiBar } from "./owner-kpi-bar";
-import { OrgReservationsCard, type OrgReservation } from "./org-reservations-card";
-import { OwnerPayoutsCard } from "./owner-payouts-card";
-import type { PayoutWithOrg } from "./payout-detail-drawer";
-import { ServicesCard } from "@/components/profile/cards/services-card";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Icons } from "@/components/icons/iconify";
-import type { OwnerBalance } from "@/app/(user)/profile/_actions";
 
 interface OwnerProfileViewProps {
     user: { id: string; name: string; email: string; image?: string | null; emailVerified: boolean };
-    balance: OwnerBalance;
-    orgs?: { id: string; name: string; slug: string }[];
-    reservations?: OrgReservation[];
 }
 
-export function OrgProfileView({ user, balance, orgs = [], reservations = [] }: OwnerProfileViewProps) {
+export function OrgProfileView({ user }: OwnerProfileViewProps) {
     const t = useTranslations();
     const userInitial = user.name?.[0]?.toUpperCase() || "?";
-
-    const orgById = new Map(orgs.map((o) => [o.id, o]));
-    const orgName = (id: string | null) => (id ? orgById.get(id)?.name ?? "—" : "—");
-    const payoutsWithOrg: PayoutWithOrg[] = balance.payouts.map((p) => ({ ...p, organizationName: orgName(p.organizationId) }));
-
-    // Real sparkline series: cumulative paid (by paid date) and cumulative pending (by issue date).
-    const cumulative = (rows: PayoutWithOrg[], dateKey: "paidAt" | "issuedAt") => {
-        const sorted = rows
-            .filter((p) => p[dateKey])
-            .sort((a, b) => new Date(a[dateKey]!).getTime() - new Date(b[dateKey]!).getTime());
-        let acc = 0;
-        return [0, ...sorted.map((p) => (acc += p.amount) / 100)];
-    };
-    const availableSeries = cumulative(payoutsWithOrg.filter((p) => p.status === "PAID"), "paidAt");
-    const pendingSeries = cumulative(payoutsWithOrg.filter((p) => p.status === "PENDING"), "issuedAt");
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -91,20 +67,9 @@ export function OrgProfileView({ user, balance, orgs = [], reservations = [] }: 
                 </Link>
             </div>
 
-            {/* KPI bar — saldo disponible (con 'Ver registro') + por pagar */}
-            <OwnerKpiBar
-                availableCents={balance.availableCents}
-                pendingCents={balance.pendingCents}
-                availableSeries={availableSeries}
-                pendingSeries={pendingSeries}
-            />
-
-            {/* Payouts list */}
-            <OwnerPayoutsCard payouts={payoutsWithOrg} />
-
-            {/* Cards */}
-            <OrgReservationsCard reservations={reservations} />
-            <ServicesCard />
+            {/* Aqui iban el saldo del propietario, los pagos, las reservas y los
+                servicios: todo eso es del negocio de alojamientos de QuickBook.
+                En Procovar una organizacion son personas, no propiedades. */}
         </div>
     );
 }

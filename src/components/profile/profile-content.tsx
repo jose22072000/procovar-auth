@@ -2,10 +2,6 @@
 
 import { ClientKpiBar } from "./client-view/kpi-bar";
 import { OwnerUpgradeCta } from "./client-view/owner-upgrade-cta";
-import { InvoicesCard } from "./cards/invoices-card";
-import { ServicesCard } from "./cards/services-card";
-import { ReservationsCard } from "./cards/reservations-card";
-import { VouchersCard } from "./cards/vouchers-card";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
@@ -136,11 +132,9 @@ export function ProfileContent({
                 totalSpentCents={kpiData.totalSpentCents}
             />
 
-            {/* Cards full width */}
-            <InvoicesCard />
-            <ReservationsCard />
-            <VouchersCard />
-            <ServicesCard />
+            {/* Aqui iban facturas, reservas, bonos y servicios: son del negocio de
+                alojamientos de QuickBook. En Procovar el perfil es solo la cuenta
+                de la persona. */}
 
             {/* Upgrade CTA */}
             {showUpgradeCta && <OwnerUpgradeCta panelUrl={panelUrl} />}

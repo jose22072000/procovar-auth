@@ -2,7 +2,6 @@ import { getCurrentUser } from "@/server/auth.server";
 import { redirect } from "next/navigation";
 import { resolveProfileRole } from "@/lib/role-resolver";
 import { prisma } from "@/lib/prisma";
-import { fetchOwnerBalance, fetchOrgProperties, fetchOrgReservations } from "../_actions";
 import { OrgProfileView } from "@/components/profile/org-view";
 import { OrgEventsRefresher } from "@/components/profile/org-view/org-events-refresher";
 import type { Member } from "@/components/full-user-provider";
@@ -52,39 +51,13 @@ export default async function OrgProfilePage() {
     // A client with no org is bounced to their personal profile.
     if (role === "client") redirect("/profile");
 
-    const balResult = await fetchOwnerBalance();
-    const balance = balResult.data ?? { availableCents: 0, pendingCents: 0, payouts: [] };
-
+    // Sin propietarios, sin saldos y sin reservas: eso era el negocio de
+    // alojamientos de QuickBook. En Procovar una organizacion son SUCURSALES y
+    // PERSONAS, y lo que importa de cada persona es su rol en cada aplicacion.
     const orgs = members.map((m) => ({
         id: m.organization.id,
         name: m.organization.name,
         slug: m.organization.slug,
-    }));
-
-    // Reservations made TO the owner's organizations: orgs → properties → reservations,
-    // each tagged with the organization it came from.
-    const propertyOrgName = new Map<string, string>();
-    const allPropertyIds: string[] = [];
-    for (const org of orgs) {
-        const { data: props } = await fetchOrgProperties(org.id);
-        for (const p of props ?? []) {
-            propertyOrgName.set(String(p.id), org.name);
-            allPropertyIds.push(String(p.id));
-        }
-    }
-    const { data: rawReservations } = await fetchOrgReservations(allPropertyIds);
-    const orgReservations = (rawReservations ?? []).map((r) => ({
-        id: r.id,
-        organizationName: propertyOrgName.get(r.propertyId) ?? "—",
-        propertyName: r.propertyName ?? "—",
-        guestName: r.guestName ?? null,
-        guestEmail: r.guestEmail ?? null,
-        checkIn: r.checkIn,
-        checkOut: r.checkOut,
-        status: r.status,
-        totalPrice: r.totalPrice,
-        currency: r.currency,
-        code: r.code ?? null,
     }));
 
     return (
@@ -95,9 +68,6 @@ export default async function OrgProfilePage() {
             ))}
             <OrgProfileView
                 user={{ id: user.id, name: user.name, email: user.email, image: user.image ?? null, emailVerified: user.emailVerified }}
-                balance={balance}
-                orgs={orgs}
-                reservations={orgReservations}
             />
         </>
     );
