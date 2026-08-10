@@ -74,6 +74,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/src/generated/prisma ./src/genera
 # deploy` desde la imagen del build, que sí tiene todo. Es una acción
 # deliberada, que es lo que corresponde al esquema de la identidad.
 
+# La aplicación escribe sus registros en /app/logs. Como corre con un usuario sin
+# privilegios, no puede crear esa carpeta ella sola: sin esto la portada devuelve
+# 500 con `EACCES: permission denied, mkdir '/app/logs/'` mientras el API
+# responde perfectamente — la mitad de la aplicación en pie y la otra no.
+RUN mkdir -p /app/logs && chown -R nextjs:nodejs /app/logs
+
 USER nextjs
 
 EXPOSE 3500
