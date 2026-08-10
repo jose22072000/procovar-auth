@@ -55,8 +55,17 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 # — la carpeta `.prisma` del generador viejo no llega a existir, y copiarla
 # rompe el build con "not found" sin decir por qué.
 COPY --from=builder --chown=nextjs:nodejs /app/src/generated/prisma ./src/generated/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+
+# El CLI se INSTALA aquí, no se copia del builder.
+#
+# Copiar `node_modules/prisma` y `@prisma` sueltos deja el CLI sin su árbol de
+# dependencias: arranca y muere con `MODULE_NOT_FOUND` dentro de `@prisma/dev`.
+# Se ve tarde, en el arranque del contenedor, no en el build.
+#
+# Instalarlo con npm trae lo que necesita y nada más. La versión va FIJA y tiene
+# que coincidir con la de package.json: un CLI más nuevo que el cliente puede
+# escribir migraciones que el cliente generado no entiende.
+RUN npm install --no-save --omit=dev prisma@7.2.0
 
 USER nextjs
 
