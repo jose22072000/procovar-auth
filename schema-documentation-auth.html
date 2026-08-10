@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Documentacion SSO Auth Center | Prisma Schema</title>
+  <style>
+    :root {
+      --bg-primary: #0f1115;
+      --bg-secondary: #161922;
+      --bg-tertiary: #1f2430;
+      --text-primary: #e4e7ee;
+      --text-secondary: #aab4c3;
+      --accent: #5fb3f9;
+      --success: #6ad18b;
+      --warning: #ffb562;
+      --danger: #ff6b6b;
+      --border: #272c36;
+    }
+    body {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+    header {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    h1 { margin: 0; color: var(--accent); letter-spacing: -0.3px; }
+    h2 { color: var(--accent); margin-top: 0; }
+    h3 { color: var(--text-primary); border-bottom: 1px solid var(--border); padding-bottom: 0.35rem; }
+    p  { color: var(--text-secondary); }
+    .module {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 1.2rem;
+      margin: 1.2rem 0;
+    }
+    .code { font-family: 'Courier New', monospace; background: var(--bg-tertiary); padding: 0.1rem 0.3rem; border-radius: 3px; }
+    pre { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    code { font-family: 'Courier New', monospace; color: #dce4ef; }
+    .toc { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin: 1rem 0 1.5rem; }
+    .toc ul { list-style: none; padding-left: 1rem; margin: 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .note { background: rgba(95, 179, 249, 0.08); border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Documentacion SSO Auth Center</h1>
+    <p>Esquema Prisma (Next.js 16) | Base de autenticacion centralizada para todas las apps.</p>
+    <p>Convencion: todos los campos camelCase del dominio se persisten en snake_case en BD via <span class="code">@@map</span> y <span class="code">@map</span>.</p>
+    <div class="note">
+      Beneficios SSO para el ecosistema: un solo identity store, auditoria consistente, revocacion centralizada, permisos por organizacion, soporte multi-proveedor (OAuth + password), y menor superficie de riesgo al compartir sesiones firmadas entre apps.
+    </div>
+  </header>
+
+  <section class="toc">
+    <h2>Indice</h2>
+    <ul>
+      <li><a href="#naming">Convenciones de nombres</a></li>
+      <li><a href="#vision">Vision SSO y cohesion</a></li>
+      <li><a href="#user">User</a></li>
+      <li><a href="#account">Account (OAuth / Password)</a></li>
+      <li><a href="#session">Session</a></li>
+      <li><a href="#verification">Verification (tokens)</a></li>
+      <li><a href="#organization">Organization</a></li>
+      <li><a href="#member">Member (roles por org)</a></li>
+      <li><a href="#invitation">Invitation</a></li>
+    </ul>
+  </section>
+
+  <section id="naming" class="module">
+    <h2>Convenciones de nombres (camelCase → snake_case)</h2>
+    <p>Regla: <span class="code">fooBarBaz</span> → <span class="code">foo_bar_baz</span> en BD. Tablas y columnas se renombran con <span class="code">@@map</span> y <span class="code">@map</span> para mantener naming consistente y audit friendly.</p>
+    <ul>
+      <li>Identificadores: <span class="code">userId</span> → <span class="code">user_id</span>, <span class="code">organizationId</span> → <span class="code">organization_id</span>.</li>
+      <li>Tokens y hashes: <span class="code">tokenHash</span> → <span class="code">token_hash</span>, nunca plain text.</li>
+      <li>Timestamps: <span class="code">expiresAt</span> → <span class="code">expires_at</span> (UTC).</li>
+      <li>Traza de cliente: <span class="code">userAgent</span> → <span class="code">user_agent</span>, <span class="code">ipAddress</span> → <span class="code">ip_address</span>.</li>
+    </ul>
+    <div class="note">No se almacena PII sensible en texto plano; contraseñas y tokens se guardan hasheados o encriptados.</div>
+  </section>
+
+  <section id="vision" class="module">
+    <h2>Vision SSO y cohesion</h2>
+    <p>El Auth Center es la unica fuente de identidad para todas las apps. Beneficios clave:</p>
+    <ul>
+      <li>Ingreso unificado (OAuth y password) con propagacion de sesiones firmadas entre productos.</li>
+      <li>Control central de organizaciones, roles y revocaciones (cierre de sesion remoto, baja de cuentas comprometidas).</li>
+      <li>Auditoria consistente: IP, user-agent y cliente que origino la sesion.</li>
+      <li>Multi-tenant seguro: cada relacion usuario↔organizacion vive en <span class="code">member</span>, evitando mezclas de datos.</li>
+      <li>Invitaciones trazables para onboarding controlado y con expiracion.</li>
+    </ul>
+  </section>
+
+  <section id="user" class="module">
+    <h2>User</h2>
+    <p>Identidad base y unica por persona. Aisla perfil de credenciales (<span class="code">account</span>) y de pertenencia a organizaciones (<span class="code">member</span>).</p>
+    <pre><code>model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @map("email_verified")
+  image         String?
+  isSystemAdmin Boolean  @default(false) @map("is_system_admin")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt      @map("updated_at")
+  sessions      Session[]
+  accounts      Account[]
+  members       Member[]
+  invitations   Invitation[]
+  @@map("user")
+}</code></pre>
+    <p><strong>Por que?</strong> Separa identidad de autenticacion: puedes migrar de password a SSO sin tocar datos de perfil. <strong>Riesgos mitigados:</strong> evitar duplicados por email, controlar superadmins via <span class="code">is_system_admin</span>.</p>
+  </section>
+
+  <section id="account" class="module">
+    <h2>Account (credenciales / OAuth)</h2>
+    <p>Conecta usuario con proveedor de identidad (Google/Microsoft) o auth local. Permite multi-login sin duplicar perfil.</p>
+    <pre><code>model Account {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  accountId String   @map("account_id")
+  providerId            String    @map("provider_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope      String?
+  idToken    String?   @map("id_token")
+  password   String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt      @map("updated_at")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("account")
+}</code></pre>
+    <p><strong>Por que?</strong> Evita lock-in de proveedor; puedes agregar OAuth sin tocar <span class="code">user</span>. Tokens se guardan encriptados/hasheados. <strong>Escalabilidad:</strong> multiproveedor sin cambiar el dominio.</p>
+  </section>
+
+  <section id="session" class="module">
+    <h2>Session</h2>
+    <p>Sesiones firmadas con trazabilidad. Permiten logout centralizado y auditoria.</p>
+    <pre><code>model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  activeOrganizationId String? @map("active_organization_id")
+  clientId  String?   @map("client_id")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt      @map("updated_at")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("session")
+}</code></pre>
+    <p><strong>Por que?</strong> Auditoria (IP/UA), control de organizacion activa para UX contextual, cierre remoto (<span class="code">revoked_at</span>) en incidentes.</p>
+  </section>
+
+  <section id="verification" class="module">
+    <h2>Verification (tokens de verificacion)</h2>
+    <p>Tokens temporales para verificacion de email, magic links y reset de password. Se almacenan hasheados.</p>
+    <pre><code>model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt      @map("updated_at")
+  @@map("verification")
+}</code></pre>
+    <p><strong>Por que?</strong> Evita dependencia de proveedores de correo como fuente de verdad; permite invalidar tokens al instante y auditar usos.</p>
+  </section>
+
+  <section id="organization" class="module">
+    <h2>Organization</h2>
+    <p>Representa tenant/unidad de negocio. Todo permiso se deriva de pertenencia en <span class="code">member</span>.</p>
+    <pre><code>model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  metadata  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+  members       Member[]
+  invitations   Invitation[]
+  @@map("organization")
+}</code></pre>
+    <p><strong>Por que?</strong> Multi-tenant limpio: separa datos y roles. <strong>Valor:</strong> permite que un usuario pertenezca a varias orgs con roles distintos.</p>
+  </section>
+
+  <section id="member" class="module">
+    <h2>Member (roles por organizacion)</h2>
+    <p>Puente User↔Organization con rol efectivo. Soporta multi-rol multi-org sin duplicar usuarios.</p>
+    <pre><code>model Member {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  role           String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt      @map("updated_at")
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([userId, organizationId])
+  @@map("member")
+}</code></pre>
+    <p><strong>Por que?</strong> Evita clonar usuarios por tenant, habilita RBAC por org y controles de acceso claros. La unique comp impide roles duplicados en la misma org.</p>
+  </section>
+
+  <section id="invitation" class="module">
+    <h2>Invitation</h2>
+    <p>Onboarding seguro y auditable para agregar miembros a una org.</p>
+    <pre><code>model Invitation {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  email          String
+  role           String
+  status         String
+  tokenHash      String?  @map("token_hash")
+  inviterId      String   @map("inviter_id")
+  expiresAt      DateTime @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  acceptedAt     DateTime? @map("accepted_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  @@map("invitation")
+}</code></pre>
+    <p><strong>Por que?</strong> Elimina altas manuales; define rol desde el envio y evita reuso de tokens (hash). Expiracion controla riesgo de invitaciones abandonadas.</p>
+  </section>
+</body>
+</html>

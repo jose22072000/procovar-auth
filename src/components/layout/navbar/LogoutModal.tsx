@@ -10,35 +10,46 @@ import {
 } from "@heroui/react";
 import { useLogoutModalContext } from "./LogoutModalProvider";
 import { Icons } from "@/components/icons/iconify";
+import { useTranslations } from "next-intl";
 
 export function LogoutModal() {
+    const t = useTranslations();
     const { isOpen, setIsOpen, isLoggingOut, handleLogout } = useLogoutModalContext();
 
     return (
-        <Modal isOpen={isOpen} scrollBehavior="outside" backdrop="blur" size="lg" onOpenChange={setIsOpen} classNames={{
-            backdrop: "bg-transparent",
-        }}>
-            <ModalContent className="py-2">
+        <Modal isOpen={isOpen} backdrop="blur" size="sm" onOpenChange={setIsOpen}>
+            <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader className="flex items-center gap-2 text-2xl font-bold text-danger-500">
-                            <Icons.dialog className="size-8" /> Confirmar cierre de sesión
+                        <ModalHeader className="flex flex-col items-center gap-3 pt-8 pb-2">
+                            <div className="flex items-center justify-center w-16 h-16 rounded-sm bg-danger-50 border-2 border-danger-100">
+                                <Icons.powerOff className="size-8 text-danger-500" />
+                            </div>
+                            <span className="text-xl font-bold text-foreground">{t("common.logoutModal.title")}</span>
                         </ModalHeader>
-                        <ModalBody>
-                            <p className="text-center">¿Estás seguro de que quieres cerrar tu sesión? </p>
+                        <ModalBody className="text-center px-6 pb-2">
+                            <p className="text-default-600 text-sm">{t("common.logoutModal.body")}</p>
                         </ModalBody>
-                        <ModalFooter>
-                            <Button color="default" variant="light" onPress={onClose}>
-                                Cancelar
+                        <ModalFooter className="flex gap-3 pb-6 px-6">
+                            <Button
+                                color="default"
+                                variant="bordered"
+                                onPress={onClose}
+                                className="flex-1"
+                                isDisabled={isLoggingOut}
+                            >
+                                {t("dashboard.common.cancel")}
                             </Button>
                             <Button
                                 color="danger"
+                                variant="bordered"
                                 onPress={handleLogout}
                                 isLoading={isLoggingOut}
-                                disabled={isLoggingOut}
-                                startContent={!isLoggingOut && <Icons.dialogCheck className="size-6" />}
+                                isDisabled={isLoggingOut}
+                                startContent={!isLoggingOut && <Icons.powerOff className="size-4" />}
+                                className="flex-1"
                             >
-                                {isLoggingOut ? "Cerrando sesión..." : "Confirmar"}
+                                {isLoggingOut ? t("common.logoutModal.loggingOut") : t("common.logoutModal.confirm")}
                             </Button>
                         </ModalFooter>
                     </>

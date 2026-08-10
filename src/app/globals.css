@@ -4,10 +4,123 @@
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @custom-variant dark (&:is(.dark *));
 
-body {
-    @apply text-foreground relative;
+/* ── Design tokens ────────────────────────────────── */
+:root {
+  --background:            #fafafa;
+  --foreground:            #01072c;
+  --color-dozeblue:        #1e3a8a;
+  --qb-nav-bg:             #0A2252;
+  --qb-nav-accent:         #0a5bd3;
+  --color-dozebg1:         #f8f8f6;
+  --color-dozebg2:         #e6e4ff;
+  --color-dozegray:        #4b5563;
+  --page-builder-bg:       linear-gradient(180deg, #eef2ff 0%, #f9faff 55%, #ffffff 100%);
+  --page-builder-card:     rgba(255, 255, 255, 0.97);
+  --page-builder-border:   rgba(30, 58, 138, 0.15);
 }
+
+.dark {
+  --background:            #121212;
+  --foreground:            #a09f9f;
+  --color-dozeblue:        #60a5fa;
+  --color-dozebg1:         #1e1e1e;
+  --color-dozebg2:         #2a2a2a;
+  --color-dozegray:        #9ca3af;
+  --page-builder-bg:       linear-gradient(180deg, #050b1f 0%, #0d1c34 55%, #04080f 100%);
+  --page-builder-card:     rgba(11, 20, 39, 0.95);
+  --page-builder-border:   rgba(191, 219, 254, 0.12);
+}
+
+/* ── Tailwind v4 custom utilities ─────────────────── */
+@theme inline {
+  --color-dozeblue: var(--color-dozeblue);
+  --color-dozegray: var(--color-dozegray);
+  --color-dozebg1:  var(--color-dozebg1);
+  --font-montserrat: var(--font-montserrat), sans-serif;
+  --font-poppins:    var(--font-poppins), sans-serif;
+}
+
+body {
+    color: var(--foreground);
+    position: relative;
+}
+
 .radial-bg {
-    background-color: rgb(17, 13, 91) 42.71%;
-    background-image: radial-gradient(58.11% 44.54% at 51.59% -9.61%, rgb(180, 176, 254) 0%, rgb(54, 50, 133) 32.92%, rgb(17, 13, 91) 52.71%, rgb(5, 3, 39) 88.54%);
+    background: var(--page-builder-bg);
+}
+
+.text-danger[data-slot="error-message"] {
+    color: #b91c1c !important; /* HeroUI danger DEFAULT (#ff87b1) is 2.24:1 ❌ → red-700 = 6.5:1 ✅ AA */
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding-top: 4px !important;
+}
+
+/* ── HeroUI component text visibility (light theme) ── */
+/* text-default-500 was mapped to #d4d4d8 (1.45:1 ❌) → now zinc-500 (4.6:1 ✅ AA) */
+.text-default-500 {
+    color: #71717a !important;
+}
+.text-default-400 {
+    color: #a1a1aa !important;
+}
+
+[data-slot="input"] {
+    color: #01072c !important;
+}
+
+[data-slot="input"]::placeholder {
+    color: #71717a !important; /* was #9ca3af (2.54:1 ❌) → zinc-500 (4.6:1 ✅ AA) */
+}
+
+[data-slot="label"] {
+    color: #4b5563 !important;
+}
+
+[data-slot="input-wrapper"] {
+    background-color: #ffffff !important;
+}
+
+/* Dropdown items */
+[data-slot="item-title"] {
+    color: #01072c !important;
+}
+
+[data-slot="description"] {
+    color: #6b7280 !important;
+}
+
+/* Select */
+[data-slot="value"] {
+    color: #01072c !important;
+}
+
+[data-slot="trigger"] {
+    background-color: #ffffff !important;
+}
+
+/* Textarea */
+[data-slot="textarea"] {
+    color: #01072c !important;
+}
+
+[data-slot="textarea"]::placeholder {
+    color: #71717a !important; /* was #9ca3af (2.54:1 ❌) → zinc-500 (4.6:1 ✅ AA) */
+}
+
+/* Card & general content slots */
+[data-slot="base"] {
+    color: inherit;
+}
+
+/* ── Danger / Alert text: HeroUI danger DEFAULT (#ff87b1) is pink and fails WCAG ── */
+/* Alert danger: title and description */
+[data-color="danger"] [data-slot="title"],
+[data-color="danger"] [data-slot="description"],
+[data-color="danger"] [data-slot="alert-title"] {
+    color: #b91c1c !important; /* red-700, 6.5:1 on white ✅ AA */
+}
+/* Invalid input border color — darker red so the state is also visually clear */
+[data-invalid="true"] [data-slot="input-wrapper"] {
+    border-color: #b91c1c !important;
 }

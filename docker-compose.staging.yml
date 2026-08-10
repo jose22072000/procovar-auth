@@ -1,0 +1,7 @@
+# Staging/dev override: builds with the fast single-stage Dockerfile.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+services:
+  qb-auth:
+    build:
+      dockerfile: Dockerfile.staging

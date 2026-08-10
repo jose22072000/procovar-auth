@@ -1,6 +1,5 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
+import { resolveSessionUser } from "@/lib/require-admin";
 import { NextResponse } from "next/server";
 
 /**
@@ -8,7 +7,7 @@ import { NextResponse } from "next/server";
  * /api/user/full-profile:
  *   get:
  *     summary: Get full user profile
- *     description: Returns detailed information about the authenticated user, including organizations, roles, and sessions.
+ *     description: Returns detailed information about the authenticated user, including organizations and roles. Sensitive data is excluded.
  *     tags:
  *       - User
  *     responses:
@@ -19,41 +18,64 @@ import { NextResponse } from "next/server";
  *             schema:
  *               type: object
  *               properties:
- *                 user:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     name:
- *                       type: string
- *                     email:
- *                       type: string
- *                     members:
- *                       type: array
- *                       items:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 emailVerified:
+ *                   type: boolean
+ *                 image:
+ *                   type: string
+ *                   nullable: true
+ *                 isSystemAdmin:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 members:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       role:
+ *                         type: string
+ *                       organizationId:
+ *                         type: string
+ *                       organization:
  *                         type: object
  *                         properties:
- *                           organization:
- *                             type: object
- *                             properties:
- *                               id:
- *                                 type: string
- *                               name:
- *                                 type: string
- *                               slug:
- *                                 type: string
- *                           role:
+ *                           id:
  *                             type: string
+ *                           name:
+ *                             type: string
+ *                           slug:
+ *                             type: string
+ *                           logo:
+ *                             type: string
+ *                             nullable: true
+ *                 accounts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       providerId:
+ *                         type: string
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: User not found
  *       500:
  *         description: Internal Server Error
  */
 export async function GET() {
     try {
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+        const session = await resolveSessionUser();
 
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -61,25 +83,74 @@ export async function GET() {
 
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            include: {
+            select: {
+                // User fields - no sensitive data
+                id: true,
+                name: true,
+                email: true,
+                emailVerified: true,
+                image: true,
+                isSystemAdmin: true,
+                createdAt: true,
+                updatedAt: true,
+                // Members with organizations
                 members: {
-                    include: {
-                        organization: true,
+                    select: {
+                        id: true,
+                        role: true,
+                        organizationId: true,
+                        createdAt: true,
+                        organization: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                                logo: true,
+                                metadata: true,
+                                createdAt: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                },
+                // Accounts - only non-sensitive fields
+                accounts: {
+                    select: {
+                        id: true,
+                        providerId: true,
+                        // NOT including: password, accessToken, refreshToken, idToken
                     },
                 },
-                sessions: true,
-                accounts: true,
+                // Active subscription with plan details
+                subscriptions: {
+                    where: { status: 'ACTIVE' },
+                    select: {
+                        id: true,
+                        status: true,
+                        billingCycle: true,
+                        currentPeriodStart: true,
+                        currentPeriodEnd: true,
+                        createdAt: true,
+                        plan: {
+                            select: {
+                                id: true,
+                                key: true,
+                                name: true,
+                                description: true,
+                                features: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                },
+                // NOT including sessions - contains tokens
             },
         });
 
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
-
-        // Remove sensitive data if necessary (like passwords, tokens)
-        // Prisma excludes sensitive fields by default if not selected, but here we included everything.
-        // We should be careful with sessions tokens if they are sensitive.
-        // For now, returning what was requested: "all user information".
 
         return NextResponse.json(user);
     } catch (error) {

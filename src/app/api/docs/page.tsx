@@ -10,7 +10,12 @@ export default async function DocsPage() {
   });
 
   if (!session) {
-    redirect("/"); // Redirect to home or login if not authenticated
+    redirect("/"); // Redirect to home if not authenticated
+  }
+
+  // Only system admins can access API docs
+  if (!session.user.isSystemAdmin) {
+    redirect("/profile"); // Redirect non-admins to dashboard
   }
 
   const spec = await getApiDocs();

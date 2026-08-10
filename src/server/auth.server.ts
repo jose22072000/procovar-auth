@@ -4,12 +4,51 @@ import { auth } from "@/lib/auth";
 import { headers, cookies } from "next/headers";
 import { ApiResponse } from "@/lib/types";
 import { logger } from "@/lib/logger";
-import { recordAudit, getRequestContext } from "@/lib/audit";
+import { getFlowState, clearFlowState } from "@/lib/flow-state";
+import { resolveSessionUser } from "@/lib/require-admin";
+import { isSessionRevoked } from "@/lib/session-revocation";
+import { prisma } from "@/lib/prisma";
+
+const SESSION_RESOLVE_TIMEOUT_MS = 5000;
 
 export const getCurrentUser = async (): Promise<ApiResponse<typeof auth.$Infer.Session.user | null>> => {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+    // Fast path: resolve by session token directly in DB (avoids slower Better Auth path in dev).
+    try {
+        const resolved = await resolveSessionUser();
+        if (resolved?.user?.id) {
+            const user = await prisma.user.findUnique({
+                where: { id: resolved.user.id },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    emailVerified: true,
+                    image: true,
+                    isSystemAdmin: true,
+                    createdAt: true,
+                },
+            });
+
+            if (user) {
+                logger.info("Current user session retrieved", { userId: user.id, source: "token" });
+                return {
+                    data: user as typeof auth.$Infer.Session.user,
+                    toast: {
+                        title: "Authenticated",
+                        description: "User session retrieved successfully.",
+                        type: "success"
+                    }
+                };
+            }
+        }
+    } catch {
+        // Fall back to Better Auth path below.
+    }
+
+    const session = await Promise.race([
+        auth.api.getSession({ headers: await headers() }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), SESSION_RESOLVE_TIMEOUT_MS)),
+    ]);
 
     if (!session) {
         return {
@@ -21,6 +60,23 @@ export const getCurrentUser = async (): Promise<ApiResponse<typeof auth.$Infer.S
             }
         };
     }
+
+    // Reject revoked sessions on the Better Auth fallback path too. getSession()
+    // is served from the cookie cache and ignores our `revokedAt` column, so
+    // without this a revoked session would still authenticate the dashboard
+    // (requireAdmin) for up to the cookie-cache TTL. The fast path above already
+    // rejects via resolveSessionUser().
+    if (await isSessionRevoked(session.session?.id)) {
+        return {
+            data: null,
+            toast: {
+                title: "Not Authenticated",
+                description: "No active session found.",
+                type: "info"
+            }
+        };
+    }
+
     logger.info("Current user session retrieved", { userId: session.user.id });
     return {
         data: session.user,
@@ -56,22 +112,36 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
             cookieStore.delete("remember-email");
         }
 
-        // Auditoría: sign-in exitoso (con el client desde el que se autenticó).
-        const ctx = await getRequestContext();
-        const sess = await auth.api.getSession({ headers: await headers() });
-        await recordAudit({
-            action: "sign-in",
-            status: "success",
-            userId: sess?.user?.id ?? null,
-            organizationId: sess?.session?.activeOrganizationId ?? null,
-            clientId: ctx.clientId,
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-            metadata: { email },
-        });
+        // Consume flow state and get redirect URL
+        const flowState = await getFlowState();
+        let redirectUrl = '/profile';
+        if (flowState?.origin) {
+            // External origin only: defer to /api/auth/callback (SSO flow).
+            // Internal paths (e.g. /dashboard set by proxy for unauthenticated access)
+            // are intentionally ignored — /profile handles role-based routing so
+            // non-admin users don't land on admin-only routes.
+            if (flowState.redirectOrigin && flowState.origin.startsWith('http')) {
+                redirectUrl = '/api/auth/callback';
+                return {
+                    data: { success: true, redirectUrl },
+                    toast: {
+                        title: "Success",
+                        description: "Signed in successfully",
+                        type: "success"
+                    }
+                };
+            }
+            // Internal booking return: resume the in-progress reservation at its
+            // step. Scoped to /booking so other internal paths (e.g. /dashboard)
+            // still fall through to /profile.
+            else if (flowState.origin.startsWith('/booking')) {
+                redirectUrl = flowState.origin;
+            }
+        }
+        await clearFlowState();
 
         return {
-            data: { success: true },
+            data: { success: true, redirectUrl },
             toast: {
                 title: "Success",
                 description: "Signed in successfully",
@@ -82,17 +152,6 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
     } catch (error) {
         const e = error as Error;
         logger.error("Sign in error", { error: e.message, stack: e.stack });
-
-        // Auditoría: intento fallido de sign-in.
-        const ctx = await getRequestContext();
-        await recordAudit({
-            action: "sign-in",
-            status: "failure",
-            clientId: ctx.clientId,
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-            metadata: { email },
-        });
 
         // Hide technical errors from the user
         const isTechnicalError =
@@ -127,20 +186,33 @@ export const signUp = async (name: string, email: string, password: string): Pro
             },
         });
 
-        const ctx = await getRequestContext();
-        const sess = await auth.api.getSession({ headers: await headers() });
-        await recordAudit({
-            action: "sign-up",
-            status: "success",
-            userId: sess?.user?.id ?? null,
-            clientId: ctx.clientId,
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-            metadata: { email, name },
-        });
+        // Consume flow state and get redirect URL
+        const flowState = await getFlowState();
+        let redirectUrl = '/profile';
+        if (flowState?.redirectOrigin && flowState?.origin) {
+            // External origin only: defer to /api/auth/callback (SSO flow).
+            // Internal paths ignored — /profile handles role-based routing.
+            if (flowState.origin.startsWith('http')) {
+                redirectUrl = '/api/auth/callback';
+                return {
+                    data: { success: true, redirectUrl },
+                    toast: {
+                        title: "Success",
+                        description: "Account created successfully",
+                        type: "success"
+                    }
+                };
+            }
+        }
+        // Internal booking return: resume the in-progress reservation at its step
+        // after sign-up. Scoped to /booking so other internal paths stay on /profile.
+        else if (flowState?.origin?.startsWith('/booking')) {
+            redirectUrl = flowState.origin;
+        }
+        await clearFlowState();
 
         return {
-            data: { success: true },
+            data: { success: true, redirectUrl },
             toast: {
                 title: "Success",
                 description: "Account created successfully",
@@ -164,24 +236,9 @@ export const signUp = async (name: string, email: string, password: string): Pro
 
 export const signOut = async (): Promise<ApiResponse> => {
     try {
-        // Capturar quién/desde-qué-client antes de cerrar la sesión.
-        const ctx = await getRequestContext();
-        const sess = await auth.api.getSession({ headers: await headers() });
-
         await auth.api.signOut({
             headers: await headers(),
         });
-
-        await recordAudit({
-            action: "sign-out",
-            status: "success",
-            userId: sess?.user?.id ?? null,
-            organizationId: sess?.session?.activeOrganizationId ?? null,
-            clientId: ctx.clientId,
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-        });
-
         return {
             data: { success: true },
             toast: {
@@ -206,8 +263,6 @@ export const signOut = async (): Promise<ApiResponse> => {
 
 export const forgotPassword = async (email: string): Promise<ApiResponse> => {
     try {
-        // better-auth renombro este metodo: en 1.4.x es requestPasswordReset.
-        // Con el nombre viejo el build ni compila.
         await auth.api.requestPasswordReset({
             body: {
                 email,
@@ -244,16 +299,6 @@ export const resetPassword = async (password: string, token: string): Promise<Ap
                 token,
             },
         });
-
-        const ctx = await getRequestContext();
-        await recordAudit({
-            action: "password-reset",
-            status: "success",
-            clientId: ctx.clientId,
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-        });
-
         return {
             data: { success: true },
             toast: {

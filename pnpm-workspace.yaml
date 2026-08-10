@@ -1,0 +1,35 @@
+# pnpm 11+ config home (the "pnpm" key in package.json + many .npmrc keys are
+# no longer read here; newer pnpm only honors these in pnpm-workspace.yaml).
+
+# Flat node_modules like npm/yarn-classic. Required: the app imports phantom
+# deps (e.g. @heroui/toast, a transitive of @heroui/react) directly; isolated
+# linker hides those and `next build` fails with "module not found".
+nodeLinker: hoisted
+shamefullyHoist: true
+autoInstallPeers: true
+strictPeerDependencies: false
+
+# Pin rolldown (transitive via vitest 4 -> vite 8, range ~1.1.3): the newest
+# 1.1.4 is rejected by the registry's minimum-release-age supply-chain policy
+# (published same day). 1.1.3 is already past the cutoff.
+overrides:
+  rolldown: 1.1.3
+
+# Allow build/postinstall scripts for deps that genuinely need them:
+#   argon2/@prisma/engines/prisma/sharp -> native bindings + engine downloads
+#   (auth, DB, next/image break at runtime if these are skipped).
+allowBuilds:
+  '@heroui/shared-utils': true
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  '@scarf/scarf': true
+  '@swc/core': true
+  '@tree-sitter-grammars/tree-sitter-yaml': true
+  argon2: true
+  core-js-pure: true
+  esbuild: true
+  prisma: true
+  sharp: true
+  tree-sitter: true
+  tree-sitter-json: true
+  unrs-resolver: true

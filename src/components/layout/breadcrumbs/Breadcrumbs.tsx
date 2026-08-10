@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useBreadcrumbs } from "./useBreadcrumbs";
 
 export function Breadcrumbs() {
+    const t = useTranslations();
     const crumbs = useBreadcrumbs();
 
     if (crumbs.length === 0) return null;
@@ -10,7 +12,7 @@ export function Breadcrumbs() {
     const current = crumbs[crumbs.length - 1];
 
     return (
-        <nav aria-label="Breadcrumb" className="flex w-full items-center overflow-hidden">
+        <nav aria-label={t("common.breadcrumbAriaLabel")} className="flex w-full items-center overflow-hidden">
             <ol className="hidden xl:flex items-center gap-2 text-large text-default-700">
                 {crumbs.map((crumb, index) => {
                     const isLast = index === crumbs.length - 1;

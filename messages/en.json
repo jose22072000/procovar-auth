@@ -1,0 +1,1014 @@
+{
+  "nav": {
+    "findStays": "Find Stays",
+    "about": "About",
+    "contact": "Contact",
+    "listProperty": "List your property",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "settings": "My profile",
+    "invoices": "Invoices",
+    "reservations": "Reservations",
+    "services": "Subscriptions",
+    "vouchers": "Vouchers",
+    "logOut": "Log Out",
+    "userMenu": "User menu",
+    "notificationsAria": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No updates",
+    "noNotificationsHint": "We'll notify you when there's activity",
+    "manageNotifications": "Manage notifications"
+  },
+  "auth": {
+    "getStarted": "Get Started",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "welcomeBack": "Welcome Back",
+    "logInToContinue": "Log in to your account to continue",
+    "continueWithGoogle": "Continue with Google",
+    "signUpWithGoogle": "Sign up with Google",
+    "or": "OR",
+    "emailAddress": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "needAccount": "Need to create an account?",
+    "createAccount": "Create an Account",
+    "joinUsToGetStarted": "Join us to get started",
+    "alreadyHaveAccount": "Already have an account?",
+    "lockIconLabel": "lock",
+    "resetPasswordTitle": "Reset Password",
+    "setNewPassword": "Set new password",
+    "setNewPasswordHint": "Please enter your new password below",
+    "newPasswordLabel": "New Password",
+    "confirmNewPasswordLabel": "Confirm New Password",
+    "resetPasswordButton": "Reset Password",
+    "invalidLinkTitle": "Invalid Link",
+    "invalidLinkDescription": "The password reset link is invalid or has expired.",
+    "returnToSignIn": "Return to Sign In",
+    "invalidOrMissingToken": "Invalid or missing reset token.",
+    "passwordMinLength": "Password must be at least 8 characters long",
+    "passwordUppercase": "Password must contain at least one uppercase letter",
+    "passwordLowercase": "Password must contain at least one lowercase letter",
+    "passwordNumber": "Password must contain at least one number",
+    "passwordSpecialChar": "Password must contain at least one special character",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "forgotPasswordTitle": "Forgot Password",
+    "resetYourPasswordSubtitle": "Reset your password",
+    "forgotPasswordHint": "Enter your email address and we'll send you a link to reset your password",
+    "emailInvalidFormat": "Invalid email address format",
+    "sendResetLinkButton": "Send Reset Link",
+    "rememberYourPassword": "Remember your password?"
+  },
+  "account": {
+    "welcomeBack": "Welcome Back",
+    "continueToProfile": "Continue to Profile",
+    "goToDashboard": "Go to Dashboard",
+    "orgDashboard": "Owner Dashboard",
+    "myPersonalProfile": "My personal profile",
+    "wantToSwitchAccounts": "Want to switch accounts?",
+    "signOut": "Sign Out"
+  },
+  "logout": {
+    "title": "Sign out?",
+    "descriptionAnonymous": "Confirm to run global sign out across all registered apps, or cancel to stay on the current page.",
+    "descriptionSignedIn": "You're about to sign out as {userName}. This will end your session on every Divergtech app you're currently signed in to.",
+    "confirm": "Yes, sign me out",
+    "cancel": "No, keep me signed in"
+  },
+  "profile": {
+    "emailVerified": "Email Verified",
+    "emailNotVerified": "Email not verified",
+    "settings": "My profile"
+  },
+  "cards": {
+    "viewAll": "View all",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications",
+    "read": "Read",
+    "unread": "Unread",
+    "invoices": "Invoices",
+    "noInvoices": "No invoices",
+    "reservations": "Reservations",
+    "noReservations": "No reservations",
+    "services": "Subscriptions",
+    "noServices": "No subscriptions",
+    "vouchers": "Vouchers",
+    "noVouchers": "No vouchers",
+    "total": "Total",
+    "showingOf": "Showing {shown} of {total}",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "nextPayment": "Next payment",
+    "invoiceStatus": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "cancelled": "Cancelled",
+      "overdue": "Overdue"
+    },
+    "reservationStatus": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    },
+    "serviceStatus": {
+      "active": "Active",
+      "expired": "Expired"
+    }
+  },
+  "clientView": {
+    "activeStays": "Active Stays",
+    "activeStaysSub": "stays in progress",
+    "completedStays": "Completed Stays",
+    "completedStaysSub": "completed stays",
+    "totalSpent": "Total Spent",
+    "totalSpentSub": "accumulated spend",
+    "totalIncome": "Income",
+    "totalIncomeSub": "accumulated income",
+    "favorites": "Favorites",
+    "upcomingStays": "Upcoming Stays",
+    "noUpcomingStays": "No upcoming stays",
+    "upgradeTitle": "Have a property?",
+    "upgradeDesc": "Start hosting and reach thousands of travelers",
+    "startHosting": "Start Hosting",
+    "backToOrg": "Back to my organization"
+  },
+  "orgView": {
+    "viewAsClient": "View as Client",
+    "activeProperties": "Active Properties",
+    "monthlyBookings": "Bookings This Month",
+    "monthlyIncome": "Income This Month",
+    "avgRating": "Avg. Rating",
+    "properties": "Properties",
+    "noProperties": "No properties yet",
+    "recentReservations": "Recent Reservations",
+    "noRecentReservations": "No recent reservations",
+    "team": "Team",
+    "finances": "Finances",
+    "managePanelLink": "Manage in Panel",
+    "roleOwner": "Owner",
+    "roleAdmin": "Admin",
+    "roleStaff": "Staff",
+    "roleAgent": "Agent",
+    "pendingPayouts": "Pending Payouts",
+    "reviews": "reviews",
+    "members": "members",
+    "statusLive": "Live",
+    "statusDraft": "Draft",
+    "totalReservations": "Total Reservations",
+    "uniqueClients": "Unique Clients",
+    "totalRevenue": "Total Revenue",
+    "thisMonth": "this month",
+    "reservationsLabel": "reservations",
+    "reservationsCardTitle": "Reservations",
+    "reservationsToOrgsCount": "{count} reservations to your organizations",
+    "noOrgReservations": "No reservations",
+    "reservationNotFoundTitle": "Reservation not found",
+    "reservationNotFoundBody": "We couldn't find this reservation.",
+    "reservationDetailTitle": "Reservation Detail",
+    "organizationLabel": "Organization",
+    "propertyLabel": "Property",
+    "guestLabel": "Guest",
+    "emailLabel": "Email",
+    "reservationLabel": "Reservation",
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "rawStatus": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "CHECKED_IN": "In Progress",
+      "CHECKED_OUT": "Completed",
+      "CANCELLED": "Cancelled",
+      "NO_SHOW": "No Show"
+    },
+    "allStatuses": "All",
+    "resultsCount": "{count} results",
+    "searchByIdPlaceholder": "Search by ID…",
+    "noResults": "No results",
+    "payoutStatus": {
+      "PAID": "Paid",
+      "PENDING": "Pending",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "payoutsCardTitle": "Payouts",
+    "noPayoutsRegistered": "No payouts recorded",
+    "availableBalance": "Available Balance",
+    "paidSub": "paid",
+    "viewEarningsRecordTooltip": "View the record of everything you've earned with us",
+    "viewRecord": "View Record",
+    "toBePaid": "To Be Paid",
+    "pendingSub": "pending",
+    "payoutInvoiceTitle": "Payout Invoice",
+    "totalAmount": "Total Amount",
+    "statusLabel": "Status",
+    "conceptLabel": "Concept",
+    "issueDateLabel": "Issue Date",
+    "dueDateLabel": "Due Date",
+    "paidDateLabel": "Paid Date",
+    "reservationsIncludedCount": "Reservations included ({count})"
+  },
+  "adminView": {
+    "activeProperties": "Active Properties",
+    "weeklyReservations": "Reservations This Week",
+    "weeklyReservationsSub": "last 7 days",
+    "totalReservationsSub": "{count} total reservations",
+    "totalUsersSub": "{count} total users",
+    "newUsers": "New Users (7d)",
+    "activeOrgs": "Active Organizations",
+    "activeOrgsSub": "active organizations"
+  },
+  "dashboard": {
+    "subnav": {
+      "settings": "Settings",
+      "permissions": "Permissions",
+      "users": "Users",
+      "organizations": "Organizations"
+    },
+    "accessDenied": {
+      "title": "Access denied",
+      "description": "You don't have permission to view this page."
+    },
+    "settingsPage": {
+      "title": "System configuration"
+    },
+    "organizationsPage": {
+      "title": "Organizations"
+    },
+    "permissionsPage": {
+      "title": "Permissions"
+    },
+    "usersPage": {
+      "title": "Users"
+    },
+    "emailBanner": {
+      "title": "Verify your email",
+      "description": "You won't receive important notifications until you verify your account",
+      "resend": "Resend email",
+      "resendCooldown": "Resend in {seconds}s"
+    },
+    "common": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "close": "Close"
+    },
+    "clientsManager": {
+      "invalidValue": "Invalid value",
+      "alreadyExists": "Already exists",
+      "add": "Add",
+      "nameRequired": "Name is required",
+      "saveError": "Error saving",
+      "clientIdInvalid": "Client ID: lowercase letters, numbers and hyphens only",
+      "clientIdExists": "Client ID already exists",
+      "createError": "Error creating",
+      "editClientTitle": "Edit: {clientId}",
+      "newClientTitle": "New client app",
+      "clientIdLabel": "Client ID",
+      "clientIdPlaceholder": "my-app",
+      "clientIdDescription": "Lowercase letters, numbers and hyphens. Cannot be changed later.",
+      "nameLabel": "Name",
+      "namePlaceholder": "My application",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "callbackUrlsLabel": "Allowed callback URLs",
+      "callbackUrlPlaceholder": "https://example.com/api/auth/callback",
+      "domainsLabel": "Allowed domains",
+      "domainPlaceholder": "example.com",
+      "scopesLabel": "Scopes",
+      "scopePlaceholder": "profile",
+      "activeLabel": "Active",
+      "activeDescription": "Deactivated clients cannot authenticate",
+      "saveChanges": "Save changes",
+      "createClient": "Create client",
+      "signingKeyModalTitle": "Save this signing key now",
+      "signingKeyModalBody": "This is the only time this key will be shown. Save it as ",
+      "signingKeySaved": "I've saved it",
+      "unauthorizedError": "Unauthorized. Please sign in again.",
+      "loadError": "Could not load clients",
+      "networkError": "Network error",
+      "retry": "Retry",
+      "registeredClientsOne": "registered client",
+      "registeredClientsOther": "registered clients",
+      "newApp": "New app",
+      "statusActive": "active",
+      "statusInactive": "disabled",
+      "editClientTooltip": "Edit client",
+      "disableClientTooltip": "Disable client",
+      "callbackUrlsCount": "Callback URLs ({count})",
+      "noCallbackUrls": "No callback URLs — authentication will fail",
+      "domainsCount": "Allowed domains ({count})",
+      "none": "None",
+      "scopesCount": "Scopes ({count})",
+      "signingKeyLabel": "Signing key (qbAuthSigningKey)",
+      "reveal": "Reveal",
+      "keyVersionUpdated": "Key version: {version} · Updated: {date}",
+      "noClientApps": "No client apps registered yet."
+    },
+    "usersManager": {
+      "profileUpdated": "Profile updated",
+      "userDeleted": "User deleted",
+      "permissionsUpdated": "Permissions updated",
+      "emailUpdated": "Email updated",
+      "sessionsRevoked": "Sessions revoked",
+      "sessionRevoked": "Session revoked",
+      "confirmDeleteUser": "Delete user {email}? This action is irreversible.",
+      "searchUserLabel": "Search user",
+      "searchUserPlaceholder": "Name or email…",
+      "usersCount": "{count} users",
+      "adminCount": "{count} admin",
+      "tableAriaLabel": "Users",
+      "colUser": "User",
+      "colEmail": "Email",
+      "colAdmin": "Admin",
+      "colOrgs": "Orgs",
+      "colActions": "Actions",
+      "noUsersMatch": "No user matches the search.",
+      "noUsers": "No users.",
+      "systemAdminTooltip": "System administrator",
+      "joinedOn": "Joined {date}",
+      "verified": "verified",
+      "unverified": "unverified",
+      "viewDetailTooltip": "View detail",
+      "detailAriaLabel": "Detail",
+      "editProfileTooltip": "Edit profile",
+      "editAriaLabel": "Edit",
+      "markUnverified": "Mark unverified",
+      "markVerified": "Mark verified",
+      "verifyAriaLabel": "Verify",
+      "deleteUserTooltip": "Delete user",
+      "deleteAriaLabel": "Delete",
+      "editProfileTitle": "Edit profile",
+      "nameLabel": "Name",
+      "phoneLabel": "Phone",
+      "nationalityLabel": "Nationality",
+      "addressLabel": "Address",
+      "passportLabel": "Passport/ID",
+      "detailTitle": "Detail",
+      "subscriptionSection": "Subscription",
+      "until": "until {date}",
+      "noActiveSubscription": "No active subscription.",
+      "organizationsSection": "Organizations",
+      "noOrganizations": "No organizations.",
+      "sessionsSection": "Sessions",
+      "activeSessionsCount": "({count} active)",
+      "revokeAll": "Revoke all",
+      "loadingSessions": "Loading sessions…",
+      "sessionsTableAriaLabel": "Sessions",
+      "colIp": "IP",
+      "colClient": "Client",
+      "colCreated": "Created",
+      "colStatus": "Status",
+      "noSessions": "No sessions.",
+      "directClient": "Direct",
+      "revokedStatus": "revoked",
+      "activeStatus": "active",
+      "alreadyRevoked": "Already revoked",
+      "revokeSessionTooltip": "Revoke session",
+      "revokeAriaLabel": "Revoke"
+    },
+    "orgsManager": {
+      "memberRemoved": "Member removed",
+      "orgUpdated": "Organization updated",
+      "orgDeleted": "Organization deleted",
+      "rolesUpdated": "Roles updated",
+      "confirmRemoveMember": "Remove {email} from {orgName}?",
+      "searchOrgLabel": "Search organization",
+      "searchOrgPlaceholder": "Name or slug…",
+      "noOrgsMatch": "No matching organizations.",
+      "edit": "Edit",
+      "delete": "Delete",
+      "membersLabel": "Members",
+      "rolesLabel": "Roles",
+      "noMembers": "This organization has no members.",
+      "editRoles": "Edit roles",
+      "removeFromOrgTooltip": "Remove from organization",
+      "removeMemberAriaLabel": "Remove member",
+      "selectOrgPrompt": "Select an organization to see its members.",
+      "editOrgTitle": "Edit organization",
+      "nameLabel": "Name",
+      "slugLabel": "Slug",
+      "logoLabel": "Logo (URL)",
+      "deleteOrgTitle": "Delete organization",
+      "deleteOrgWarningPrefix": "This deletes the organization, its members and roles. Type",
+      "deleteOrgWarningSuffix": "to confirm.",
+      "deletePermanently": "Delete permanently",
+      "memberRolesTitle": "Member roles",
+      "rolesSelectLabel": "Roles",
+      "selectRolesPlaceholder": "Select roles"
+    }
+  },
+  "myProfile": {
+    "title": "My profile",
+    "stepByStep": "Fill in step by step",
+    "saveError": "Couldn't save, try again.",
+    "wizard": {
+      "stepOf": "Step {step} of {total}",
+      "skip": "Skip",
+      "finish": "Finish",
+      "next": "Next"
+    },
+    "editor": {
+      "complete": "Profile complete",
+      "yourProfile": "Your profile",
+      "allSetDescription": "All set. Changes are saved automatically.",
+      "missingFieldsDescription": "You're missing {count} fields. Saved automatically when you leave each field.",
+      "email": "Email",
+      "emailLocked": "Email can't be changed"
+    },
+    "field": {
+      "name": {
+        "label": "Full name",
+        "question": "What's your name?",
+        "placeholder": "First and last name"
+      },
+      "phone": {
+        "label": "Phone",
+        "question": "And your phone number?",
+        "placeholder": "+34 600 000 000"
+      },
+      "nationality": {
+        "label": "Nationality",
+        "question": "What country are you from?",
+        "placeholder": "e.g. Spanish",
+        "why": "Speeds up your future bookings and hotel check-in."
+      },
+      "address": {
+        "label": "Address",
+        "question": "What's your address?",
+        "placeholder": "Street, City, Country"
+      },
+      "passportId": {
+        "label": "Passport / ID",
+        "question": "Lastly, your ID document",
+        "placeholder": "AB123456",
+        "why": "The hotel needs it for check-in registration."
+      }
+    },
+    "payment": {
+      "title": "Payment methods",
+      "ownerDescription": "As an owner, your platform charges and payouts are managed from the owner panel. There you can view your settlements, invoices, and configure your bank details.",
+      "goToOwnerPanel": "Go to owner panel",
+      "noCardsTitle": "You don't have any saved cards yet",
+      "noCardsDescription": "Today the card is entered during booking. Saving it for future bookings will be available once the payment gateway is activated.",
+      "addCard": "Add card",
+      "comingSoon": "Coming soon",
+      "exploreStays": "Explore stays",
+      "secureOwnerNote": "Transfers are processed securely. We never store bank details in plain text.",
+      "secureClientNote": "Payments are processed with SSL encryption. We never store your card details."
+    },
+    "security": {
+      "title": "Security",
+      "linkedAccounts": "Linked accounts",
+      "emailPassword": "Email and password",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "minChars": "Minimum 8 characters",
+      "confirmPassword": "Confirm password",
+      "updatePassword": "Update password",
+      "passwordsMismatch": "Passwords don't match.",
+      "passwordTooShort": "The password must be at least 8 characters long.",
+      "wrongCurrentPassword": "Incorrect current password.",
+      "passwordUpdated": "Password updated."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "email": {
+        "label": "Email notifications",
+        "description": "Receive general updates by email"
+      },
+      "bookingConfirmations": {
+        "label": "Booking confirmations",
+        "description": "Notification when a booking is confirmed or cancelled"
+      },
+      "invoiceAlerts": {
+        "label": "Invoice alerts",
+        "description": "Notices about new invoices and payment reminders"
+      },
+      "serviceAlerts": {
+        "label": "Service alerts",
+        "description": "Changes to service status"
+      },
+      "marketingEmails": {
+        "label": "Marketing emails",
+        "description": "Promotions, news, and product updates"
+      }
+    },
+    "progressRing": {
+      "ariaLabel": "Profile {percent}% complete"
+    },
+    "admin": {
+      "permissionsCatalog": {
+        "title": "Permissions catalog",
+        "description": "Permissions are defined by the code (not created by hand). Sync to populate the database with the current catalog.",
+        "permissionsCount": "{count} permissions",
+        "groupsCount": "{count} groups",
+        "servicesCount": "{count} services",
+        "syncButton": "Sync permissions",
+        "syncSuccessTitle": "Permissions synced",
+        "syncSuccessDescription": "{permissions} permissions, {orgs} orgs",
+        "syncErrorTitle": "Couldn't sync",
+        "emptyPrefix": "There are no permissions in the database. Click",
+        "emptySuffix": "to populate them from the code.",
+        "searchLabel": "Search permission",
+        "searchPlaceholder": "Key, name, or service…",
+        "noMatch": "No permission matches \"{query}\"."
+      },
+      "platformSettings": {
+        "savedTitle": "Saved",
+        "savedDescription": "Hold time updated.",
+        "saveErrorTitle": "Couldn't save",
+        "title": "Platform settings",
+        "subtitle": "Global settings for the booking system.",
+        "holdMinutesLabel": "Hold time (minutes)",
+        "saveButton": "Save",
+        "holdMinutesHint": "How long a pre-booking is held before it expires (1-1440)."
+      }
+    }
+  },
+  "profilePages": {
+    "shell": {
+      "itemsCount": "{count} items"
+    },
+    "completeness": {
+      "complete": "Profile complete",
+      "percentComplete": "Profile {percent}% complete",
+      "viewAndEdit": "View and edit your details",
+      "completeYourData": "Complete your personal details"
+    },
+    "orgReservations": {
+      "title": "Reservations",
+      "searchPlaceholder": "Search by organization, property, or guest...",
+      "filterAriaLabel": "Filter by status",
+      "allStatuses": "All statuses",
+      "noResults": "No reservations."
+    },
+    "services": {
+      "title": "Services",
+      "searchPlaceholder": "Search services...",
+      "nextPayment": "Next payment",
+      "empty": "No services found.",
+      "status": {
+        "active": "Active",
+        "expired": "Expired"
+      }
+    },
+    "invoices": {
+      "title": "Invoices",
+      "searchPlaceholder": "Search invoices...",
+      "loading": "Loading invoices...",
+      "empty": "No invoices found.",
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "overdue": "Overdue",
+        "cancelled": "Cancelled",
+        "refund_requested": "Refund requested",
+        "refunded": "Refunded"
+      }
+    },
+    "vouchers": {
+      "title": "My Vouchers",
+      "loading": "Loading vouchers...",
+      "empty": "No vouchers found.",
+      "noReason": "Voucher",
+      "validUntil": "Valid until {date}",
+      "remainingOfAmount": "Remaining balance",
+      "showUsages": "Show usage ({count})",
+      "hideUsages": "Hide usage",
+      "usageLine": "Spent on reservation {reservationId} — {date}",
+      "usageUnknownReservation": "a deleted reservation",
+      "status": {
+        "ACTIVE": "Active",
+        "USED": "Used",
+        "EXPIRED": "Expired",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "filters": {
+        "unread": "Unread",
+        "all": "All",
+        "archived": "Archived"
+      },
+      "loading": "Loading notifications...",
+      "empty": "No notifications found.",
+      "new": "New",
+      "markAsRead": "Mark as read",
+      "archive": "Archive",
+      "unarchive": "Restore",
+      "archiveAllRead": "Archive read",
+      "viewDetail": "Open",
+      "codeLabel": "Booking code",
+      "checkInLabel": "Check-in",
+      "checkOutLabel": "Check-out"
+    },
+    "payouts": {
+      "title": "Payouts",
+      "searchPlaceholder": "Search by organization or invoice number...",
+      "filterAriaLabel": "Filter by status",
+      "allStatuses": "All statuses",
+      "lineCount": "{count, plural, one {# reservation} other {# reservations}}",
+      "empty": "No payouts.",
+      "status": {
+        "PENDING": "Pending",
+        "PAID": "Paid",
+        "FAILED": "Failed",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "reservations": {
+      "title": "Reservations",
+      "searchPlaceholder": "Search reservations...",
+      "newBooking": "New Booking",
+      "loading": "Loading reservations...",
+      "empty": "No reservations found."
+    },
+    "reservationDetail": {
+      "notFoundTitle": "Reservation Not Found",
+      "notFoundBody": "Reservation not found.",
+      "stayLabel": "Stay",
+      "nightsUnit": "{count, plural, one {night} other {nights}}",
+      "priceBreakdown": "Price Breakdown",
+      "total": "Total",
+      "reservationIdLabel": "Reservation ID",
+      "roomLabel": "Room",
+      "guestsLabel": "Guests",
+      "rateLabel": "Rate",
+      "refundable": "Refundable",
+      "nonRefundable": "Non-refundable",
+      "requestRefund": "Request refund",
+      "cancelReservation": "Cancel reservation",
+      "delete": "Delete",
+      "refundModalTitle": "Request refund",
+      "cancelModalTitle": "Cancel Reservation",
+      "refundReasonPrompt": "Tell us why you're requesting a refund for <strong>{property}</strong>. Your request will be reviewed.",
+      "cancelConfirmPrompt": "Are you sure you want to cancel your reservation for <strong>{property}</strong>? This action cannot be undone.",
+      "refundReasonLabel": "Why are you requesting a refund?",
+      "keepIt": "Keep it",
+      "submitRequest": "Submit request",
+      "yesCancel": "Yes, cancel",
+      "deleteModalTitle": "Delete Reservation",
+      "deleteModalBody": "Permanently delete reservation for <strong>{property}</strong>?",
+      "modalCancelBtn": "Cancel",
+      "toastCancelledTitle": "Reservation cancelled",
+      "toastRefundRequestedTitle": "Refund requested",
+      "toastRequestSentDesc": "Your request was sent.",
+      "toastRefundReviewDesc": "The refund will be reviewed.",
+      "toastRefundEstimateDesc": "Estimated refund: {amount}",
+      "toastNotRefundableDesc": "This rate is not refundable.",
+      "toastFailedTitle": "Could not be processed",
+      "perNightUnit": "night"
+    },
+    "serviceDetail": {
+      "notFoundTitle": "Service Not Found",
+      "notFoundBody": "Service not found.",
+      "notActiveNote": "This service is no longer active.",
+      "noDescription": "Service details not available.",
+      "detailsHeading": "Service Details",
+      "nameLabel": "Service Name",
+      "propertyLabel": "Property",
+      "billingFrequencyLabel": "Billing Frequency",
+      "idLabel": "Service ID",
+      "statusLabel": "Status",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "delete": "Delete",
+      "deleteModalTitle": "Delete Service",
+      "deleteModalBody": "Permanently delete <strong>{name}</strong>?",
+      "modalCancelBtn": "Cancel",
+      "frequency": {
+        "monthly": "Monthly",
+        "biweekly": "Bi-weekly",
+        "weekly": "Weekly"
+      },
+      "descriptions": {
+        "SVC-001": "High-speed fiber internet connection up to 1 Gbps, includes router rental and technical support.",
+        "SVC-002": "Professional pool cleaning and maintenance service, includes water treatment and filter cleaning.",
+        "SVC-003": "24/7 monitored security system with motion sensors, cameras, and emergency response.",
+        "SVC-004": "Regular lawn mowing, trimming and garden maintenance service.",
+        "SVC-005": "Standard electricity plan with competitive rates and monthly billing.",
+        "SVC-006": "Natural gas supply contract for heating and cooking appliances.",
+        "SVC-007": "Weekly deep cleaning service including all rooms and common areas.",
+        "SVC-008": "Smart home integration: lighting, thermostat, locks and appliance control via app."
+      }
+    },
+    "invoiceDetail": {
+      "notFoundTitle": "Invoice Not Found",
+      "notFoundBody": "Invoice not found.",
+      "detailsHeading": "Invoice Details",
+      "invoiceNumberLabel": "Invoice Number",
+      "categoryLabel": "Category",
+      "paymentMethodLabel": "Payment Method",
+      "periodLabel": "Period",
+      "propertyHeading": "Property",
+      "propertyNameLabel": "Property Name",
+      "addressLabel": "Address",
+      "datesHeading": "Dates",
+      "invoiceDateLabel": "Invoice Date",
+      "dueDateLabel": "Due Date",
+      "payNow": "Pay Now",
+      "downloadPdf": "Download PDF",
+      "delete": "Delete",
+      "deleteModalTitle": "Delete Invoice",
+      "deleteModalBody": "Permanently delete invoice <strong>{number}</strong>?",
+      "modalCancelBtn": "Cancel",
+      "categories": {
+        "rental": "Monthly Rental",
+        "service": "Service",
+        "deposit": "Security Deposit",
+        "maintenance": "Maintenance",
+        "utility": "Utility"
+      },
+      "cancel": "Cancel",
+      "cancelModalTitle": "Cancel invoice",
+      "cancelModalBody": "Cancel invoice <strong>{number}</strong>? You'll be able to delete it afterwards.",
+      "actionFailed": "The action could not be completed."
+    },
+    "notificationDetail": {
+      "notFoundTitle": "Notification Not Found",
+      "notFoundBody": "Notification not found.",
+      "backToNotifications": "Back to Notifications"
+    },
+    "payoutDetail": {
+      "notFoundTitle": "Payout Invoice Not Found",
+      "notFoundBody": "We couldn't find this payout invoice.",
+      "defaultTitle": "Payout Invoice",
+      "downloadPdf": "Download PDF",
+      "defaultDescription": "Payment for {count, plural, one {# reservation} other {# reservations}}",
+      "detailsHeading": "Payout Details",
+      "invoiceNumberLabel": "Invoice No.",
+      "organizationLabel": "Organization",
+      "conceptLabel": "Concept",
+      "reservationsCountLabel": "Reservations",
+      "datesHeading": "Dates",
+      "issueDateLabel": "Issue Date",
+      "paymentDateLabel": "Payment Date",
+      "paidDateLabel": "Paid Date",
+      "reservationsIncludedHeading": "Reservations included ({count})",
+      "noReservations": "No reservations"
+    }
+  },
+  "lang": {
+    "switch": "ES",
+    "current": "EN"
+  },
+  "common": {
+    "togglePasswordVisibility": "Toggle password visibility",
+    "breadcrumbAriaLabel": "Breadcrumb",
+    "profileCard": {
+      "errorLoadingProfile": "Error loading profile: {error}",
+      "userIdLabel": "User ID",
+      "roleLabel": "Role",
+      "roleSystemAdmin": "System Admin",
+      "roleUser": "User",
+      "emailStatusLabel": "Email Status",
+      "verified": "Verified",
+      "notVerified": "Not Verified",
+      "resendVerification": "Resend Verification",
+      "resendIn": "Resend in {seconds}s",
+      "memberSince": "Member Since",
+      "organizationsTitle": "Organizations",
+      "noOrganizations": "You are not a member of any organization yet.",
+      "linkedAccountsTitle": "Linked Accounts",
+      "noLinkedAccounts": "No linked accounts.",
+      "providerGoogle": "Google",
+      "providerGithub": "GitHub",
+      "providerCredential": "Email & Password"
+    },
+    "logoutModal": {
+      "title": "Log out?",
+      "body": "Are you sure you want to sign out?",
+      "confirm": "Yes, log out",
+      "loggingOut": "Signing out..."
+    }
+  },
+  "reservations": {
+    "goBack": "Go back",
+    "searchPlaceholder": "Search by property or location...",
+    "totalItemsLabel": "{count} total items",
+    "clear": "Clear",
+    "inLabel": "In",
+    "outLabel": "Out",
+    "table": {
+      "location": "Location"
+    }
+  },
+  "apiKeys": {
+    "loadingLabel": "Loading admin data…",
+    "toast": {
+      "loadFailedTitle": "Failed to load admin data"
+    },
+    "tabs": {
+      "ariaLabel": "API Keys sections",
+      "help": "Help & Concepts",
+      "serviceClients": "Service Clients ({count})",
+      "apiKeysTab": "API Keys ({count})",
+      "scopeCatalog": "Scope Catalog ({count})"
+    },
+    "help": {
+      "whatIsThis": {
+        "title": "What is this page?",
+        "description": "qb-auth is the central Identity Hub. From here you provision the credentials each microservice uses to authenticate against qb-auth (verify sessions, mint JWTs, validate API keys). It does NOT issue cross-service master keys — every service has its OWN credential."
+      },
+      "noKey": {
+        "title": "Important: there is no global signing key",
+        "p1": "<strong>SERVICE_AUTH_SECRET</strong> is the master secret that lives ONLY in qb-auth's env. Every per-client signing key is derived from it via:",
+        "p2": "The key you copy after creating a Service Client is <strong>only that client's key</strong>. It identifies it when calling qb-auth — it does NOT grant access to other microservices' endpoints (qb-back, qb-notify… each enforce their own auth).",
+        "p3": "The <code>*</code> wildcard scope on a client (e.g. <code>qb-admin</code>) only widens what that client can do <em>against qb-auth</em> — never against other services."
+      },
+      "credTypes": {
+        "title": "The 3 credential types",
+        "subtitle": "Pick the right one for each integration."
+      },
+      "credential": {
+        "serviceClient": {
+          "title": "Service Client (HMAC)",
+          "chip": "signingKey",
+          "when": "A backend (qb-back, qb-panel, qb-notify…) needs to call qb-auth as itself.",
+          "how1": "Created here → signingKey shown ONCE.",
+          "how2": "Identifies ONE client (its clientId) — NOT a master key.",
+          "how3": "Sent as the X-Service-Auth header on requests TO qb-auth.",
+          "how4": "qb-auth verifies it by re-deriving via HMAC(SERVICE_AUTH_SECRET, 'svc:v<n>:<clientId>')."
+        },
+        "apiKey": {
+          "title": "API Key (qbk_…)",
+          "chip": "apiKey",
+          "when": "Third-party / human / scripts hitting the hub.",
+          "how1": "Created here → full token shown ONCE.",
+          "how2": "Sent as Authorization: Bearer qbk_…",
+          "how3": "Verified via POST /api/auth/api-keys/verify."
+        },
+        "adminSession": {
+          "title": "Admin user session",
+          "chip": "cookie",
+          "when": "Humans using this dashboard.",
+          "how1": "Login via /sign-in with isSystemAdmin=true.",
+          "how2": "Browser cookie qb.session_token.",
+          "how3": "Required to access /apikeys and /api/admin/*."
+        },
+        "whenLabel": "When:"
+      },
+      "microservices": {
+        "title": "What each microservice needs",
+        "subtitle": "Recommended baseline per consumer of qb-auth.",
+        "ownsEverything": "Owns everything",
+        "serviceClientChip": "Service Client",
+        "verifiesApiKeys": "Verifies API keys"
+      },
+      "accordion": {
+        "onboard": {
+          "ariaLabel": "Create service client",
+          "title": "How do I onboard a new microservice?",
+          "step1": "Open the <strong>Service Clients</strong> tab and click <em>New Client</em>.",
+          "step2": "Pick a preset (e.g. <em>Consumer backend</em>) — it pre-fills scopes for you.",
+          "step3": "Copy the derived <code>signingKey</code> shown ONCE on success and paste it into the consumer's <code>SERVICE_SIGNING_KEY</code> env var.",
+          "step4": "Set <code>SERVICE_CLIENT_ID</code> and <code>SERVICE_KEY_VERSION=1</code> on the consumer.",
+          "step5Prefix": "Test with",
+          "step5Suffix": "it should return"
+        },
+        "rotate": {
+          "ariaLabel": "Rotate",
+          "title": "How do I rotate a signing key without downtime?",
+          "step1": "Click <em>Rotate</em> on the client row. Version goes 1 → 2.",
+          "step2": "Roll out the new <code>SERVICE_SIGNING_KEY</code> + <code>SERVICE_KEY_VERSION=2</code> to all instances.",
+          "step3": "qb-auth still accepts both versions for a grace window. Watch audit logs for any caller stuck on v1, then revoke v1 if needed."
+        },
+        "scopes": {
+          "ariaLabel": "Scopes",
+          "title": "Why scopes? How do I add new ones?",
+          "intro": "Scopes are the permission language of the hub. Every protected route declares which scopes it requires; every credential carries a scope set. The catalog lives in a single TypeScript file so it cannot drift:",
+          "howToAdd": "To add a scope: edit that file, add the entry with metadata, then reference it from the route handler. The UI picks it up automatically — no migrations needed."
+        }
+      }
+    },
+    "scopeChips": {
+      "none": "no scopes",
+      "unknownScope": "Unknown scope"
+    },
+    "risk": {
+      "read": "read",
+      "write": "write",
+      "admin": "admin"
+    },
+    "clients": {
+      "intro": "HMAC clients used for backend ↔ backend service auth. The signing key is derived from <code>SERVICE_AUTH_SECRET</code> and shown once.",
+      "newClientButton": "New Client",
+      "confirmRotate": "Rotate signing key for \"{clientId}\"?",
+      "toast": {
+        "rotationFailedTitle": "Rotation failed"
+      },
+      "rotateNotice": "New signing key — replace SERVICE_SIGNING_KEY and bump SERVICE_KEY_VERSION on every consumer.",
+      "revealedKeyTitle": "Signing key for {clientId} (v{version})",
+      "revealedJwtTitle": "Platform JWT for {clientId} (aud: {audiences}, exp: {expiresIn})",
+      "empty": "No service clients yet.",
+      "statusActive": "active",
+      "statusInactive": "inactive",
+      "mintJwtButton": "Mint JWT",
+      "rotateButton": "Rotate"
+    },
+    "createClient": {
+      "title": "New Service Client",
+      "subtitle": "Provisions an HMAC signing key derived from <code>SERVICE_AUTH_SECRET</code>.",
+      "presetLabel": "Preset",
+      "presetPlaceholder": "Choose a preset (optional)",
+      "clientIdLabel": "Client ID",
+      "clientIdPlaceholder": "qb-back",
+      "clientIdDescription": "Lowercase, digits and dashes. Stable identifier.",
+      "nameLabel": "Name",
+      "namePlaceholder": "QB Back (Core API)",
+      "descriptionLabel": "Description",
+      "callbackUrlsLabel": "Allowed callback URLs",
+      "callbackUrlsPlaceholder": "https://qb-back.example.com/auth/callback",
+      "callbackUrlsDescription": "One per line.",
+      "domainsLabel": "Allowed domains",
+      "domainsPlaceholder": "qb-back.example.com",
+      "domainsDescription": "One per line. Used to validate returnTo.",
+      "cancelButton": "Cancel",
+      "createButton": "Create",
+      "toast": {
+        "createFailedTitle": "Create failed"
+      }
+    },
+    "mintJwt": {
+      "titleBase": "Mint Platform JWT",
+      "titleFor": "Mint Platform JWT for {clientId}",
+      "subtitle": "RS256 token signed by qb-auth's active JWKS key. Verifiable by any service that fetches <code>/.well-known/jwks.json</code>.",
+      "alertTitle": "One token, many services",
+      "alertDescription": "Use this token as Authorization: Bearer … in qb-back, qb-notify and qb-auth. Each verifies it locally — no shared secret needed.",
+      "expiresInLabel": "Expires in",
+      "expiresInDescription": "zeit/ms format: 30d, 90d, 1y…",
+      "audiencesLabel": "Extra audiences",
+      "audiencesDescription": "One per line. Downstream services that will verify this token (qb-auth is always added).",
+      "embeddedScopesLabel": "Embedded scopes:",
+      "noneFallback": "(none)",
+      "revokeLabel": "To revoke before expiry:",
+      "revokeText": "rotate the JWKS key in qb-auth (POST /api/admin/jwks/rotate).",
+      "cancelButton": "Cancel",
+      "mintButton": "Mint JWT",
+      "toast": {
+        "mintFailedTitle": "Mint failed"
+      }
+    },
+    "apiKeysTab": {
+      "intro": "Opaque <code>qbk_…</code> tokens issued to scripts, third parties, or users. Verified via <code>POST /api/auth/api-keys/verify</code>.",
+      "newButton": "New API Key",
+      "confirmRevoke": "Revoke API key \"{name}\"? This cannot be undone.",
+      "toast": {
+        "revokeFailedTitle": "Revoke failed",
+        "revokedTitle": "API key revoked"
+      },
+      "revealedTitle": "API key for \"{name}\"",
+      "empty": "No API keys yet.",
+      "statusRevoked": "revoked",
+      "statusActive": "active",
+      "revokeButton": "Revoke",
+      "userChip": "user",
+      "standaloneLabel": "standalone",
+      "lastUsedLabel": "Last used:",
+      "expiresLabel": "Expires:",
+      "neverLabel": "never"
+    },
+    "createApiKey": {
+      "title": "New API Key",
+      "subtitle": "Plain-text key shown once. Stored as argon2id hash.",
+      "nameLabel": "Name",
+      "namePlaceholder": "qb-notify production",
+      "boundClientLabel": "Bound client (optional)",
+      "standalonePlaceholder": "Standalone",
+      "expiresAtLabel": "Expires at (optional)",
+      "cancelButton": "Cancel",
+      "createButton": "Create",
+      "toast": {
+        "createFailedTitle": "Create failed"
+      }
+    },
+    "scopeCatalog": {
+      "alertTitle": "Single source of truth",
+      "alertDescription": "Defined in src/lib/scopes-catalog.ts. Edit that file to add, rename or document scopes — the API and UI pick it up automatically.",
+      "searchPlaceholder": "Search scopes by id, label or description…",
+      "presetsTitle": "Presets",
+      "rolesTitle": "Roles → recommended scopes"
+    },
+    "scopeSelector": {
+      "label": "Scopes",
+      "selectedCount": "{count} selected"
+    },
+    "revealedSecret": {
+      "dismissButton": "I've copied it — dismiss"
+    },
+    "page": {
+      "accessDeniedTitle": "Access Denied",
+      "accessDeniedBody": "This page is restricted to system administrators.",
+      "title": "API Keys & Service Clients",
+      "subtitle": "Manage every credential that the qb-auth Identity Hub issues — HMAC signing keys for backend microservices, opaque API keys for third parties, and the scope catalog that defines what each credential is allowed to do."
+    }
+  }
+}

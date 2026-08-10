@@ -66,14 +66,15 @@ if (isServer) {
     }),
   ];
 
-  // Only add console transport in development
-  if (!isProduction) {
-    transports.push(
-      new winston.transports.Console({
-        format: format,
-      })
-    );
-  }
+  // Always log to stdout. In production the only transports used to be rotating
+  // files inside the container: ephemeral, lost on every redeploy, and invisible
+  // in `docker logs` / Dokploy. That made failures like a rejected QB Notify
+  // payload silent, since notifications are fire-and-forget.
+  transports.push(
+    new winston.transports.Console({
+      format: isProduction ? jsonFormat : format,
+    })
+  );
 
   winstonLogger = winston.createLogger({
     level: isProduction ? "info" : "debug",

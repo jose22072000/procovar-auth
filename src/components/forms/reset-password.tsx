@@ -8,28 +8,30 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { resetPassword } from "@/server/auth.server";
 import { useRouter, useSearchParams } from "next/navigation";
-
-const resetPasswordSchema = z.object({
-    password: z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-    confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-});
-
-type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
+import { useTranslations } from "next-intl";
 
 export function ResetPasswordForm() {
+    const t = useTranslations();
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
-    
+
+    const resetPasswordSchema = z.object({
+        password: z
+            .string()
+            .min(8, t("auth.passwordMinLength"))
+            .regex(/[A-Z]/, t("auth.passwordUppercase"))
+            .regex(/[a-z]/, t("auth.passwordLowercase"))
+            .regex(/[0-9]/, t("auth.passwordNumber"))
+            .regex(/[^A-Za-z0-9]/, t("auth.passwordSpecialChar")),
+        confirmPassword: z.string(),
+    }).refine((data) => data.password === data.confirmPassword, {
+        message: t("auth.passwordsDoNotMatch"),
+        path: ["confirmPassword"],
+    });
+
+    type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
+
     const [isVisible, setIsVisible] = React.useState(false);
     const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
 
@@ -59,7 +61,7 @@ export function ResetPasswordForm() {
 
     const onSubmit = async (data: ResetPasswordSchema) => {
         if (!token) {
-            setError("root", { message: "Invalid or missing reset token." });
+            setError("root", { message: t("auth.invalidOrMissingToken") });
             return;
         }
 
@@ -82,15 +84,15 @@ export function ResetPasswordForm() {
 
         if (!hasError) {
             reset();
-            router.push("/");
+            router.push("/?reset=success");
         }
     };
 
     if (!token) {
         return (
              <div className="flex w-full max-w-sm flex-col gap-4">
-                <Alert color="danger" title="Invalid Link" description="The password reset link is invalid or has expired." />
-                <Button as={Link} href="/" color="primary">Return to Sign In</Button>
+                <Alert color="danger" title={t("auth.invalidLinkTitle")} description={t("auth.invalidLinkDescription")} />
+                <Button as={Link} href="/" variant="bordered" color="primary" startContent={<Icons.arrowLeft className="size-4" />}>{t("auth.returnToSignIn")}</Button>
              </div>
         )
     }
@@ -98,16 +100,16 @@ export function ResetPasswordForm() {
     return (
         <div className="flex w-full max-w-sm flex-col gap-4">
             <div className="flex items-center gap-2 pb-10">
-                <span aria-label="lock" role="img">
+                <span aria-label={t("auth.lockIconLabel")} role="img">
                     <Icons.keyMinimalistic className="!size-10" />
                 </span>
-                <h1 className="text-4xl font-medium">Reset Password</h1>
+                <h1 className="text-4xl font-medium">{t("auth.resetPasswordTitle")}</h1>
             </div>
             <div className="flex flex-col items-center pb-6">
-                <p className="text-xl font-medium">Set new password</p>
-                <p className="text-small text-center">Please enter your new password below</p>
+                <p className="text-xl font-medium">{t("auth.setNewPassword")}</p>
+                <p className="text-small text-center">{t("auth.setNewPasswordHint")}</p>
             </div>
-            
+
             <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
                 <Input
                     isRequired
@@ -125,7 +127,7 @@ export function ResetPasswordForm() {
                             )}
                         </button>
                     }
-                    label="New Password"
+                    label={t("auth.newPasswordLabel")}
                     autoComplete="new-password"
                     type={isVisible ? "text" : "password"}
                     variant="bordered"
@@ -149,7 +151,7 @@ export function ResetPasswordForm() {
                             )}
                         </button>
                     }
-                    label="Confirm New Password"
+                    label={t("auth.confirmNewPasswordLabel")}
                     autoComplete="new-password"
                     type={isConfirmVisible ? "text" : "password"}
                     variant="bordered"
@@ -162,13 +164,14 @@ export function ResetPasswordForm() {
                 
                 <Button
                     className="w-full font-semibold"
+                    variant="bordered"
                     color="primary"
                     type="submit"
                     size="lg"
                     isLoading={isSubmitting}
                     startContent={!isSubmitting && <Icons.shieldKey className="!size-6" />}
                 >
-                    Reset Password
+                    {t("auth.resetPasswordButton")}
                 </Button>
             </form>
         </div>

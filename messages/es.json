@@ -1,0 +1,1014 @@
+{
+  "nav": {
+    "findStays": "Buscar alojamientos",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "listProperty": "Lista tu propiedad",
+    "profile": "Perfil",
+    "notifications": "Notificaciones",
+    "settings": "Mi perfil",
+    "invoices": "Facturas",
+    "reservations": "Reservas",
+    "services": "Suscripciones",
+    "vouchers": "Vales",
+    "logOut": "Cerrar sesión",
+    "userMenu": "Menú de usuario",
+    "notificationsAria": "Notificaciones",
+    "markAllRead": "Leídas todas",
+    "noNotifications": "Sin novedades",
+    "noNotificationsHint": "Te avisaremos cuando haya actividad",
+    "manageNotifications": "Gestionar notificaciones"
+  },
+  "auth": {
+    "getStarted": "Comenzar",
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "welcomeBack": "Bienvenido de nuevo",
+    "logInToContinue": "Inicia sesión para continuar",
+    "continueWithGoogle": "Continuar con Google",
+    "signUpWithGoogle": "Registrarte con Google",
+    "or": "O",
+    "emailAddress": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "fullName": "Nombre completo",
+    "rememberMe": "Recordarme",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "needAccount": "¿Necesitas crear una cuenta?",
+    "createAccount": "Crear una cuenta",
+    "joinUsToGetStarted": "Únete para comenzar",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "lockIconLabel": "candado",
+    "resetPasswordTitle": "Restablecer contraseña",
+    "setNewPassword": "Establece una nueva contraseña",
+    "setNewPasswordHint": "Introduce tu nueva contraseña a continuación",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmNewPasswordLabel": "Confirmar nueva contraseña",
+    "resetPasswordButton": "Restablecer contraseña",
+    "invalidLinkTitle": "Enlace no válido",
+    "invalidLinkDescription": "El enlace para restablecer la contraseña no es válido o ha caducado.",
+    "returnToSignIn": "Volver a iniciar sesión",
+    "invalidOrMissingToken": "Token de restablecimiento no válido o ausente.",
+    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+    "passwordUppercase": "La contraseña debe contener al menos una letra mayúscula",
+    "passwordLowercase": "La contraseña debe contener al menos una letra minúscula",
+    "passwordNumber": "La contraseña debe contener al menos un número",
+    "passwordSpecialChar": "La contraseña debe contener al menos un carácter especial",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "forgotPasswordTitle": "Contraseña olvidada",
+    "resetYourPasswordSubtitle": "Restablece tu contraseña",
+    "forgotPasswordHint": "Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña",
+    "emailInvalidFormat": "Formato de correo electrónico no válido",
+    "sendResetLinkButton": "Enviar enlace de restablecimiento",
+    "rememberYourPassword": "¿Recuerdas tu contraseña?"
+  },
+  "account": {
+    "welcomeBack": "Bienvenido de nuevo",
+    "continueToProfile": "Continuar al perfil",
+    "goToDashboard": "Ir al dashboard",
+    "orgDashboard": "Dashboard propietario",
+    "myPersonalProfile": "Mi perfil personal",
+    "wantToSwitchAccounts": "¿Quieres cambiar de cuenta?",
+    "signOut": "Cerrar sesión"
+  },
+  "logout": {
+    "title": "¿Cerrar sesión?",
+    "descriptionAnonymous": "Confirma para cerrar la sesión global en todas las apps registradas, o cancela para seguir en la página actual.",
+    "descriptionSignedIn": "Vas a cerrar sesión como {userName}. Esto terminará tu sesión en todas las apps de Divergtech en las que estás conectado.",
+    "confirm": "Sí, cerrar sesión",
+    "cancel": "No, mantener la sesión"
+  },
+  "profile": {
+    "emailVerified": "Email verificado",
+    "emailNotVerified": "Email no verificado",
+    "settings": "Mi perfil"
+  },
+  "cards": {
+    "viewAll": "Ver todo",
+    "notifications": "Notificaciones",
+    "noNotifications": "Sin notificaciones",
+    "read": "Leído",
+    "unread": "No leído",
+    "invoices": "Facturas",
+    "noInvoices": "Sin facturas",
+    "reservations": "Reservas",
+    "noReservations": "Sin reservas",
+    "services": "Suscripciones",
+    "noServices": "Sin suscripciones",
+    "vouchers": "Vales",
+    "noVouchers": "Sin vales",
+    "total": "Total",
+    "showingOf": "Mostrando {shown} de {total}",
+    "checkIn": "Entrada",
+    "checkOut": "Salida",
+    "nextPayment": "Próximo pago",
+    "invoiceStatus": {
+      "paid": "Pagado",
+      "pending": "Pendiente",
+      "cancelled": "Cancelado",
+      "overdue": "Vencido"
+    },
+    "reservationStatus": {
+      "confirmed": "Confirmado",
+      "pending": "Pendiente",
+      "cancelled": "Cancelado"
+    },
+    "serviceStatus": {
+      "active": "Activo",
+      "expired": "Expirado"
+    }
+  },
+  "clientView": {
+    "activeStays": "Estancias activas",
+    "activeStaysSub": "estancias en curso",
+    "completedStays": "Estancias completadas",
+    "completedStaysSub": "estancias completadas",
+    "totalSpent": "Total gastado",
+    "totalSpentSub": "gastos acumulados",
+    "totalIncome": "Ingresos",
+    "totalIncomeSub": "ingresos acumulados",
+    "favorites": "Favoritos",
+    "upcomingStays": "Próximas estancias",
+    "noUpcomingStays": "Sin estancias próximas",
+    "upgradeTitle": "¿Tienes una propiedad?",
+    "upgradeDesc": "Empieza a hospedar y llega a miles de viajeros",
+    "startHosting": "Empezar a hospedar",
+    "backToOrg": "Volver a mi organización"
+  },
+  "orgView": {
+    "viewAsClient": "Ver como cliente",
+    "activeProperties": "Propiedades activas",
+    "monthlyBookings": "Reservas este mes",
+    "monthlyIncome": "Ingresos este mes",
+    "avgRating": "Calificación promedio",
+    "properties": "Propiedades",
+    "noProperties": "Sin propiedades aún",
+    "recentReservations": "Reservas recientes",
+    "noRecentReservations": "Sin reservas recientes",
+    "team": "Equipo",
+    "finances": "Finanzas",
+    "managePanelLink": "Gestionar en Panel",
+    "roleOwner": "Propietario",
+    "roleAdmin": "Administrador",
+    "roleStaff": "Staff",
+    "roleAgent": "Agente",
+    "pendingPayouts": "Cobros pendientes",
+    "reviews": "reseñas",
+    "members": "miembros",
+    "statusLive": "Activo",
+    "statusDraft": "Borrador",
+    "totalReservations": "Reservas totales",
+    "uniqueClients": "Clientes únicos",
+    "totalRevenue": "Ingresos totales",
+    "thisMonth": "este mes",
+    "reservationsLabel": "reservas",
+    "reservationsCardTitle": "Reservas",
+    "reservationsToOrgsCount": "{count} reservas a tus organizaciones",
+    "noOrgReservations": "Sin reservas",
+    "reservationNotFoundTitle": "Reserva no encontrada",
+    "reservationNotFoundBody": "No encontramos esta reserva.",
+    "reservationDetailTitle": "Detalle de reserva",
+    "organizationLabel": "Organización",
+    "propertyLabel": "Propiedad",
+    "guestLabel": "Huésped",
+    "emailLabel": "Email",
+    "reservationLabel": "Reserva",
+    "status": {
+      "PENDING": "Pendiente",
+      "CONFIRMED": "Confirmada",
+      "COMPLETED": "Completada",
+      "CANCELLED": "Cancelada"
+    },
+    "rawStatus": {
+      "PENDING": "Pendiente",
+      "CONFIRMED": "Confirmado",
+      "CHECKED_IN": "En curso",
+      "CHECKED_OUT": "Completado",
+      "CANCELLED": "Cancelado",
+      "NO_SHOW": "No show"
+    },
+    "allStatuses": "Todos",
+    "resultsCount": "{count} resultados",
+    "searchByIdPlaceholder": "Buscar por ID…",
+    "noResults": "Sin resultados",
+    "payoutStatus": {
+      "PAID": "Pagado",
+      "PENDING": "Por pagar",
+      "FAILED": "Fallido",
+      "CANCELLED": "Cancelado"
+    },
+    "payoutsCardTitle": "Pagos",
+    "noPayoutsRegistered": "Sin pagos registrados",
+    "availableBalance": "Saldo disponible",
+    "paidSub": "pagado",
+    "viewEarningsRecordTooltip": "Ver el registro de todo lo que has ganado con nosotros",
+    "viewRecord": "Ver registro",
+    "toBePaid": "Por pagar",
+    "pendingSub": "pendiente",
+    "payoutInvoiceTitle": "Factura de pago",
+    "totalAmount": "Importe total",
+    "statusLabel": "Estado",
+    "conceptLabel": "Concepto",
+    "issueDateLabel": "Fecha emisión",
+    "dueDateLabel": "Fecha de pago",
+    "paidDateLabel": "Fecha pagado",
+    "reservationsIncludedCount": "Reservas incluidas ({count})"
+  },
+  "adminView": {
+    "activeProperties": "Propiedades activas",
+    "weeklyReservations": "Reservas esta semana",
+    "weeklyReservationsSub": "últimos 7 días",
+    "totalReservationsSub": "{count} reservas totales",
+    "totalUsersSub": "{count} usuarios total",
+    "newUsers": "Nuevos usuarios (7d)",
+    "activeOrgs": "Organizaciones activas",
+    "activeOrgsSub": "organizaciones activas"
+  },
+  "dashboard": {
+    "subnav": {
+      "settings": "Configuración",
+      "permissions": "Permisos",
+      "users": "Usuarios",
+      "organizations": "Organizaciones"
+    },
+    "accessDenied": {
+      "title": "Acceso denegado",
+      "description": "No tienes permisos para ver esta página."
+    },
+    "settingsPage": {
+      "title": "Configuración del sistema"
+    },
+    "organizationsPage": {
+      "title": "Organizaciones"
+    },
+    "permissionsPage": {
+      "title": "Permisos"
+    },
+    "usersPage": {
+      "title": "Usuarios"
+    },
+    "emailBanner": {
+      "title": "Verifica tu email",
+      "description": "No recibirás notificaciones importantes hasta verificar tu cuenta",
+      "resend": "Reenviar email",
+      "resendCooldown": "Reenviar en {seconds}s"
+    },
+    "common": {
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "close": "Cerrar"
+    },
+    "clientsManager": {
+      "invalidValue": "Valor inválido",
+      "alreadyExists": "Ya existe",
+      "add": "Añadir",
+      "nameRequired": "El nombre es obligatorio",
+      "saveError": "Error al guardar",
+      "clientIdInvalid": "ID de cliente: solo minúsculas, números y guiones",
+      "clientIdExists": "El ID de cliente ya existe",
+      "createError": "Error al crear",
+      "editClientTitle": "Editar: {clientId}",
+      "newClientTitle": "Nueva app cliente",
+      "clientIdLabel": "ID de cliente",
+      "clientIdPlaceholder": "my-app",
+      "clientIdDescription": "Minúsculas, números y guiones. No se puede cambiar después.",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "Mi aplicación",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Descripción opcional",
+      "callbackUrlsLabel": "URLs de callback permitidas",
+      "callbackUrlPlaceholder": "https://example.com/api/auth/callback",
+      "domainsLabel": "Dominios permitidos",
+      "domainPlaceholder": "example.com",
+      "scopesLabel": "Scopes",
+      "scopePlaceholder": "profile",
+      "activeLabel": "Activo",
+      "activeDescription": "Los clientes desactivados no pueden autenticarse",
+      "saveChanges": "Guardar cambios",
+      "createClient": "Crear cliente",
+      "signingKeyModalTitle": "Guarda esta clave de firma ahora",
+      "signingKeyModalBody": "Es la única vez que se muestra esta clave. Guárdala como ",
+      "signingKeySaved": "La he guardado",
+      "unauthorizedError": "No autorizado. Inicia sesión de nuevo.",
+      "loadError": "No se pudieron cargar los clientes",
+      "networkError": "Error de red",
+      "retry": "Reintentar",
+      "registeredClientsOne": "cliente registrado",
+      "registeredClientsOther": "clientes registrados",
+      "newApp": "Nueva app",
+      "statusActive": "activo",
+      "statusInactive": "desactivado",
+      "editClientTooltip": "Editar cliente",
+      "disableClientTooltip": "Desactivar cliente",
+      "callbackUrlsCount": "URLs de callback ({count})",
+      "noCallbackUrls": "Sin URLs de callback — la autenticación fallará",
+      "domainsCount": "Dominios permitidos ({count})",
+      "none": "Ninguno",
+      "scopesCount": "Scopes ({count})",
+      "signingKeyLabel": "Clave de firma (qbAuthSigningKey)",
+      "reveal": "Revelar",
+      "keyVersionUpdated": "Versión de clave: {version} · Actualizado: {date}",
+      "noClientApps": "Aún no hay apps cliente registradas."
+    },
+    "usersManager": {
+      "profileUpdated": "Perfil actualizado",
+      "userDeleted": "Usuario eliminado",
+      "permissionsUpdated": "Permisos actualizados",
+      "emailUpdated": "Email actualizado",
+      "sessionsRevoked": "Sesiones revocadas",
+      "sessionRevoked": "Sesión revocada",
+      "confirmDeleteUser": "¿Eliminar al usuario {email}? Esta acción es irreversible.",
+      "searchUserLabel": "Buscar usuario",
+      "searchUserPlaceholder": "Nombre o email…",
+      "usersCount": "{count} usuarios",
+      "adminCount": "{count} admin",
+      "tableAriaLabel": "Usuarios",
+      "colUser": "Usuario",
+      "colEmail": "Email",
+      "colAdmin": "Admin",
+      "colOrgs": "Orgs",
+      "colActions": "Acciones",
+      "noUsersMatch": "Ningún usuario coincide con la búsqueda.",
+      "noUsers": "Sin usuarios.",
+      "systemAdminTooltip": "Administrador del sistema",
+      "joinedOn": "Alta {date}",
+      "verified": "verificado",
+      "unverified": "sin verificar",
+      "viewDetailTooltip": "Ver detalle",
+      "detailAriaLabel": "Detalle",
+      "editProfileTooltip": "Editar perfil",
+      "editAriaLabel": "Editar",
+      "markUnverified": "Marcar sin verificar",
+      "markVerified": "Marcar verificado",
+      "verifyAriaLabel": "Verificar",
+      "deleteUserTooltip": "Eliminar usuario",
+      "deleteAriaLabel": "Eliminar",
+      "editProfileTitle": "Editar perfil",
+      "nameLabel": "Nombre",
+      "phoneLabel": "Teléfono",
+      "nationalityLabel": "Nacionalidad",
+      "addressLabel": "Dirección",
+      "passportLabel": "Pasaporte/ID",
+      "detailTitle": "Detalle",
+      "subscriptionSection": "Suscripción",
+      "until": "hasta {date}",
+      "noActiveSubscription": "Sin suscripción activa.",
+      "organizationsSection": "Organizaciones",
+      "noOrganizations": "Sin organizaciones.",
+      "sessionsSection": "Sesiones",
+      "activeSessionsCount": "({count} activas)",
+      "revokeAll": "Revocar todas",
+      "loadingSessions": "Cargando sesiones…",
+      "sessionsTableAriaLabel": "Sesiones",
+      "colIp": "IP",
+      "colClient": "Cliente",
+      "colCreated": "Creada",
+      "colStatus": "Estado",
+      "noSessions": "Sin sesiones.",
+      "directClient": "Directo",
+      "revokedStatus": "revocada",
+      "activeStatus": "activa",
+      "alreadyRevoked": "Ya revocada",
+      "revokeSessionTooltip": "Revocar sesión",
+      "revokeAriaLabel": "Revocar"
+    },
+    "orgsManager": {
+      "memberRemoved": "Miembro eliminado",
+      "orgUpdated": "Organización actualizada",
+      "orgDeleted": "Organización eliminada",
+      "rolesUpdated": "Roles actualizados",
+      "confirmRemoveMember": "¿Quitar a {email} de {orgName}?",
+      "searchOrgLabel": "Buscar organización",
+      "searchOrgPlaceholder": "Nombre o slug…",
+      "noOrgsMatch": "Sin organizaciones que coincidan.",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "membersLabel": "Miembros",
+      "rolesLabel": "Roles",
+      "noMembers": "Esta organización no tiene miembros.",
+      "editRoles": "Editar roles",
+      "removeFromOrgTooltip": "Quitar de la organización",
+      "removeMemberAriaLabel": "Quitar miembro",
+      "selectOrgPrompt": "Selecciona una organización para ver sus miembros.",
+      "editOrgTitle": "Editar organización",
+      "nameLabel": "Nombre",
+      "slugLabel": "Slug",
+      "logoLabel": "Logo (URL)",
+      "deleteOrgTitle": "Eliminar organización",
+      "deleteOrgWarningPrefix": "Esto elimina la organización, sus miembros y roles. Escribe",
+      "deleteOrgWarningSuffix": "para confirmar.",
+      "deletePermanently": "Eliminar definitivamente",
+      "memberRolesTitle": "Roles del miembro",
+      "rolesSelectLabel": "Roles",
+      "selectRolesPlaceholder": "Selecciona roles"
+    }
+  },
+  "myProfile": {
+    "title": "Mi perfil",
+    "stepByStep": "Rellenar paso a paso",
+    "saveError": "No se pudo guardar, reintenta.",
+    "wizard": {
+      "stepOf": "Paso {step} de {total}",
+      "skip": "Saltar",
+      "finish": "Terminar",
+      "next": "Siguiente"
+    },
+    "editor": {
+      "complete": "Perfil completo",
+      "yourProfile": "Tu perfil",
+      "allSetDescription": "Todo listo. Los cambios se guardan solos.",
+      "missingFieldsDescription": "Te faltan {count} campos. Se guarda solo al salir de cada campo.",
+      "email": "Email",
+      "emailLocked": "No se puede cambiar el email"
+    },
+    "field": {
+      "name": {
+        "label": "Nombre completo",
+        "question": "¿Cómo te llamas?",
+        "placeholder": "Nombre y apellidos"
+      },
+      "phone": {
+        "label": "Teléfono",
+        "question": "¿Y tu teléfono?",
+        "placeholder": "+34 600 000 000"
+      },
+      "nationality": {
+        "label": "Nacionalidad",
+        "question": "¿De qué país eres?",
+        "placeholder": "ej. Español",
+        "why": "Agiliza tus futuras reservas y el check-in del hotel."
+      },
+      "address": {
+        "label": "Dirección",
+        "question": "¿Cuál es tu dirección?",
+        "placeholder": "Calle, Ciudad, País"
+      },
+      "passportId": {
+        "label": "Pasaporte / DNI",
+        "question": "Por último, tu documento",
+        "placeholder": "AB123456",
+        "why": "El hotel lo necesita para el registro de entrada."
+      }
+    },
+    "payment": {
+      "title": "Métodos de pago",
+      "ownerDescription": "Como propietario, tus cobros y pagos a la plataforma se gestionan desde el panel de propietario. Allí puedes ver tus liquidaciones, facturas y configurar tus datos bancarios.",
+      "goToOwnerPanel": "Ir al panel de propietario",
+      "noCardsTitle": "Aún no tienes tarjetas guardadas",
+      "noCardsDescription": "Hoy la tarjeta se introduce durante la reserva. Guardarla para futuras reservas llegará cuando activemos la pasarela de pago.",
+      "addCard": "Añadir tarjeta",
+      "comingSoon": "Próximamente",
+      "exploreStays": "Explorar alojamientos",
+      "secureOwnerNote": "Las transferencias se procesan de forma segura. Nunca almacenamos datos bancarios en texto plano.",
+      "secureClientNote": "Los pagos se procesan con cifrado SSL. Nunca almacenamos los datos de tu tarjeta."
+    },
+    "security": {
+      "title": "Seguridad",
+      "linkedAccounts": "Cuentas vinculadas",
+      "emailPassword": "Email y contraseña",
+      "changePassword": "Cambiar contraseña",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "minChars": "Mínimo 8 caracteres",
+      "confirmPassword": "Confirmar contraseña",
+      "updatePassword": "Actualizar contraseña",
+      "passwordsMismatch": "Las contraseñas no coinciden.",
+      "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
+      "wrongCurrentPassword": "Contraseña actual incorrecta.",
+      "passwordUpdated": "Contraseña actualizada."
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "email": {
+        "label": "Notificaciones por email",
+        "description": "Recibe actualizaciones generales en tu email"
+      },
+      "bookingConfirmations": {
+        "label": "Confirmaciones de reserva",
+        "description": "Notificación cuando una reserva se confirme o cancele"
+      },
+      "invoiceAlerts": {
+        "label": "Alertas de facturas",
+        "description": "Avisos de nuevas facturas y recordatorios de pago"
+      },
+      "serviceAlerts": {
+        "label": "Alertas del servicio",
+        "description": "Cambios en el estado del servicio"
+      },
+      "marketingEmails": {
+        "label": "Emails de marketing",
+        "description": "Promociones, novedades y actualizaciones del producto"
+      }
+    },
+    "progressRing": {
+      "ariaLabel": "Perfil {percent}% completo"
+    },
+    "admin": {
+      "permissionsCatalog": {
+        "title": "Catálogo de permisos",
+        "description": "Los permisos los define el código (no se crean a mano). Sincroniza para poblar la base con el catálogo actual.",
+        "permissionsCount": "{count} permisos",
+        "groupsCount": "{count} grupos",
+        "servicesCount": "{count} servicios",
+        "syncButton": "Sincronizar permisos",
+        "syncSuccessTitle": "Permisos sincronizados",
+        "syncSuccessDescription": "{permissions} permisos, {orgs} orgs",
+        "syncErrorTitle": "No se pudo sincronizar",
+        "emptyPrefix": "No hay permisos en la base. Pulsa",
+        "emptySuffix": "para poblarlos desde el código.",
+        "searchLabel": "Buscar permiso",
+        "searchPlaceholder": "Clave, nombre o servicio…",
+        "noMatch": "Ningún permiso coincide con «{query}»."
+      },
+      "platformSettings": {
+        "savedTitle": "Guardado",
+        "savedDescription": "Tiempo de reserva actualizado.",
+        "saveErrorTitle": "No se pudo guardar",
+        "title": "Configuración de la plataforma",
+        "subtitle": "Ajustes globales del sistema de reservas.",
+        "holdMinutesLabel": "Tiempo de reserva (minutos)",
+        "saveButton": "Guardar",
+        "holdMinutesHint": "Cuánto tiempo se mantiene una pre-reserva antes de expirar (1–1440)."
+      }
+    }
+  },
+  "profilePages": {
+    "shell": {
+      "itemsCount": "{count} elementos"
+    },
+    "completeness": {
+      "complete": "Perfil completo",
+      "percentComplete": "Perfil {percent}% completo",
+      "viewAndEdit": "Ver y editar tus datos",
+      "completeYourData": "Completa tus datos personales"
+    },
+    "orgReservations": {
+      "title": "Reservas",
+      "searchPlaceholder": "Buscar por organización, propiedad o huésped...",
+      "filterAriaLabel": "Filtrar por estado",
+      "allStatuses": "Todos los estados",
+      "noResults": "Sin reservas."
+    },
+    "services": {
+      "title": "Servicios",
+      "searchPlaceholder": "Buscar servicios...",
+      "nextPayment": "Próximo pago",
+      "empty": "No se encontraron servicios.",
+      "status": {
+        "active": "Activo",
+        "expired": "Expirado"
+      }
+    },
+    "invoices": {
+      "title": "Facturas",
+      "searchPlaceholder": "Buscar facturas...",
+      "loading": "Cargando facturas...",
+      "empty": "No se encontraron facturas.",
+      "status": {
+        "paid": "Pagada",
+        "pending": "Pendiente",
+        "overdue": "Vencida",
+        "cancelled": "Cancelada",
+        "refund_requested": "Por reembolsar",
+        "refunded": "Reembolsada"
+      }
+    },
+    "vouchers": {
+      "title": "Mis Vales",
+      "loading": "Cargando vales...",
+      "empty": "No se encontraron vales.",
+      "noReason": "Vale",
+      "validUntil": "Válido hasta {date}",
+      "remainingOfAmount": "Saldo restante",
+      "showUsages": "Ver uso ({count})",
+      "hideUsages": "Ocultar uso",
+      "usageLine": "Gastado en la reserva {reservationId} — {date}",
+      "usageUnknownReservation": "una reserva eliminada",
+      "status": {
+        "ACTIVE": "Activo",
+        "USED": "Usado",
+        "EXPIRED": "Expirado",
+        "CANCELLED": "Cancelado"
+      }
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "filters": {
+        "unread": "Sin leer",
+        "all": "Todas",
+        "archived": "Archivadas"
+      },
+      "loading": "Cargando notificaciones...",
+      "empty": "No hay notificaciones.",
+      "new": "Nueva",
+      "markAsRead": "Marcar como leída",
+      "archive": "Archivar",
+      "unarchive": "Restaurar",
+      "archiveAllRead": "Archivar leídas",
+      "viewDetail": "Abrir",
+      "codeLabel": "Código de reserva",
+      "checkInLabel": "Entrada",
+      "checkOutLabel": "Salida"
+    },
+    "payouts": {
+      "title": "Pagos",
+      "searchPlaceholder": "Buscar por organización o nº de factura...",
+      "filterAriaLabel": "Filtrar por estado",
+      "allStatuses": "Todos los estados",
+      "lineCount": "{count, plural, one {# reserva} other {# reservas}}",
+      "empty": "Sin pagos.",
+      "status": {
+        "PENDING": "Por pagar",
+        "PAID": "Pagado",
+        "FAILED": "Fallido",
+        "CANCELLED": "Cancelado"
+      }
+    },
+    "reservations": {
+      "title": "Reservas",
+      "searchPlaceholder": "Buscar reservas...",
+      "newBooking": "Nueva reserva",
+      "loading": "Cargando reservas...",
+      "empty": "No se encontraron reservas."
+    },
+    "reservationDetail": {
+      "notFoundTitle": "Reserva no encontrada",
+      "notFoundBody": "Reserva no encontrada.",
+      "stayLabel": "Estancia",
+      "nightsUnit": "{count, plural, one {noche} other {noches}}",
+      "priceBreakdown": "Desglose de precio",
+      "total": "Total",
+      "reservationIdLabel": "ID de reserva",
+      "roomLabel": "Habitación",
+      "guestsLabel": "Huéspedes",
+      "rateLabel": "Tarifa",
+      "refundable": "Reembolsable",
+      "nonRefundable": "No reembolsable",
+      "requestRefund": "Pedir reembolso",
+      "cancelReservation": "Cancelar reserva",
+      "delete": "Eliminar",
+      "refundModalTitle": "Pedir reembolso",
+      "cancelModalTitle": "Cancelar reserva",
+      "refundReasonPrompt": "Cuéntanos por qué solicitas el reembolso para <strong>{property}</strong>. Tu solicitud será revisada.",
+      "cancelConfirmPrompt": "¿Seguro que quieres cancelar tu reserva para <strong>{property}</strong>? Esta acción no se puede deshacer.",
+      "refundReasonLabel": "¿Por qué solicitas el reembolso?",
+      "keepIt": "No cancelar",
+      "submitRequest": "Enviar solicitud",
+      "yesCancel": "Sí, cancelar",
+      "deleteModalTitle": "Eliminar reserva",
+      "deleteModalBody": "¿Eliminar permanentemente la reserva de <strong>{property}</strong>?",
+      "modalCancelBtn": "Cancelar",
+      "toastCancelledTitle": "Reserva cancelada",
+      "toastRefundRequestedTitle": "Reembolso solicitado",
+      "toastRequestSentDesc": "Tu solicitud fue enviada.",
+      "toastRefundReviewDesc": "El reembolso será revisado.",
+      "toastRefundEstimateDesc": "Reembolso estimado: {amount}",
+      "toastNotRefundableDesc": "Esta tarifa no es reembolsable.",
+      "toastFailedTitle": "No se pudo procesar",
+      "perNightUnit": "noche"
+    },
+    "serviceDetail": {
+      "notFoundTitle": "Servicio no encontrado",
+      "notFoundBody": "Servicio no encontrado.",
+      "notActiveNote": "Este servicio ya no está activo.",
+      "noDescription": "Detalles del servicio no disponibles.",
+      "detailsHeading": "Detalles del servicio",
+      "nameLabel": "Nombre del servicio",
+      "propertyLabel": "Propiedad",
+      "billingFrequencyLabel": "Frecuencia de facturación",
+      "idLabel": "ID del servicio",
+      "statusLabel": "Estado",
+      "deactivate": "Desactivar",
+      "activate": "Activar",
+      "delete": "Eliminar",
+      "deleteModalTitle": "Eliminar servicio",
+      "deleteModalBody": "¿Eliminar permanentemente <strong>{name}</strong>?",
+      "modalCancelBtn": "Cancelar",
+      "frequency": {
+        "monthly": "Mensual",
+        "biweekly": "Quincenal",
+        "weekly": "Semanal"
+      },
+      "descriptions": {
+        "SVC-001": "Conexión de fibra de alta velocidad hasta 1 Gbps, incluye alquiler de router y soporte técnico.",
+        "SVC-002": "Servicio profesional de limpieza y mantenimiento de piscina, incluye tratamiento del agua y limpieza de filtros.",
+        "SVC-003": "Sistema de seguridad monitorizado 24/7 con sensores de movimiento, cámaras y respuesta de emergencia.",
+        "SVC-004": "Servicio regular de corte de césped, poda y mantenimiento de jardín.",
+        "SVC-005": "Plan eléctrico estándar con tarifas competitivas y facturación mensual.",
+        "SVC-006": "Contrato de suministro de gas natural para calefacción y electrodomésticos de cocina.",
+        "SVC-007": "Servicio semanal de limpieza profunda que incluye todas las habitaciones y áreas comunes.",
+        "SVC-008": "Integración de hogar inteligente: control de iluminación, termostato, cerraduras y electrodomésticos vía app."
+      }
+    },
+    "invoiceDetail": {
+      "notFoundTitle": "Factura no encontrada",
+      "notFoundBody": "Factura no encontrada.",
+      "detailsHeading": "Detalles de la factura",
+      "invoiceNumberLabel": "Número de factura",
+      "categoryLabel": "Categoría",
+      "paymentMethodLabel": "Método de pago",
+      "periodLabel": "Periodo",
+      "propertyHeading": "Propiedad",
+      "propertyNameLabel": "Nombre de la propiedad",
+      "addressLabel": "Dirección",
+      "datesHeading": "Fechas",
+      "invoiceDateLabel": "Fecha de factura",
+      "dueDateLabel": "Fecha de vencimiento",
+      "payNow": "Pagar ahora",
+      "downloadPdf": "Descargar PDF",
+      "delete": "Eliminar",
+      "deleteModalTitle": "Eliminar factura",
+      "deleteModalBody": "¿Eliminar permanentemente la factura <strong>{number}</strong>?",
+      "modalCancelBtn": "Cancelar",
+      "categories": {
+        "rental": "Alquiler mensual",
+        "service": "Servicio",
+        "deposit": "Depósito de garantía",
+        "maintenance": "Mantenimiento",
+        "utility": "Suministro"
+      },
+      "cancel": "Cancelar",
+      "cancelModalTitle": "Cancelar factura",
+      "cancelModalBody": "¿Seguro que quieres cancelar la factura <strong>{number}</strong>? Podrás eliminarla después.",
+      "actionFailed": "No se pudo completar la acción."
+    },
+    "notificationDetail": {
+      "notFoundTitle": "Notificación no encontrada",
+      "notFoundBody": "No se ha encontrado la notificación.",
+      "backToNotifications": "Volver a notificaciones"
+    },
+    "payoutDetail": {
+      "notFoundTitle": "Factura no encontrada",
+      "notFoundBody": "No se encontró la factura de pago.",
+      "defaultTitle": "Factura de pago",
+      "downloadPdf": "Descargar PDF",
+      "defaultDescription": "Pago de {count, plural, one {# reserva} other {# reservas}}",
+      "detailsHeading": "Detalles del pago",
+      "invoiceNumberLabel": "Nº de factura",
+      "organizationLabel": "Organización",
+      "conceptLabel": "Concepto",
+      "reservationsCountLabel": "Reservas",
+      "datesHeading": "Fechas",
+      "issueDateLabel": "Fecha de emisión",
+      "paymentDateLabel": "Fecha de pago",
+      "paidDateLabel": "Fecha pagado",
+      "reservationsIncludedHeading": "Reservas incluidas ({count})",
+      "noReservations": "Sin reservas"
+    }
+  },
+  "lang": {
+    "switch": "EN",
+    "current": "ES"
+  },
+  "common": {
+    "togglePasswordVisibility": "Mostrar u ocultar contraseña",
+    "breadcrumbAriaLabel": "Ruta de navegación",
+    "profileCard": {
+      "errorLoadingProfile": "Error al cargar el perfil: {error}",
+      "userIdLabel": "ID de usuario",
+      "roleLabel": "Rol",
+      "roleSystemAdmin": "Administrador del sistema",
+      "roleUser": "Usuario",
+      "emailStatusLabel": "Estado del email",
+      "verified": "Verificado",
+      "notVerified": "No verificado",
+      "resendVerification": "Reenviar verificación",
+      "resendIn": "Reenviar en {seconds}s",
+      "memberSince": "Miembro desde",
+      "organizationsTitle": "Organizaciones",
+      "noOrganizations": "Aún no eres miembro de ninguna organización.",
+      "linkedAccountsTitle": "Cuentas vinculadas",
+      "noLinkedAccounts": "Sin cuentas vinculadas.",
+      "providerGoogle": "Google",
+      "providerGithub": "GitHub",
+      "providerCredential": "Email y contraseña"
+    },
+    "logoutModal": {
+      "title": "¿Cerrar sesión?",
+      "body": "¿Estás seguro de que quieres cerrar tu sesión?",
+      "confirm": "Sí, salir",
+      "loggingOut": "Saliendo..."
+    }
+  },
+  "reservations": {
+    "goBack": "Volver",
+    "searchPlaceholder": "Buscar por propiedad o ubicación...",
+    "totalItemsLabel": "{count} elementos en total",
+    "clear": "Limpiar",
+    "inLabel": "Entrada",
+    "outLabel": "Salida",
+    "table": {
+      "location": "Ubicación"
+    }
+  },
+  "apiKeys": {
+    "loadingLabel": "Cargando datos de administración…",
+    "toast": {
+      "loadFailedTitle": "No se pudieron cargar los datos de administración"
+    },
+    "tabs": {
+      "ariaLabel": "Secciones de API Keys",
+      "help": "Ayuda y conceptos",
+      "serviceClients": "Clientes de Servicio ({count})",
+      "apiKeysTab": "API Keys ({count})",
+      "scopeCatalog": "Catálogo de Scopes ({count})"
+    },
+    "help": {
+      "whatIsThis": {
+        "title": "¿Qué es esta página?",
+        "description": "qb-auth es el Identity Hub central. Desde aquí aprovisionas las credenciales que cada microservicio usa para autenticarse contra qb-auth (verificar sesiones, emitir JWTs, validar API keys). NO emite claves maestras entre servicios — cada servicio tiene SU PROPIA credencial."
+      },
+      "noKey": {
+        "title": "Importante: no existe una clave de firma global",
+        "p1": "<strong>SERVICE_AUTH_SECRET</strong> es el secreto maestro que vive ÚNICAMENTE en el entorno de qb-auth. Cada clave de firma por cliente se deriva de él mediante:",
+        "p2": "La clave que copias al crear un Cliente de Servicio es <strong>solo la clave de ese cliente</strong>. Lo identifica al llamar a qb-auth — NO otorga acceso a los endpoints de otros microservicios (qb-back, qb-notify… cada uno aplica su propia autenticación).",
+        "p3": "El scope comodín <code>*</code> en un cliente (p. ej. <code>qb-admin</code>) solo amplía lo que ese cliente puede hacer <em>contra qb-auth</em> — nunca contra otros servicios."
+      },
+      "credTypes": {
+        "title": "Los 3 tipos de credenciales",
+        "subtitle": "Elige la adecuada para cada integración."
+      },
+      "credential": {
+        "serviceClient": {
+          "title": "Cliente de Servicio (HMAC)",
+          "chip": "signingKey",
+          "when": "Un backend (qb-back, qb-panel, qb-notify…) necesita llamar a qb-auth como sí mismo.",
+          "how1": "Se crea aquí → el signingKey se muestra UNA VEZ.",
+          "how2": "Identifica a UN cliente (su clientId) — NO es una clave maestra.",
+          "how3": "Se envía como cabecera X-Service-Auth en las peticiones HACIA qb-auth.",
+          "how4": "qb-auth lo verifica re-derivándolo mediante HMAC(SERVICE_AUTH_SECRET, 'svc:v<n>:<clientId>')."
+        },
+        "apiKey": {
+          "title": "API Key (qbk_…)",
+          "chip": "apiKey",
+          "when": "Terceros / humanos / scripts que acceden al hub.",
+          "how1": "Se crea aquí → el token completo se muestra UNA VEZ.",
+          "how2": "Se envía como Authorization: Bearer qbk_…",
+          "how3": "Se verifica mediante POST /api/auth/api-keys/verify."
+        },
+        "adminSession": {
+          "title": "Sesión de usuario admin",
+          "chip": "cookie",
+          "when": "Humanos usando este panel.",
+          "how1": "Inicio de sesión en /sign-in con isSystemAdmin=true.",
+          "how2": "Cookie del navegador qb.session_token.",
+          "how3": "Necesaria para acceder a /apikeys y /api/admin/*."
+        },
+        "whenLabel": "Cuándo:"
+      },
+      "microservices": {
+        "title": "Qué necesita cada microservicio",
+        "subtitle": "Base recomendada por cada consumidor de qb-auth.",
+        "ownsEverything": "Es dueño de todo",
+        "serviceClientChip": "Cliente de Servicio",
+        "verifiesApiKeys": "Verifica API keys"
+      },
+      "accordion": {
+        "onboard": {
+          "ariaLabel": "Crear cliente de servicio",
+          "title": "¿Cómo doy de alta un nuevo microservicio?",
+          "step1": "Abre la pestaña <strong>Clientes de Servicio</strong> y haz clic en <em>Nuevo Cliente</em>.",
+          "step2": "Elige un preset (p. ej. <em>Consumer backend</em>) — te rellena los scopes automáticamente.",
+          "step3": "Copia el <code>signingKey</code> derivado que se muestra UNA VEZ al crearlo y pégalo en la variable de entorno <code>SERVICE_SIGNING_KEY</code> del consumidor.",
+          "step4": "Configura <code>SERVICE_CLIENT_ID</code> y <code>SERVICE_KEY_VERSION=1</code> en el consumidor.",
+          "step5Prefix": "Pruébalo con",
+          "step5Suffix": "debería devolver"
+        },
+        "rotate": {
+          "ariaLabel": "Rotar",
+          "title": "¿Cómo roto una clave de firma sin downtime?",
+          "step1": "Haz clic en <em>Rotate</em> en la fila del cliente. La versión pasa de 1 → 2.",
+          "step2": "Despliega el nuevo <code>SERVICE_SIGNING_KEY</code> + <code>SERVICE_KEY_VERSION=2</code> en todas las instancias.",
+          "step3": "qb-auth sigue aceptando ambas versiones durante un periodo de gracia. Vigila los logs de auditoría por si algún cliente se queda en v1, y revócala si hace falta."
+        },
+        "scopes": {
+          "ariaLabel": "Scopes",
+          "title": "¿Por qué scopes? ¿Cómo añado nuevos?",
+          "intro": "Los scopes son el lenguaje de permisos del hub. Cada ruta protegida declara qué scopes requiere; cada credencial lleva un conjunto de scopes. El catálogo vive en un único archivo TypeScript para que no pueda desincronizarse:",
+          "howToAdd": "Para añadir un scope: edita ese archivo, añade la entrada con sus metadatos y referéncialo desde el route handler. La UI lo recoge automáticamente — no hacen falta migraciones."
+        }
+      }
+    },
+    "scopeChips": {
+      "none": "sin scopes",
+      "unknownScope": "Scope desconocido"
+    },
+    "risk": {
+      "read": "lectura",
+      "write": "escritura",
+      "admin": "admin"
+    },
+    "clients": {
+      "intro": "Clientes HMAC usados para autenticación de servicio a servicio (backend ↔ backend). La clave de firma se deriva de <code>SERVICE_AUTH_SECRET</code> y se muestra una sola vez.",
+      "newClientButton": "Nuevo Cliente",
+      "confirmRotate": "¿Rotar la clave de firma de \"{clientId}\"?",
+      "toast": {
+        "rotationFailedTitle": "Fallo al rotar"
+      },
+      "rotateNotice": "Nueva clave de firma — reemplaza SERVICE_SIGNING_KEY y sube SERVICE_KEY_VERSION en todos los consumidores.",
+      "revealedKeyTitle": "Clave de firma de {clientId} (v{version})",
+      "revealedJwtTitle": "JWT de plataforma para {clientId} (aud: {audiences}, exp: {expiresIn})",
+      "empty": "Aún no hay clientes de servicio.",
+      "statusActive": "activo",
+      "statusInactive": "inactivo",
+      "mintJwtButton": "Emitir JWT",
+      "rotateButton": "Rotar"
+    },
+    "createClient": {
+      "title": "Nuevo Cliente de Servicio",
+      "subtitle": "Aprovisiona una clave de firma HMAC derivada de <code>SERVICE_AUTH_SECRET</code>.",
+      "presetLabel": "Preset",
+      "presetPlaceholder": "Elige un preset (opcional)",
+      "clientIdLabel": "ID de cliente",
+      "clientIdPlaceholder": "qb-back",
+      "clientIdDescription": "Minúsculas, dígitos y guiones. Identificador estable.",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "QB Back (Core API)",
+      "descriptionLabel": "Descripción",
+      "callbackUrlsLabel": "URLs de callback permitidas",
+      "callbackUrlsPlaceholder": "https://qb-back.example.com/auth/callback",
+      "callbackUrlsDescription": "Una por línea.",
+      "domainsLabel": "Dominios permitidos",
+      "domainsPlaceholder": "qb-back.example.com",
+      "domainsDescription": "Uno por línea. Se usa para validar returnTo.",
+      "cancelButton": "Cancelar",
+      "createButton": "Crear",
+      "toast": {
+        "createFailedTitle": "Fallo al crear"
+      }
+    },
+    "mintJwt": {
+      "titleBase": "Emitir JWT de plataforma",
+      "titleFor": "Emitir JWT de plataforma para {clientId}",
+      "subtitle": "Token RS256 firmado con la clave JWKS activa de qb-auth. Verificable por cualquier servicio que consulte <code>/.well-known/jwks.json</code>.",
+      "alertTitle": "Un token, muchos servicios",
+      "alertDescription": "Usa este token como Authorization: Bearer … en qb-back, qb-notify y qb-auth. Cada uno lo verifica localmente — no hace falta secreto compartido.",
+      "expiresInLabel": "Expira en",
+      "expiresInDescription": "Formato zeit/ms: 30d, 90d, 1y…",
+      "audiencesLabel": "Audiencias extra",
+      "audiencesDescription": "Una por línea. Servicios downstream que verificarán este token (qb-auth siempre se añade).",
+      "embeddedScopesLabel": "Scopes incluidos:",
+      "noneFallback": "(ninguno)",
+      "revokeLabel": "Para revocar antes de que expire:",
+      "revokeText": "rota la clave JWKS en qb-auth (POST /api/admin/jwks/rotate).",
+      "cancelButton": "Cancelar",
+      "mintButton": "Emitir JWT",
+      "toast": {
+        "mintFailedTitle": "Fallo al emitir"
+      }
+    },
+    "apiKeysTab": {
+      "intro": "Tokens opacos <code>qbk_…</code> emitidos para scripts, terceros o usuarios. Se verifican mediante <code>POST /api/auth/api-keys/verify</code>.",
+      "newButton": "Nueva API Key",
+      "confirmRevoke": "¿Revocar la API key \"{name}\"? Esto no se puede deshacer.",
+      "toast": {
+        "revokeFailedTitle": "Fallo al revocar",
+        "revokedTitle": "API key revocada"
+      },
+      "revealedTitle": "API key de \"{name}\"",
+      "empty": "Aún no hay API keys.",
+      "statusRevoked": "revocada",
+      "statusActive": "activa",
+      "revokeButton": "Revocar",
+      "userChip": "usuario",
+      "standaloneLabel": "independiente",
+      "lastUsedLabel": "Último uso:",
+      "expiresLabel": "Expira:",
+      "neverLabel": "nunca"
+    },
+    "createApiKey": {
+      "title": "Nueva API Key",
+      "subtitle": "Clave en texto plano mostrada una sola vez. Se guarda como hash argon2id.",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "qb-notify production",
+      "boundClientLabel": "Cliente vinculado (opcional)",
+      "standalonePlaceholder": "Independiente",
+      "expiresAtLabel": "Expira el (opcional)",
+      "cancelButton": "Cancelar",
+      "createButton": "Crear",
+      "toast": {
+        "createFailedTitle": "Fallo al crear"
+      }
+    },
+    "scopeCatalog": {
+      "alertTitle": "Única fuente de verdad",
+      "alertDescription": "Definido en src/lib/scopes-catalog.ts. Edita ese archivo para añadir, renombrar o documentar scopes — la API y la UI lo recogen automáticamente.",
+      "searchPlaceholder": "Buscar scopes por id, etiqueta o descripción…",
+      "presetsTitle": "Presets",
+      "rolesTitle": "Roles → scopes recomendados"
+    },
+    "scopeSelector": {
+      "label": "Scopes",
+      "selectedCount": "{count} seleccionados"
+    },
+    "revealedSecret": {
+      "dismissButton": "Ya la he copiado — descartar"
+    },
+    "page": {
+      "accessDeniedTitle": "Acceso denegado",
+      "accessDeniedBody": "Esta página está restringida a administradores del sistema.",
+      "title": "API Keys y Clientes de Servicio",
+      "subtitle": "Gestiona todas las credenciales que emite el Identity Hub de qb-auth — claves de firma HMAC para microservicios backend, API keys opacas para terceros, y el catálogo de scopes que define qué puede hacer cada credencial."
+    }
+  }
+}

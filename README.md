@@ -1,41 +1,36 @@
-# procovar-auth
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Servicio de **identidad central** de procovar (SSO). Solo **usuarios + organizaciones** — sin
-lógica de negocio de otros proyectos. Varias apps (PEDIDO, delivery, analitics) se conectan aquí
-para no manejar auth cada una por su lado. Incluye **auditoría** (qué hace cada usuario y en qué
-client). Construido sobre [better-auth](https://better-auth.com) (Next.js + Prisma/Postgres).
+## Getting Started
 
-## Modelo de datos
-- `user`, `session`, `account`, `verification` — auth base.
-- `organization`, `member`, `invitation` — multi-tenant (una org = una **sucursal** en procovar).
-- `audit_log` — auditoría (ver abajo).
+First, run the development server:
 
-Ganchos multi-app en `src/lib/auth.ts`: `Session.clientId` (qué app), `Session.revokedAt`,
-`User.isSystemAdmin`, cookie compartida entre subdominios (`ROOT_DOMAIN`, prefijo `qb`).
-
-## Cómo conecta una app
-1. **Sesión compartida**: todas bajo un mismo dominio (`auth.`/`pedido.`/`delivery.`/`analitics.`)
-   para compartir la cookie `qb.session_token`. Cada app valida la sesión con
-   `GET /api/verify-session` (manda la cookie → recibe `session + user`).
-2. **clientId**: al redirigir a auth, la app pasa su `clientId` (flujo `src/lib/flow-state.ts`),
-   que queda asociado a la sesión y a la auditoría.
-
-## Auditoría — "qué hacen los usuarios y en qué client"
-- **Automática (eventos de auth):** sign-in (éxito/fallo), sign-up, sign-out, password-reset — se
-  registran en `src/server/auth.server.ts` con `clientId`, IP y user-agent.
-- **Desde las apps:** cada app registra sus propias acciones:
-  ```
-  POST /api/audit          (header x-api-key: SERVICE_API_KEY)
-  { "clientId": "delivery", "action": "order.create", "userId": "...", "resource": "order:123",
-    "status": "success", "metadata": { ... } }
-  ```
-- **Consulta (solo super-admin):** `GET /api/audit?clientId=&userId=&action=&limit=`.
-
-## Puesta en marcha
 ```bash
-npm install
-cp .env.example .env         # completa DATABASE_URL, BETTER_AUTH_SECRET, AUTH_FLOW_SECRET, SERVICE_API_KEY…
-npx prisma migrate deploy    # incluye 20260707120000_add_audit_log
-npx prisma generate
-npm run dev                  # http://localhost:3500
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

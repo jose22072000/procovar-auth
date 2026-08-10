@@ -9,5 +9,12 @@
   "tailwindCSS.experimental.classRegex": [],
   "tailwindCSS.validate": false,
   "css.lint.unknownAtRules": "ignore",
-  "css.validate": false
+  "css.validate": false,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/node_modules": true
+  }
 }

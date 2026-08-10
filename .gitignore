@@ -49,5 +49,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# permitir el ejemplo (sin secretos)
-!.env.example
+# local dev only — never commit these
+docker-compose.local.yml
+prisma/create-test-user.ts
+
+# Brainstorming visual companion
+.superpowers/

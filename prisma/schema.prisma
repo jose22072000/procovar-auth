@@ -14,60 +14,40 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  email         String    @unique
+  email         String         @unique
   emailVerified Boolean
   image         String?
-  isSystemAdmin Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  isSystemAdmin Boolean        @default(false)
+  phone         String?
+  nationality   String?
+  address       String?
+  passportId    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   sessions      Session[]
   accounts      Account[]
   members       Member[]
   invitations   Invitation[]
-  auditLogs     AuditLog[]
+  subscriptions Subscription[]
 
   @@map("user")
 }
 
-// Auditoría central: qué hace cada usuario y en QUÉ client (aplicación) lo hace.
-// La alimentan (a) los eventos de auth de este servicio y (b) las apps conectadas
-// vía POST /api/audit (con x-api-key). No hay FK a organización para no acoplar.
-model AuditLog {
-  id             String   @id @default(cuid())
-  userId         String?
-  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  organizationId String?                 // organización activa (si aplica)
-  clientId       String?                 // qué app: pedido | delivery | analitics | auth ...
-  action         String                  // "sign-in", "sign-out", "order.create", ...
-  resource       String?                 // sobre qué objeto (id/ruta), opcional
-  status         String   @default("success") // success | failure
-  ipAddress      String?
-  userAgent      String?
-  metadata       Json?                   // datos extra libres
-  createdAt      DateTime @default(now())
-
-  @@index([userId])
-  @@index([clientId])
-  @@index([action])
-  @@index([createdAt])
-  @@map("audit_log")
-}
-
 model Session {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   userId               String
-  token                String   @unique
+  token                String    @unique
   expiresAt            DateTime
   ipAddress            String?
   userAgent            String?
   activeOrganizationId String?
   clientId             String?
   revokedAt            DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }
@@ -112,6 +92,7 @@ model Organization {
   updatedAt   DateTime     @updatedAt
   members     Member[]
   invitations Invitation[]
+  roles       Role[]
 
   @@map("organization")
 }
@@ -125,24 +106,269 @@ model Member {
   updatedAt      DateTime     @updatedAt
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberRoles    MemberRole[]
 
   @@unique([userId, organizationId])
   @@map("member")
 }
 
 model Invitation {
-  id             String       @id @default(cuid())
-  organizationId String
-  email          String
-  role           String
-  status         String
-  tokenHash      String?
-  inviterId      String
-  expiresAt      DateTime
-  createdAt      DateTime     @default(now())
-  acceptedAt     DateTime?
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  id                 String       @id @default(cuid())
+  organizationId     String
+  email              String
+  role               String
+  status             String
+  tokenHash          String?
+  inviterId          String
+  expiresAt          DateTime
+  createdAt          DateTime     @default(now())
+  acceptedAt         DateTime?
+  roleId             String?
+  propertyIds        Json         @default("[]")
+  scopeAllProperties Boolean      @default(true)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter            User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@map("invitation")
+}
+
+// ── Subscription Plans ──────────────────────────────────
+
+model Plan {
+  id            String         @id @default(cuid())
+  key           String         @unique /// Stable identifier: "basic", "pro", "pro_plus"
+  name          String /// Display name: "Basic", "Pro", "Pro Plus"
+  description   String?
+  priceMonthly  Decimal        @default(0) @db.Decimal(10, 2) /// Monthly price in USD
+  priceYearly   Decimal        @default(0) @db.Decimal(10, 2) /// Yearly price in USD
+  features      Json           @default("{}") /// Flexible feature flags & limits (JSON)
+  sortOrder     Int            @default(0) /// Display ordering
+  isActive      Boolean        @default(true) /// Soft-disable without deleting
+  icon          String?
+  color         String?
+  popular       Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+
+  @@map("plan")
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  billingCycle       BillingCycle       @default(MONTHLY)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status])
+  @@map("subscription")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+// ── Identity Hub: Service-to-Service & API keys ──────────
+
+/// External application / microservice that delegates auth to qb-auth.
+/// `clientSecretHash` is currently unused (per-client signing keys are derived
+/// from SERVICE_AUTH_SECRET via HMAC). Reserved for future per-client static
+/// secrets (e.g. webhook-style signing).
+model ClientApp {
+  id                  String   @id @default(cuid())
+  clientId            String   @unique /// Stable identifier (e.g. "qb-booking")
+  name                String
+  description         String?
+  clientSecretHash    String? /// argon2id hash, optional
+  signingKeyVersion   Int      @default(1) /// bump to rotate the derived signing key
+  allowedCallbackUrls String[] @default([]) /// exact origin+path match
+  allowedDomains      String[] @default([]) /// host (or parent host) for returnTo
+  scopes              String[] @default([]) /// e.g. ['callback:create','session:verify']
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  apiKeys             ApiKey[]
+
+  @@map("client_app")
+}
+
+/// Owner custom domains that qb-auth trusts as SSO callback hosts.
+/// Manually created + verified + activated by an admin for now; the future
+/// per-property UI writes to this same table. The validation gate is `active`.
+model TenantDomain {
+  id         String   @id @default(cuid())
+  host       String   @unique /// host only, no scheme/path, lowercase (e.g. "dozzze-romeo.com")
+  clientId   String /// the ClientApp.clientId that serves this domain (e.g. "qb-sites")
+  propertyId String? /// optional link to a property (future)
+  verified   Boolean  @default(false) /// admin sets after confirming ownership
+  active     Boolean  @default(false) /// admin sets; ONLY active domains pass validation
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([clientId])
+  @@map("tenant_domain")
+}
+
+/// API key for human/script access. The plaintext key is shown once on
+/// creation and then only its argon2id hash is stored.
+model ApiKey {
+  id          String     @id @default(cuid())
+  prefix      String     @unique /// 8 hex chars, public lookup
+  hash        String /// argon2id of the secret part
+  name        String
+  scopes      String[]   @default([])
+  clientAppId String?
+  userId      String?
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  clientApp   ClientApp? @relation(fields: [clientAppId], references: [id], onDelete: SetNull)
+
+  @@index([clientAppId])
+  @@index([userId])
+  @@map("api_key")
+}
+
+/// Audit trail for security-relevant actions.
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String /// e.g. "callback.create", "auth.code.exchange", "session.revoke"
+  resource  String?
+  clientId  String?
+  userId    String?
+  ip        String?
+  ua        String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([clientId, createdAt])
+  @@index([userId, createdAt])
+  @@map("audit_log")
+}
+
+/// Asymmetric signing keypair used for RS256 JWTs and exposed via JWKS.
+/// Multiple non-revoked keys may exist simultaneously (rotation grace).
+/// The most recently created non-revoked, non-expired key is used to sign.
+model JwksKey {
+  id         String    @id @default(cuid())
+  kid        String    @unique /// JWKS key id (also kept in JWT header)
+  alg        String    @default("RS256")
+  publicPem  String    @db.Text
+  privatePem String    @db.Text /// stored encrypted-at-rest only by Postgres TDE; access via env-only
+  active     Boolean   @default(true) /// false = do not sign with this key (still verified)
+  revokedAt  DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([active, revokedAt])
+  @@map("jwks_key")
+}
+
+/// Runtime key-value store for system configuration (e.g. service URLs).
+/// Values here override env-var fallbacks so domain changes don't require redeployment.
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+// ── RBAC: Permissions / Roles ────────────────────────────
+
+model Permission {
+  id              String           @id @default(cuid())
+  key             String           @unique
+  resource        String
+  action          String
+  service         String
+  group           String
+  label           Json
+  description     Json?
+  isDeprecated    Boolean          @default(false)
+  rolePermissions RolePermission[]
+
+  @@map("permission")
+}
+
+model Role {
+  id             String           @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  color          String?
+  icon           String?
+  isSystem       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions    RolePermission[]
+  memberRoles    MemberRole[]
+
+  @@unique([organizationId, name])
+  @@map("role")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permission")
+}
+
+model MemberRole {
+  id                 String  @id @default(cuid())
+  memberId           String
+  roleId             String
+  scopeAllProperties Boolean @default(true)
+  propertyIds        Json    @default("[]")
+  member             Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role               Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, roleId])
+  @@map("member_role")
+}
+
+/// Evidence that a customer accepted the published legal terms before paying.
+/// Kept in qb-auth (the identity + checkout owner) and referenced by invoice /
+/// reservation id — those live in qb-back, so they are opaque strings here,
+/// never foreign keys (same posture as every other qb-back id in this schema).
+model TermsAcceptance {
+  id            String   @id @default(cuid())
+  authUserId    String
+  invoiceId     String?
+  reservationId String?
+  /// Version of the legal corpus accepted (COMPANY.termsVersion).
+  termsVersion  String
+  /// Slugs of the documents shown/accepted, e.g. ["condiciones","cancelaciones"].
+  documents     String[]
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([authUserId])
+  @@index([invoiceId])
+  @@map("terms_acceptances")
 }

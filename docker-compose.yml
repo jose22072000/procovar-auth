@@ -1,0 +1,51 @@
+services:
+  qb-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qb-auth
+    restart: unless-stopped
+    ports:
+      - "3500:3500"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - ROOT_DOMAIN=${ROOT_DOMAIN}
+      - BEARER_TOKEN=${BEARER_TOKEN}
+      - APP_NAME=${APP_NAME}
+      # APP_URL = el dominio de ESTE servicio. A los demás se les llama por su nombre.
+      - APP_URL=${APP_URL}
+      - SUPPORT_EMAIL=${SUPPORT_EMAIL}
+      - QB_BACKEND_URL=${QB_BACKEND_URL}
+      - QB_BOOKING_URL=${QB_BOOKING_URL}
+      - QB_PANEL_URL=${QB_PANEL_URL}
+      - QB_NOTIFY_URL=${QB_NOTIFY_URL}
+      - QB_NOTIFY_KEY_ID=${QB_NOTIFY_KEY_ID}
+      - QB_NOTIFY_SECRET=${QB_NOTIFY_SECRET}
+      - CALLBACK_SECRET=${CALLBACK_SECRET}
+      - SERVICE_AUTH_SECRET=${SERVICE_AUTH_SECRET}
+      - SERVICE_AUTH_MAX_SKEW=${SERVICE_AUTH_MAX_SKEW}
+      - QB_AUTH_JWKS_CACHE_TTL_SECONDS=${QB_AUTH_JWKS_CACHE_TTL_SECONDS}
+      - REDIS_MASTER_NAME=${REDIS_MASTER_NAME}
+      - REDIS_SENTINELS=${REDIS_SENTINELS}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB_DEFAULT=${REDIS_DB_DEFAULT}
+      - REDIS_DB_LOCKS=${REDIS_DB_LOCKS}
+      - REDIS_DB_SESSIONS=${REDIS_DB_SESSIONS}
+      - REDIS_DB_CACHE=${REDIS_DB_CACHE}
+      - REDIS_PREFIX=${REDIS_PREFIX}
+    networks:
+      - qb-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3500/api/auth/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  qb-network:
+    external: true

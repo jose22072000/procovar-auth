@@ -1,12 +1,14 @@
 import { Input, InternalForwardRefRenderFunction, type InputProps } from "@heroui/react"
 import React from "react";
 import { Icons } from "../icons/iconify";
+import { useTranslations } from "next-intl";
 
 export const InputPassword = ({ ...props }: InternalForwardRefRenderFunction<"input", InputProps>) => {
+    const t = useTranslations();
     const [isVisible, setIsVisible] = React.useState(false);
     const toggleVisibility = () => setIsVisible(!isVisible);
     return <Input endContent={<button
-        aria-label="toggle password visibility"
+        aria-label={t("common.togglePasswordVisibility")}
         className="focus:outline-solid outline-transparent"
         type="button"
         onClick={toggleVisibility}

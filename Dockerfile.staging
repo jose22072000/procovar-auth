@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1.7
+#######################################################################
+# STAGING / DEV Dockerfile — optimized for REBUILD SPEED, not image size
+#
+# Single stage on purpose. The prod multi-stage Dockerfile copies the full
+# ~500MB node_modules from builder -> runner; that cross-stage COPY is slower
+# than the Next build itself. Here node_modules is built once into the image
+# layer and reused via BuildKit cache — no copy step at all.
+#
+# Uses pnpm (faster install than npm) + node 24. Runs `next start` in place
+# (uses /app/.next + /app/node_modules directly) — standalone bundle never
+# copied/assembled. .npmrc sets node-linker=hoisted -> flat node_modules so
+# next start + Prisma resolve exactly like npm.
+#
+# Build:  DOCKER_BUILDKIT=1 docker build -f Dockerfile.staging -t qb-auth:staging .
+#######################################################################
+
+ARG NODE_VERSION=24-alpine
+FROM node:${NODE_VERSION}
+
+RUN apk add --no-cache libc6-compat tini \
+ && npm i -g pnpm@11.1.3
+WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production \
+    PORT=3500 \
+    HOSTNAME=0.0.0.0
+
+# --- deps: cached layer, only re-runs when package.json / lockfile change ---
+# --prod=false: NODE_ENV=production would skip devDeps, but typescript is
+# needed at build time to transpile next.config.ts.
+COPY package.json pnpm-lock.yaml .npmrc pnpm-workspace.yaml ./
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    CI=true pnpm install --frozen-lockfile --prod=false
+
+# --- source + build ---------------------------------------------------
+COPY . .
+RUN --mount=type=cache,target=/app/.next/cache \
+    pnpm exec prisma generate --config prisma.config.js \
+ && NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
+
+RUN chmod +x docker-entrypoint.staging.sh
+
+EXPOSE 3500
+ENTRYPOINT ["/sbin/tini", "--", "./docker-entrypoint.staging.sh"]

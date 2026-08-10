@@ -1,25 +1,126 @@
 import { betterAuth } from "better-auth";
-import { nextCookies } from 'better-auth/next-js';
+import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
+import {
+    notifyEmailVerification,
+    notifyForgotPassword,
+    notifyPasswordResetSuccess,
+    notifyWelcome,
+} from "./notifications";
+
+const APP_NAME = process.env.APP_NAME ?? "QB Auth";
+/**
+ * El dominio de ESTE servicio. Convención del ecosistema: la URL propia de cada
+ * microservicio se llama APP_URL; a los demás se les llama por su nombre
+ * (QB_AUTH_URL, QB_BACKEND_URL, QB_BOOKING_URL, QB_PANEL_URL, QB_SITE_URL).
+ *
+ * Se pasa a betterAuth() como `baseURL` (abajo) en vez de dejar que la librería lea
+ * BETTER_AUTH_URL por su cuenta: si no, harían falta DOS variables con el mismo valor.
+ */
+const APP_URL = process.env.APP_URL ?? "http://localhost:3500";
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? `support@${process.env.ROOT_DOMAIN ?? "localhost"}`;
+const LOGO_URL = process.env.NOTIFY_LOGO_URL;
+const PRIMARY_COLOR = process.env.NOTIFY_PRIMARY_COLOR ?? "#4F46E5";
+const EMAIL_VERIFICATION_EXPIRES_IN = 60 * 60; // 1 hour
+const RESET_PASSWORD_EXPIRES_IN = 60 * 60; // 1 hour
+
+/**
+ * Which client app the user came in through, read from the `qb.flow_state` cookie
+ * that /api/flow writes on an SSO entry. A direct login at qb-accounts has no
+ * client app, so this returns undefined and session.clientId stays null — the
+ * admin UI renders that as "Directo".
+ */
+const clientIdFromFlowCookie = (cookieHeader?: string | null): string | undefined => {
+    if (!cookieHeader) return undefined;
+    const raw = cookieHeader
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith('qb.flow_state='))
+        ?.slice('qb.flow_state='.length);
+    if (!raw) return undefined;
+    try {
+        const parsed = JSON.parse(decodeURIComponent(raw)) as { clientId?: unknown };
+        return typeof parsed.clientId === 'string' && parsed.clientId ? parsed.clientId : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+/**
+ * Client IP behind a proxy, for the "your password changed" security email.
+ * Same header order as `advanced.ipAddress.ipAddressHeaders` below, so the email
+ * and the stored session agree on which IP they report.
+ */
+const IP_HEADERS = ['cf-connecting-ip', 'x-real-ip', 'x-forwarded-for'] as const;
+
+const clientIpFrom = (request?: Request): string | undefined => {
+    if (!request) return undefined;
+    for (const header of IP_HEADERS) {
+        // x-forwarded-for is a comma-separated chain; the client is the first entry.
+        const value = request.headers.get(header)?.split(',')[0]?.trim();
+        if (value) return value;
+    }
+    return undefined;
+};
 
 export const auth = betterAuth({
+    baseURL: APP_URL,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
     emailAndPassword: {
         enabled: true,
+        requireEmailVerification: false, // Allow login, but show banner to verify
+        resetPasswordTokenExpiresIn: RESET_PASSWORD_EXPIRES_IN,
+        sendResetPassword: async ({ user, url }) => {
+            // Don't await - fire and forget to not block the flow
+            notifyForgotPassword({
+                email: user.email,
+                userId: user.id,
+                userName: user.name,
+                resetUrl: url,
+                expirationSeconds: RESET_PASSWORD_EXPIRES_IN,
+                appName: APP_NAME,
+                supportEmail: SUPPORT_EMAIL,
+                logoUrl: LOGO_URL,
+                primaryColor: PRIMARY_COLOR,
+            }).catch(() => {});
+        },
+        onPasswordReset: async ({ user }, request) => {
+            notifyPasswordResetSuccess({
+                email: user.email,
+                userId: user.id,
+                userName: user.name,
+                appName: APP_NAME,
+                loginUrl: APP_URL,
+                // Always send something: the template shows the IP in a security
+                // notice, and a missing required variable would reject the send.
+                ipAddress: clientIpFrom(request) ?? "Unknown",
+                supportEmail: SUPPORT_EMAIL,
+                logoUrl: LOGO_URL,
+                primaryColor: PRIMARY_COLOR,
+            }).catch(() => {});
+        },
     },
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID || '',
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+            // Update user info (name, image) on each sign-in
+            overrideUserInfoOnSignIn: true,
         },
     },
     advanced: {
         cookiePrefix: 'qb',
         useSecureCookies: process.env.NODE_ENV === 'production',
+        // Without this, better-auth only reads `x-forwarded-for` and discards it
+        // unless it parses as a bare IP — so behind Traefik (which also sets the
+        // cleaner `x-real-ip`) session.ipAddress was stored as null.
+        ipAddress: {
+            ipAddressHeaders: ['cf-connecting-ip', 'x-real-ip', 'x-forwarded-for'],
+        },
         crossSubDomainCookies: {
             enabled: true,
             domain: process.env.ROOT_DOMAIN || "localhost",
@@ -30,11 +131,104 @@ export const auth = betterAuth({
         nextCookies(),
         organization(),
     ],
+    emailVerification: {
+        sendVerificationEmail: async ({ user, url }) => {
+            notifyEmailVerification({
+                email: user.email,
+                userId: user.id,
+                userName: user.name,
+                verificationUrl: url,
+                expirationSeconds: EMAIL_VERIFICATION_EXPIRES_IN,
+                appName: APP_NAME,
+                supportEmail: SUPPORT_EMAIL,
+                logoUrl: LOGO_URL,
+                primaryColor: PRIMARY_COLOR,
+            }).catch(() => {});
+        },
+        afterEmailVerification: async (user) => {
+            notifyWelcome({
+                email: user.email,
+                userId: user.id,
+                userName: user.name,
+                appName: APP_NAME,
+                actionUrl: `${APP_URL}/profile`,
+                actionLabel: "Go to your profile",
+                supportEmail: SUPPORT_EMAIL,
+                logoUrl: LOGO_URL,
+                primaryColor: PRIMARY_COLOR,
+            }).catch(() => {});
+        },
+        sendOnSignUp: true,
+        sendOnSignIn: true,
+        autoSignInAfterVerification: true,
+        expiresIn: EMAIL_VERIFICATION_EXPIRES_IN,
+    },
+    databaseHooks: {
+        session: {
+            create: {
+                // Stamp the originating client app onto the session. The column
+                // existed but nothing ever wrote it, so the admin panel showed a
+                // dash for every session.
+                before: async (session, ctx) => {
+                    if (!ctx) return;
+                    const clientId = clientIdFromFlowCookie(ctx.headers?.get('cookie'));
+                    if (!clientId) return; // direct login at qb-accounts: no client app
+                    return { data: { ...session, clientId } };
+                },
+            },
+        },
+        user: {
+            create: {
+                after: async (user) => {
+                    // Send welcome email for social login users (already verified)
+                    // Fire and forget - don't block auth flow if notification fails
+                    if (user.emailVerified) {
+                        notifyWelcome({
+                            email: user.email,
+                            userId: user.id,
+                            userName: user.name,
+                            appName: APP_NAME,
+                            actionUrl: `${APP_URL}/profile`,
+                            actionLabel: "Go to your profile",
+                            supportEmail: SUPPORT_EMAIL,
+                            logoUrl: LOGO_URL,
+                            primaryColor: PRIMARY_COLOR,
+                        }).catch(() => {
+                            // Silently ignore notification errors
+                        });
+                    }
+                },
+            },
+        },
+    },
+    account: {
+        accountLinking: {
+            enabled: true,
+            // Update user profile (name, image) when linking a social account
+            updateUserInfoOnLink: true,
+        },
+    },
     user: {
         additionalFields: {
             isSystemAdmin: {
                 type: "boolean",
                 defaultValue: false,
+            },
+            phone: {
+                type: "string",
+                required: false,
+            },
+            nationality: {
+                type: "string",
+                required: false,
+            },
+            address: {
+                type: "string",
+                required: false,
+            },
+            passportId: {
+                type: "string",
+                required: false,
             },
         },
     },
@@ -48,6 +242,10 @@ export const auth = betterAuth({
                 type: "date",
                 required: false,
             },
+        },
+        cookieCache: {
+            enabled: true,
+            maxAge: 60 * 60, // 1 hour - cache session in cookie to avoid DB calls
         },
     },
 });

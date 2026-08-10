@@ -9,6 +9,7 @@ import { z } from "zod";
 import { signUp } from "@/server/auth.server";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const signUpSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -30,6 +31,7 @@ type SignUpSchema = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
     const router = useRouter();
+    const t = useTranslations();
     const [isVisible, setIsVisible] = React.useState(false);
     const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
 
@@ -78,7 +80,9 @@ export function SignUpForm() {
         if (!hasError) {
             reset();
             router.refresh();
-            router.push("/verify-email");
+            // Redirect URL is consumed and returned by the signUp server action
+            const redirectUrl = (response.data as { redirectUrl?: string } | undefined)?.redirectUrl || "/profile";
+            window.location.assign(redirectUrl);
         }
     };
 
@@ -86,9 +90,9 @@ export function SignUpForm() {
         try {
             await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/profile",
+                callbackURL: "/api/auth/callback",
             });
-        } catch (error) {
+        } catch {
             addToast({
                 title: "Error",
                 description: "Failed to connect to Google Sign In",
@@ -103,33 +107,33 @@ export function SignUpForm() {
                 <span aria-label="rocket" role="img">
                     <Icons.userPlus className="!size-10" />
                 </span>
-                <h1 className="text-4xl font-medium">Sign Up</h1>
+                <h1 className="text-4xl font-medium">{t('auth.signUp')}</h1>
             </div>
             <div className="flex flex-col items-center pb-6">
-                <p className="text-xl font-medium">Create an Account</p>
-                <p className="text-small ">Join us to get started</p>
+                <p className="text-xl font-medium">{t('auth.createAccount')}</p>
+                <p className="text-small ">{t('auth.joinUsToGetStarted')}</p>
             </div>
             <div className="flex flex-col gap-2">
                 <Button
-                    className="w-full font-semibold"
+                    className="w-full font-semibold border-[#0A2252]/70 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
                     startContent={<Icons.google className="!size-6" />}
                     variant="bordered"
                     size="lg"
                     onPress={handleGoogleSignIn}
                 >
-                    Sign up with Google
+                    {t('auth.signUpWithGoogle')}
                 </Button>
             </div>
             <div className="flex items-center gap-4 py-2">
                 <Divider className="flex-1" />
-                <p className="text-tiny  shrink-0">OR</p>
+                <p className="text-tiny  shrink-0">{t('auth.or')}</p>
                 <Divider className="flex-1" />
             </div>
             <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
                 <Input
                     isRequired
                     startContent={<Icons.userCircle className="!size-4" />}
-                    label="Full Name"
+                    label={t('auth.fullName')}
                     type="text"
                     variant="bordered"
                     autoComplete="name"
@@ -141,7 +145,7 @@ export function SignUpForm() {
                     isRequired
                     autoComplete="username"
                     startContent={<Icons.mailOutline className="!size-4" />}
-                    label="Email Address"
+                    label={t('auth.emailAddress')}
                     type="email"
                     variant="bordered"
                     isInvalid={!!errors.email}
@@ -164,7 +168,7 @@ export function SignUpForm() {
                             )}
                         </button>
                     }
-                    label="Password"
+                    label={t('auth.password')}
                     autoComplete="new-password"
                     type={isVisible ? "text" : "password"}
                     variant="bordered"
@@ -188,7 +192,7 @@ export function SignUpForm() {
                             )}
                         </button>
                     }
-                    label="Confirm Password"
+                    label={t('auth.confirmPassword')}
                     autoComplete="new-password"
                     type={isConfirmVisible ? "text" : "password"}
                     variant="bordered"
@@ -199,20 +203,20 @@ export function SignUpForm() {
 
                 {errors.root && <Alert color="danger" title={errors.root.message} />}
                 <Button
-                    className="w-full font-semibold"
-                    color="primary"
+                    className="w-full font-semibold border-[#0A2252] text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
+                    variant="bordered"
                     type="submit"
                     size="lg"
                     isLoading={isSubmitting}
                     startContent={!isSubmitting && <Icons.shieldKey className="!size-6" />}
                 >
-                    Sign Up
+                    {t('auth.signUp')}
                 </Button>
             </form>
             <p className="text-small text-center">
-                Already have an account?&nbsp;
-                <Link href="/" size="sm">
-                    Sign In
+                {t('auth.alreadyHaveAccount')}&nbsp;
+                <Link href="/" size="sm" className="text-primary-700 underline underline-offset-4">
+                    {t('auth.signIn')}
                 </Link>
             </p>
         </div>

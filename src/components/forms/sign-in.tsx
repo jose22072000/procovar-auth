@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "@/server/auth.server";
 import { authClient } from "@/lib/auth-client";
+import { useTranslations } from "next-intl";
 
 const signInSchema = z.object({
     email: z.string().email("Invalid email address format"),
@@ -25,6 +26,7 @@ type SignInSchema = z.infer<typeof signInSchema>;
 
 export function SignInForm({ savedEmail }: { savedEmail?: string }) {
     const [isVisible, setIsVisible] = React.useState(false);
+    const t = useTranslations();
 
     const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -65,15 +67,21 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 color: hasError ? "danger" : "success",
             })
         }
+        
+        if (!hasError) {
+            // Redirect URL is consumed and returned by the signIn server action
+            const redirectUrl = (response.data as { redirectUrl?: string } | undefined)?.redirectUrl || "/profile";
+            window.location.assign(redirectUrl);
+        }
     };
 
     const handleGoogleSignIn = async () => {
         try {
             await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/",
+                callbackURL: "/api/auth/callback",
             });
-        } catch (error) {
+        } catch {
             addToast({
                 title: "Error",
                 description: "Failed to connect to Google Sign In",
@@ -88,26 +96,26 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 <span aria-label="waving hand" role="img" className="text-4xl">
                     👋
                 </span>
-                <h1 className="text-4xl font-medium">Sign In</h1>
+                <h1 className="text-4xl font-medium">{t('auth.signIn')}</h1>
             </div>
             <div className="flex flex-col items-center pb-6">
-                <p className="text-xl font-medium">Welcome Back</p>
-                <p className="text-small ">Log in to your account to continue</p>
+                <p className="text-xl font-medium">{t('auth.welcomeBack')}</p>
+                <p className="text-small ">{t('auth.logInToContinue')}</p>
             </div>
             <div className="flex flex-col gap-2">
                 <Button
-                    className="w-full font-semibold"
+                    className="w-full font-semibold border-[#0A2252]/70 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
                     startContent={<Icons.google className="!size-6" />}
                     variant="bordered"
                     size="lg"
                     onPress={handleGoogleSignIn}
                 >
-                    Continue with Google
+                    {t('auth.continueWithGoogle')}
                 </Button>
             </div>
             <div className="flex items-center gap-4 py-2">
                 <Divider className="flex-1" />
-                <p className="text-tiny  shrink-0">OR</p>
+                <p className="text-tiny  shrink-0">{t('auth.or')}</p>
                 <Divider className="flex-1" />
             </div>
             <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
@@ -115,7 +123,7 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                     isRequired
                     autoComplete="username"
                     startContent={<Icons.mailOutline className="!size-4" />}
-                    label="Email Address"
+                    label={t('auth.emailAddress')}
                     type="email"
                     variant="bordered"
                     isInvalid={!!errors.email}
@@ -138,7 +146,7 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                             )}
                         </button>
                     }
-                    label="Password"
+                    label={t('auth.password')}
                     autoComplete="current-password"
                     type={isVisible ? "text" : "password"}
                     variant="bordered"
@@ -148,28 +156,28 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 />
                 <div className="flex w-full items-center justify-between px-1 py-2">
                     <Checkbox size="sm" {...register("remember")}>
-                        Remember me
+                        {t('auth.rememberMe')}
                     </Checkbox>
-                    <Link className="" href="/forgot-password" size="sm">
-                        Forgot password?
+                    <Link className="text-primary-700 underline underline-offset-4" href="/forgot-password" size="sm">
+                        {t('auth.forgotPassword')}
                     </Link>
                 </div>
                 {errors.root && <Alert color="danger" title={errors.root.message} />}
                 <Button
-                    className="w-full font-semibold"
-                    color="primary"
+                    className="w-full font-semibold border-[#0A2252] text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
+                    variant="bordered"
                     type="submit"
                     size="lg"
                     isLoading={isSubmitting}
                     startContent={!isSubmitting && <Icons.shieldKey className="!size-6" />}
                 >
-                    Sign In
+                    {t('auth.signIn')}
                 </Button>
             </form>
             <p className="text-small text-center">
-                Need to create an account?&nbsp;
-                <Link href="/sign-up" size="sm">
-                    Sign Up
+                {t('auth.needAccount')}&nbsp;
+                <Link href="/sign-up" size="sm" className="text-primary-700 underline underline-offset-4">
+                    {t('auth.signUp')}
                 </Link>
             </p>
         </div>
