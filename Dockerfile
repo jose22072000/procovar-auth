@@ -50,7 +50,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # deploy, y para eso hace falta el CLI y el cliente generado.
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# OJO: NO se copia `node_modules/.prisma`. Este esquema usa el generador nuevo
+# (`provider = "prisma-client"`), que escribe el cliente en `src/generated/prisma`
+# — la carpeta `.prisma` del generador viejo no llega a existir, y copiarla
+# rompe el build con "not found" sin decir por qué.
+COPY --from=builder --chown=nextjs:nodejs /app/src/generated/prisma ./src/generated/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 
