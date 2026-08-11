@@ -1,204 +1,226 @@
 import { heroui } from "@heroui/react";
+
+/**
+ * HeroUI vestido de Procovar.
+ *
+ * Esta aplicación usa HeroUI y las demás usan shadcn, pero **los valores son los
+ * mismos**: los de `procovar-theme.css` (skill `procovar-design`). Cambiar un
+ * color de la marca significa cambiarlo en los dos sitios — no hay forma de
+ * evitarlo mientras convivan dos librerías, así que lo que hay que evitar es
+ * que se separen sin que nadie lo note. Si tocas uno, toca el otro.
+ *
+ * Las escalas van de claro a oscuro alrededor del azul del isotipo, `#054C74`,
+ * que es el 600 de la escala y el valor por defecto.
+ *
+ * Radio 0 en todo: el isotipo es un cuadrado con un corchete abierto, puro
+ * ángulo recto, y una herramienta de trabajo se lee mejor como rejilla que como
+ * lista de pastillas.
+ */
 export default heroui({
-    prefix: "heroui", // prefix for themes variables
-    addCommonColors: false, // override common colors (e.g. "blue", "green", "pink").
-    defaultTheme: "light", // default theme from the themes object
-    defaultExtendTheme: "light", // default theme to extend on custom themes
+    prefix: "heroui",
+    addCommonColors: false,
+    defaultTheme: "light",
+    defaultExtendTheme: "light",
 
-    "themes": {
-        "light": {
-            "colors": {
-                "default": {
-                    "50": "#fafafa",
-                    "100": "#f4f4f5",
-                    "200": "#e4e4e7",
-                    "300": "#d4d4d8",
-                    "400": "#a1a1aa",
-                    "500": "#71717a",
-                    "600": "#52525b",
-                    "700": "#3f3f46",
-                    "800": "#27272a",
-                    "900": "#18181b",
-                    "foreground": "#000",
-                    "DEFAULT": "#71717a"
+    themes: {
+        light: {
+            colors: {
+                default: {
+                    50: "#f6f8f9",
+                    100: "#eef1f2",
+                    200: "#e3eaed",
+                    300: "#cbd6db",
+                    400: "#9aacb4",
+                    500: "#55646c",
+                    600: "#41505a",
+                    700: "#2f3c45",
+                    800: "#1e2a31",
+                    900: "#0f1518",
+                    foreground: "#0f1518",
+                    DEFAULT: "#55646c",
                 },
-                "primary": {
-                    "50": "#eff6ff",
-                    "100": "#dbeafe",
-                    "200": "#bfdbfe",
-                    "300": "#93c5fd",
-                    "400": "#60a5fa",
-                    "500": "#3b82f6",
-                    "600": "#2563eb",
-                    "700": "#1d4ed8",
-                    "800": "#1e40af",
-                    "900": "#1e3a8a",
-                    "foreground": "#fff",
-                    "DEFAULT": "#1e3a8a"
+                primary: {
+                    50: "#eff5f9",
+                    100: "#e7eff4",
+                    200: "#c3d8e5",
+                    300: "#8fb5cc",
+                    400: "#4e8bad",
+                    500: "#1a6a92",
+                    600: "#054c74",
+                    700: "#04405f",
+                    800: "#04324c",
+                    900: "#032637",
+                    foreground: "#ffffff",
+                    DEFAULT: "#054c74",
                 },
-                "secondary": {
-                    "50": "#eee4f8",
-                    "100": "#d7bfef",
-                    "200": "#bf99e5",
-                    "300": "#a773db",
-                    "400": "#904ed2",
-                    "500": "#7828c8",
-                    "600": "#6321a5",
-                    "700": "#4e1a82",
-                    "800": "#39135f",
-                    "900": "#240c3c",
-                    "foreground": "#fff",
-                    "DEFAULT": "#7828c8"
+                secondary: {
+                    50: "#f2f6f8",
+                    100: "#e7eff4",
+                    200: "#cfe0e9",
+                    300: "#a9c6d6",
+                    400: "#7ba5bd",
+                    500: "#5285a2",
+                    600: "#3b6a85",
+                    700: "#2b5168",
+                    800: "#1d3a4c",
+                    900: "#12262f",
+                    foreground: "#ffffff",
+                    DEFAULT: "#3b6a85",
                 },
-                "success": {
-                    "50": "#e2f8ec",
-                    "100": "#b9efd1",
-                    "200": "#91e5b5",
-                    "300": "#68dc9a",
-                    "400": "#40d27f",
-                    "500": "#17c964",
-                    "600": "#13a653",
-                    "700": "#0f8341",
-                    "800": "#0b5f30",
-                    "900": "#073c1e",
-                    "foreground": "#000",
-                    "DEFAULT": "#17c964"
+                success: {
+                    50: "#eff7f3",
+                    100: "#e7f2ed",
+                    200: "#c5e2d6",
+                    300: "#93cab2",
+                    400: "#4fa583",
+                    500: "#28855f",
+                    600: "#1d6a4a",
+                    700: "#17573d",
+                    800: "#12432f",
+                    900: "#0c2f21",
+                    foreground: "#ffffff",
+                    DEFAULT: "#1d6a4a",
                 },
-                "warning": {
-                    "50": "#fef4e4",
-                    "100": "#fce4bd",
-                    "200": "#fad497",
-                    "300": "#f9c571",
-                    "400": "#f7b54a",
-                    "500": "#f5a524",
-                    "600": "#ca881e",
-                    "700": "#9f6b17",
-                    "800": "#744e11",
-                    "900": "#4a320b",
-                    "foreground": "#000",
-                    "DEFAULT": "#f5a524"
+                warning: {
+                    50: "#fdf8ee",
+                    100: "#fbf2e2",
+                    200: "#f3e0bb",
+                    300: "#e6c684",
+                    400: "#cfa24a",
+                    500: "#a97723",
+                    600: "#8a5b12",
+                    700: "#734b0f",
+                    800: "#57390b",
+                    900: "#3d2708",
+                    foreground: "#ffffff",
+                    DEFAULT: "#8a5b12",
                 },
-                "danger": {
-                    "50": "#fef2f2",
-                    "100": "#fee2e2",
-                    "200": "#fecaca",
-                    "300": "#fca5a5",
-                    "400": "#f87171",
-                    "500": "#ef4444",
-                    "600": "#dc2626",
-                    "700": "#b91c1c",
-                    "800": "#991b1b",
-                    "900": "#7f1d1d",
-                    "foreground": "#fff",
-                    "DEFAULT": "#dc2626"
+                danger: {
+                    50: "#fdf1f1",
+                    100: "#fbecec",
+                    200: "#f3cfd1",
+                    300: "#e5a3a7",
+                    400: "#d0666d",
+                    500: "#bd3941",
+                    600: "#a81f26",
+                    700: "#8b1a20",
+                    800: "#6b1418",
+                    900: "#4b0e11",
+                    foreground: "#ffffff",
+                    DEFAULT: "#a81f26",
                 },
-                "background": "#ffffff",
-                "foreground": "#000000",
-                "content1": {
-                    "DEFAULT": "#ffffff",
-                    "foreground": "#000"
-                },
-                "content2": {
-                    "DEFAULT": "#f4f4f5",
-                    "foreground": "#000"
-                },
-                "content3": {
-                    "DEFAULT": "#e4e4e7",
-                    "foreground": "#000"
-                },
-                "content4": {
-                    "DEFAULT": "#d4d4d8",
-                    "foreground": "#000"
-                },
-                "focus": "#006FEE",
-                "overlay": "#ffffff"
-            }
+                background: "#f1f4f3",
+                foreground: "#0f1518",
+                divider: "#cbd6db",
+                focus: "#054c74",
+                content1: { DEFAULT: "#ffffff", foreground: "#0f1518" },
+                content2: { DEFAULT: "#f6f8f9", foreground: "#0f1518" },
+                content3: { DEFAULT: "#eef1f2", foreground: "#0f1518" },
+                content4: { DEFAULT: "#e3eaed", foreground: "#0f1518" },
+            },
         },
-        "dark": {
-            "colors": {                
-                "primary": {
-                    "50": "#002147",
-                    "100": "#003571",
-                    "200": "#00489b",
-                    "300": "#005cc4",
-                    "400": "#006fee",
-                    "500": "#2d88f1",
-                    "600": "#59a1f4",
-                    "700": "#86bbf7",
-                    "800": "#b3d4fa",
-                    "900": "#dfedfd",
-                    "foreground": "#fff",
-                    "DEFAULT": "#006fee"
-                },
-                "secondary": {
-                    "50": "#240c3c",
-                    "100": "#39135f",
-                    "200": "#4e1a82",
-                    "300": "#6321a5",
-                    "400": "#7828c8",
-                    "500": "#904ed2",
-                    "600": "#a773db",
-                    "700": "#bf99e5",
-                    "800": "#d7bfef",
-                    "900": "#eee4f8",
-                    "foreground": "#fff",
-                    "DEFAULT": "#7828c8"
-                },
-                "success": {
-                    "50": "#073c1e",
-                    "100": "#0b5f30",
-                    "200": "#0f8341",
-                    "300": "#13a653",
-                    "400": "#17c964",
-                    "500": "#40d27f",
-                    "600": "#68dc9a",
-                    "700": "#91e5b5",
-                    "800": "#b9efd1",
-                    "900": "#e2f8ec",
-                    "foreground": "#000",
-                    "DEFAULT": "#17c964"
-                },
-                "warning": {
-                    "50": "#4a320b",
-                    "100": "#744e11",
-                    "200": "#9f6b17",
-                    "300": "#ca881e",
-                    "400": "#f5a524",
-                    "500": "#f7b54a",
-                    "600": "#f9c571",
-                    "700": "#fad497",
-                    "800": "#fce4bd",
-                    "900": "#fef4e4",
-                    "foreground": "#000",
-                    "DEFAULT": "#f5a524"
-                },
-                "danger": {
-                    "50": "#7f1d1d",
-                    "100": "#991b1b",
-                    "200": "#b91c1c",
-                    "300": "#dc2626",
-                    "400": "#ef4444",
-                    "500": "#f87171",
-                    "600": "#fca5a5",
-                    "700": "#fecaca",
-                    "800": "#fee2e2",
-                    "900": "#fef2f2",
-                    "foreground": "#fff",
-                    "DEFAULT": "#ef4444"
-                },
-                "background": "#000000",
-                "foreground": "#ffffff",                
-                "overlay": "#000000"
-            }
-        }
-    },
-    "layout": {
-        "disabledOpacity": "0.6",
-        "radius": {
-            "small": "2px",
-            "medium": "2px",
-            "large": "2px"
-        }
-    }
 
+        dark: {
+            colors: {
+                default: {
+                    50: "#0f1a1f",
+                    100: "#16262e",
+                    200: "#1e323c",
+                    300: "#26383f",
+                    400: "#5b7078",
+                    500: "#94a6af",
+                    600: "#b3c2c9",
+                    700: "#cfdae0",
+                    800: "#e6edf0",
+                    900: "#f4f8f9",
+                    foreground: "#e6edf0",
+                    DEFAULT: "#94a6af",
+                },
+                primary: {
+                    50: "#0a1b24",
+                    100: "#102c3b",
+                    200: "#17415a",
+                    300: "#1f5b7c",
+                    400: "#2f7ba4",
+                    500: "#3d8fbb",
+                    600: "#4e9ec9",
+                    700: "#75b5d7",
+                    800: "#a2cee5",
+                    900: "#d0e7f2",
+                    foreground: "#04222f",
+                    DEFAULT: "#4e9ec9",
+                },
+                secondary: {
+                    50: "#0e1e26",
+                    100: "#16262e",
+                    200: "#1f3b48",
+                    300: "#2c5568",
+                    400: "#3f7590",
+                    500: "#5691ac",
+                    600: "#75aac1",
+                    700: "#9bc4d5",
+                    800: "#c2dde8",
+                    900: "#e3f0f5",
+                    foreground: "#04222f",
+                    DEFAULT: "#75aac1",
+                },
+                success: {
+                    50: "#0a1e17",
+                    100: "#10251d",
+                    200: "#17402f",
+                    300: "#1f5c43",
+                    400: "#2f8460",
+                    500: "#43a67c",
+                    600: "#67c39c",
+                    700: "#8fd6b7",
+                    800: "#b9e6d1",
+                    900: "#e0f4ea",
+                    foreground: "#08201a",
+                    DEFAULT: "#67c39c",
+                },
+                warning: {
+                    50: "#1c1509",
+                    100: "#241c0e",
+                    200: "#3d3016",
+                    300: "#5a461f",
+                    400: "#87692c",
+                    500: "#b08a3f",
+                    600: "#d9ae63",
+                    700: "#e5c68d",
+                    800: "#efdcb8",
+                    900: "#f8f0dd",
+                    foreground: "#241c0e",
+                    DEFAULT: "#d9ae63",
+                },
+                danger: {
+                    50: "#200f12",
+                    100: "#2a1418",
+                    200: "#48222a",
+                    300: "#68313b",
+                    400: "#9a4a56",
+                    500: "#c4666f",
+                    600: "#e4808a",
+                    700: "#eda4ac",
+                    800: "#f4c6cb",
+                    900: "#fae4e7",
+                    foreground: "#2a1418",
+                    DEFAULT: "#e4808a",
+                },
+                background: "#0b1418",
+                foreground: "#e6edf0",
+                divider: "#26383f",
+                focus: "#4e9ec9",
+                content1: { DEFAULT: "#111d23", foreground: "#e6edf0" },
+                content2: { DEFAULT: "#16262e", foreground: "#e6edf0" },
+                content3: { DEFAULT: "#1e323c", foreground: "#e6edf0" },
+                content4: { DEFAULT: "#26383f", foreground: "#e6edf0" },
+            },
+        },
+    },
+
+    layout: {
+        // Ángulos rectos en todo. Ver la explicación arriba.
+        radius: { small: "0px", medium: "0px", large: "0px" },
+        borderWidth: { small: "1px", medium: "1px", large: "2px" },
+    },
 });

@@ -1,57 +1,49 @@
 import { getCurrentUser } from "@/server/auth.server";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import { ProfileContent } from "@/components/profile/profile-content";
-import { resolveProfileRole } from "@/lib/role-resolver";
-import { fetchUserReservations, fetchUserInvoices } from "./_actions";
 
-export default async function ProfilePage({
-    searchParams,
-}: {
-    searchParams: Promise<{ view?: string }>;
-}) {
+export const dynamic = "force-dynamic";
+
+/**
+ * Mi cuenta.
+ *
+ * Antes esto traía las reservas y las facturas de la persona para calcular
+ * "estancias activas", "completadas" y "gasto total" — del negocio de
+ * alojamientos del que salió este código. Aquí no hay ni reservas ni facturas:
+ * lo que define a alguien es en qué sucursales trabaja y con qué rol.
+ *
+ * Tampoco redirige ya al panel. Un Super Admin también tiene cuenta propia y
+ * tiene que poder ver la suya sin que se lo lleven a otra pantalla.
+ */
+export default async function ProfilePage() {
     const { data: user } = await getCurrentUser();
     if (!user) redirect("/");
 
-    const params = await searchParams;
-    const role = await resolveProfileRole({
-        id: user.id,
-        isSystemAdmin: user.isSystemAdmin ?? false,
-        members: (user as any).members ?? [],
+    const miembros = await prisma.member.findMany({
+        where: { userId: user.id },
+        select: {
+            organization: { select: { name: true, metadata: true } },
+            memberRoles: { select: { role: { select: { name: true } } } },
+        },
+        orderBy: { createdAt: "asc" },
     });
 
-    // Admins default to their dashboard, but can preview the client view with
-    // ?view=client (same user acts as all 3 roles during testing).
-    if (role === "admin" && params.view !== "client") redirect("/dashboard");
-    if ((role === "org-full" || role === "org-restricted") && params.view !== "client") {
-        redirect("/profile/org");
-    }
+    const pertenencias = miembros.map((m) => {
+        // El código de la sucursal (CAM, HOL…) va en `metadata` como JSON. Es lo
+        // que la gente reconoce de un vistazo, mucho antes que el nombre largo.
+        let codigo: string | null = null;
+        try {
+            codigo = JSON.parse(m.organization.metadata ?? "{}").codigo ?? null;
+        } catch {
+            codigo = null;
+        }
+        return {
+            sucursal: m.organization.name,
+            codigo,
+            roles: m.memberRoles.map((r) => r.role.name),
+        };
+    });
 
-    const panelUrl = process.env.QB_PANEL_URL ?? "https://panel.hostravel.net";
-    const [resResult, invResult] = await Promise.all([
-        fetchUserReservations(),
-        fetchUserInvoices(),
-    ]);
-
-    const reservations = resResult.data ?? [];
-    const invoices = invResult.data ?? [];
-
-    const activeCount = reservations.filter(
-        (r) => r.status === "CONFIRMED" || r.status === "CHECKED_IN"
-    ).length;
-    const completedCount = reservations.filter((r) => r.status === "CHECKED_OUT").length;
-    const totalSpentCents = invoices
-        .filter((inv) => inv.status === "PAID")
-        .reduce((sum, inv) => sum + inv.amount, 0);
-
-    const hasOrg = role === "org-full" || role === "org-restricted";
-
-    return (
-        <ProfileContent
-            user={user}
-            kpiData={{ activeCount, completedCount, totalSpentCents }}
-            showUpgradeCta={!hasOrg}
-            isOwnerViewingAsClient={hasOrg}
-            panelUrl={panelUrl}
-        />
-    );
+    return <ProfileContent user={user} pertenencias={pertenencias} />;
 }

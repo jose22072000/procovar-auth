@@ -1,198 +1,112 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import {
-    Navbar,
-    NavbarBrand,
-    NavbarContent,
-    NavbarItem,
-    Link,
-    NavbarProps,
-    cn,
-    NavbarMenu,
-    NavbarMenuItem,
-    NavbarMenuToggle,
-} from "@heroui/react";
+import { Navbar, NavbarBrand, NavbarContent, Link, NavbarProps } from "@heroui/react";
 import { Icons } from "@/components/icons/iconify";
 import { useNavbarBasic } from "./useNavbarBasic";
 import { UserNavbarBasic } from "./userNavbarBasic";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import { setLocale } from "@/server/locale.server";
 import type { Locale } from "@/i18n/config";
 import { NotificationBell } from "./notification-bell";
 
-type NavBarBasicProps = Omit<NavbarProps, "children"> & { bookingUrl?: string; panelUrl?: string };
+type NavBarBasicProps = Omit<NavbarProps, "children">;
 
-export const NavBarBasic = ({ bookingUrl: bookingUrlProp, panelUrl: panelUrlProp, ...props }: NavBarBasicProps) => {
+/**
+ * La barra de arriba.
+ *
+ * Esto es el centro de accesos: se entra, se sale y se gestiona la cuenta. No
+ * hay adónde navegar desde aquí, así que la barra no lleva menú — solo la marca,
+ * el idioma, los avisos y la persona. Antes tenía "buscar alojamientos", "sobre
+ * nosotros" y "publicar propiedad", que eran de la web de reservas del producto
+ * del que salió este código y apuntaban a sitios que aquí no existen.
+ */
+export const NavBarBasic = ({ ...props }: NavBarBasicProps) => {
     const { isMenuOpen, setIsMenuOpen } = useNavbarBasic();
-    const pathName = usePathname();
     const t = useTranslations();
     const lang = useLocale() as Locale;
-    // Server action: writes the NEXT_LOCALE cookie and revalidates the layout,
-    // so server-rendered text switches too.
     const setLang = (l: Locale) => { void setLocale(l); };
     const [langOpen, setLangOpen] = useState(false);
     const langRef = useRef<HTMLDivElement>(null);
 
-    const bookingUrl = bookingUrlProp ?? '/';
-    const panelUrl = panelUrlProp ?? 'https://qb-dashboard.hostravel.net';
-
-    const handleStaysClick = (e: React.MouseEvent) => {
-        e.preventDefault();
-        window.location.href = bookingUrl;
-    };
-
     useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (langRef.current && !langRef.current.contains(e.target as Node)) {
-                setLangOpen(false);
-            }
+        const fuera = (e: MouseEvent) => {
+            if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
         };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("mousedown", fuera);
+        return () => document.removeEventListener("mousedown", fuera);
     }, []);
-
-    // Buscar alojamientos, sobre nosotros, contacto y publicar propiedad son de la
-    // web de reservas de QuickBook. Procovar no tiene esa web: apuntaban a un sitio
-    // que aqui no existe.
-    //
-    // Esta pantalla es solo el centro de identidad — se entra, se sale y se
-    // gestiona la cuenta. No hay adonde navegar desde aqui, asi que la barra se
-    // queda con el logo y el menu de la persona.
-    const navItems: Array<{ id: string; label: string; icon: typeof Icons.bed; href: string }> = [];
 
     return (
         <Navbar
             maxWidth="full"
-            className="bg-[#0A2252] fixed top-0 left-0 right-0 z-50 py-3 md:py-4"
-            classNames={{
-                wrapper: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 lg:h-14",
-            }}
+            className="bg-pv-azul-hondo fixed top-0 left-0 right-0 z-50"
+            classNames={{ wrapper: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14" }}
             {...props}
             onMenuOpenChange={setIsMenuOpen}
             isMenuOpen={isMenuOpen}
         >
             <NavbarContent as="div" justify="start">
-                <div className="flex justify-center items-center lg:hidden">
-                    <NavbarMenuToggle
-                        aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-                        className="size-8"
-                    />
-                </div>
-                <NavbarBrand as={Link} href="/" className="mr-4 w-fit max-w-fit flex items-center gap-2">
+                <NavbarBrand as={Link} href="/" className="w-fit max-w-fit items-center gap-2.5">
+                    {/* El isotipo en pantallas pequeñas, el logotipo entero a
+                        partir de tableta: el nombre completo no cabe en un móvil
+                        sin comerse el sitio de los avisos y la cuenta. */}
                     <Image
-                        src="/hostravel-icon.png"
-                        alt="Hostravel icon"
-                        width={40}
-                        height={42}
-                        className="block lg:hidden h-11 w-auto object-contain"
+                        src="/logo-512.png"
+                        alt=""
+                        width={30}
+                        height={30}
+                        className="h-7 w-7 rounded-[2px] object-contain sm:hidden"
                         priority
                     />
                     <Image
-                        src="/hostravel-logo.png"
-                        alt="Hostravel"
-                        width={190}
-                        height={52}
-                        className="hidden lg:block h-14 w-auto object-contain"
+                        src="/logo.png"
+                        alt="Procovar"
+                        width={168}
+                        height={34}
+                        className="hidden h-6 w-auto object-contain sm:block"
                         priority
                     />
+                    <span className="hidden text-[11px] font-medium uppercase tracking-[0.16em] text-white/55 md:inline">
+                        {t("navbar.section")}
+                    </span>
                 </NavbarBrand>
-                <NavbarContent justify="center" className="hidden lg:flex gap-0 lg:flex-grow lg:flex-1">
-                    {navItems.map((item) => (
-                        <NavbarItem key={item.id} isActive={pathName === item.href}>
-                            {item.id === "stays" ? (
-                                <button
-                                    type="button"
-                                    onClick={handleStaysClick}
-                                    className={cn(
-                                        "font-semibold flex items-center justify-center gap-2 rounded-sm px-4 py-2 border border-transparent hover:bg-white/10 hover:border-white/25 text-white",
-                                    )}
-                                >
-                                    <item.icon className="size-5" />
-                                    {item.label}
-                                </button>
-                            ) : (
-                                <Link
-                                    className={cn(
-                                        "font-semibold flex items-center justify-center gap-2 rounded-sm px-4 py-2 border border-transparent hover:bg-white/10 hover:border-white/25 text-white",
-                                        pathName === item.href && "font-bold bg-white/10 border-white/25"
-                                    )}
-                                    href={item.href}
-                                >
-                                    <item.icon className="size-5" />
-                                    {item.label}
-                                </Link>
-                            )}
-                        </NavbarItem>
-                    ))}
-                </NavbarContent>
             </NavbarContent>
 
-            <NavbarContent as="div" className="items-center w-fit max-w-fit gap-4" justify="end">
-                <div className="relative" ref={langRef}>
+            <NavbarContent as="div" justify="end" className="gap-1.5">
+                <div ref={langRef} className="relative">
                     <button
                         type="button"
-                        className="inline-flex h-10 w-auto min-w-[30px] items-center gap-1.5 rounded-sm border border-white/25 bg-transparent px-[6px] font-semibold text-white hover:bg-white/10"
-                        style={{ minWidth: "30px", paddingInline: "6px" }}
-                        aria-label="Switch language"
+                        onClick={() => setLangOpen((v) => !v)}
                         aria-expanded={langOpen}
-                        onClick={() => setLangOpen((o) => !o)}
+                        aria-label={t("navbar.language")}
+                        className="flex items-center gap-1 rounded-[3px] px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                     >
-                        {lang.toUpperCase()}
-                        <Icons.chevronDown className={cn("size-4 transition-transform", langOpen && "rotate-180")} />
+                        {lang}
+                        <Icons.chevronDown className="size-3.5" />
                     </button>
                     {langOpen && (
-                        <div className="absolute right-0 mt-1 bg-[#0A2252] border border-white/20 rounded-md shadow-xl z-[200] min-w-[150px] overflow-hidden">
-                            {(["en", "es"] as const).map((l) => (
+                        <div className="absolute right-0 top-full mt-1 min-w-[104px] overflow-hidden rounded-[3px] border border-pv-trazo bg-pv-blanco py-1 shadow-lg">
+                            {(["es", "en"] as Locale[]).map((l) => (
                                 <button
                                     key={l}
                                     type="button"
                                     onClick={() => { setLang(l); setLangOpen(false); }}
-                                    className={cn(
-                                        "w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10 flex items-center justify-between gap-2",
-                                        lang === l && "bg-white/5 font-semibold"
-                                    )}
+                                    className={
+                                        "block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-pv-azul-tinte " +
+                                        (l === lang ? "font-semibold text-pv-azul" : "text-pv-tinta")
+                                    }
                                 >
-                                    <span>{l === "en" ? "EN — English" : "ES — Español"}</span>
-                                    {lang === l && <Icons.checkCircle className="size-4 opacity-60" />}
+                                    {l === "es" ? "Español" : "English"}
                                 </button>
                             ))}
                         </div>
                     )}
                 </div>
+
                 <NotificationBell />
                 <UserNavbarBasic />
             </NavbarContent>
-            <NavbarMenu className="bg-[#0A2252]/95 backdrop-blur-md">
-                {navItems.map((item) => (
-                    <NavbarMenuItem key={item.id} isActive={pathName === item.href}>
-                        {item.id === "stays" ? (
-                            <button
-                                type="button"
-                                onClick={handleStaysClick}
-                                className={cn(
-                                    "font-semibold flex items-center justify-start gap-2 rounded-sm px-2 py-4 text-white w-full"
-                                )}
-                            >
-                                <item.icon className="size-5" />
-                                {item.label}
-                            </button>
-                        ) : (
-                            <Link
-                                className={cn(
-                                    "font-semibold flex items-center justify-start gap-2 rounded-sm px-2 py-4 text-white",
-                                    pathName === item.href && "font-bold"
-                                )}
-                                href={item.href}
-                            >
-                                <item.icon className="size-5" />
-                                {item.label}
-                            </Link>
-                        )}
-                    </NavbarMenuItem>
-                ))}
-            </NavbarMenu>
         </Navbar>
     );
 };

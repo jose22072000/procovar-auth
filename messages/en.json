@@ -81,7 +81,11 @@
   "profile": {
     "emailVerified": "Email Verified",
     "emailNotVerified": "Email not verified",
-    "settings": "My profile"
+    "settings": "My profile",
+    "title": "My account",
+    "myBranches": "Where I work",
+    "noBranches": "You are not in any sucursal yet. Ask an administrator.",
+    "superAdminScope": "Super Admin: you see and manage all eight sucursales. You do not belong to any one of them."
   },
   "cards": {
     "viewAll": "View all",
@@ -1037,5 +1041,9 @@
       "title": "API Keys & Service Clients",
       "subtitle": "Manage every credential that the qb-auth Identity Hub issues — HMAC signing keys for backend microservices, opaque API keys for third parties, and the scope catalog that defines what each credential is allowed to do."
     }
+  },
+  "navbar": {
+    "section": "Access",
+    "language": "Language"
   }
 }

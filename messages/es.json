@@ -81,7 +81,11 @@
   "profile": {
     "emailVerified": "Email verificado",
     "emailNotVerified": "Email no verificado",
-    "settings": "Mi perfil"
+    "settings": "Mi perfil",
+    "title": "Mi cuenta",
+    "myBranches": "Dónde trabajo",
+    "noBranches": "Todavía no estás en ninguna sucursal. Pídeselo a un administrador.",
+    "superAdminScope": "Super Admin: ves y gestionas las ocho sucursales. No perteneces a ninguna en concreto."
   },
   "cards": {
     "viewAll": "Ver todo",
@@ -1037,5 +1041,9 @@
       "title": "API Keys y Clientes de Servicio",
       "subtitle": "Gestiona todas las credenciales que emite el Identity Hub de qb-auth — claves de firma HMAC para microservicios backend, API keys opacas para terceros, y el catálogo de scopes que define qué puede hacer cada credencial."
     }
+  },
+  "navbar": {
+    "section": "Accesos",
+    "language": "Idioma"
   }
 }
