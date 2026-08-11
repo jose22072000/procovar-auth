@@ -3,6 +3,8 @@ import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
+import { compare as bcryptCompare } from "bcryptjs";
+import { hashPassword as hashPorDefecto, verifyPassword as verificarPorDefecto } from "better-auth/crypto";
 import {
     notifyEmailVerification,
     notifyForgotPassword,
@@ -73,6 +75,26 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: false, // Allow login, but show banner to verify
+        /**
+         * Comprobar la contraseña sabiendo leer los dos formatos.
+         *
+         * Las cuentas que vienen de PEDIDO y de delivery traen su contraseña
+         * cifrada con bcrypt (`$2a$`, `$2b$`, `$2y$`); las que nacen aquí usan el
+         * cifrado propio de better-auth. Traer a alguien a este sistema no puede
+         * significar quitarle la contraseña que lleva años usando.
+         *
+         * No es mantener dos sistemas: es SABER LEER lo que ya existe. Lo que se
+         * escribe es siempre lo nuestro —`hash` no cambia—, así que en cuanto
+         * alguien cambie su contraseña, su cuenta pasa al formato de la casa
+         * sola. El día que no quede ninguna bcrypt, esto se borra.
+         */
+        password: {
+            hash: hashPorDefecto,
+            verify: async ({ hash, password }) => {
+                if (/^\$2[aby]\$/.test(hash)) return bcryptCompare(password, hash);
+                return verificarPorDefecto({ hash, password });
+            },
+        },
         resetPasswordTokenExpiresIn: RESET_PASSWORD_EXPIRES_IN,
         sendResetPassword: async ({ user, url }) => {
             // Don't await - fire and forget to not block the flow
