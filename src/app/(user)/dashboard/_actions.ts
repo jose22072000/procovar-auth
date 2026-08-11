@@ -277,7 +277,15 @@ export async function revokeAllUserSessions(userId: string): Promise<{ error?: s
 
 export async function removeOrgMember(memberId: string): Promise<{ error?: string }> {
     try {
-        const actor = await requireAdmin();
+        // Se lee el miembro ANTES de comprobar el permiso: hace falta saber de
+        // que sucursal es para poder comprobar si quien pide manda en ella.
+        const previo = await prisma.member.findUnique({
+            where: { id: memberId },
+            select: { organizationId: true },
+        });
+        if (!previo) return { error: "Miembro no encontrado" };
+        const actor = await exigirEnSucursal(previo.organizationId, "member.remove");
+
         const member = await prisma.member.findUnique({
             where: { id: memberId },
             include: { user: { select: { email: true } }, organization: { select: { name: true } } },
@@ -312,13 +320,27 @@ export async function removeOrgMember(memberId: string): Promise<{ error?: strin
 
 export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Promise<{ error?: string }> {
     try {
-        await requireAdmin();
         const member = await prisma.member.findUnique({ where: { id: memberId } });
         if (!member) return { error: "Miembro no encontrado" };
+        const actor = await exigirEnSucursal(member.organizationId, "member.assignRole");
+
         // El catálogo de roles es de toda Procovar: basta con que el rol exista.
         // Lo que ata a la persona a su sucursal es el miembro, no el rol.
-        const valid = await prisma.role.findMany({ where: { id: { in: roleIds } }, select: { id: true } });
+        const valid = await prisma.role.findMany({
+            where: { id: { in: roleIds } },
+            select: { id: true, permissions: { select: { permission: { select: { key: true } } } } },
+        });
         if (valid.length !== roleIds.length) return { error: "Rol inválido" };
+
+        // Nadie reparte un rol que no podria usar el mismo. Sin esto, un
+        // Administrador se asciende dandole Super Admin a una cuenta suya.
+        const rbacActor = await resolveRbac(actor.id, member.organizationId);
+        const claves = valid.flatMap((r) =>
+            r.permissions.map((p) => p.permission?.key).filter((k): k is string => Boolean(k)),
+        );
+        if (ungrantablePermissionKeys(rbacActor, claves).length) {
+            return { error: "No puedes dar un rol con permisos que tú no tienes." };
+        }
         const existing = await prisma.memberRole.findMany({ where: { memberId }, select: { roleId: true } });
         const have = new Set(existing.map((r) => r.roleId));
         const want = new Set(roleIds);
@@ -331,7 +353,7 @@ export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Pr
         audit({
             action: "member.roles",
             resource: memberId,
-            userId: (await getCurrentUser()).data?.id ?? null,
+            userId: actor.id,
             meta: { roles: roleIds.length },
         });
         revalidatePath("/dashboard");

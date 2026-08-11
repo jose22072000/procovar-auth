@@ -1045,5 +1045,9 @@
   "navbar": {
     "section": "Access",
     "language": "Language"
+  },
+  "orgPage": {
+    "title": "My sucursal",
+    "subtitle": "The people in your sucursal and what each of them can do."
   }
 }

@@ -1,74 +1,90 @@
-import { getCurrentUser } from "@/server/auth.server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { resolveProfileRole } from "@/lib/role-resolver";
 import { prisma } from "@/lib/prisma";
-import { OrgProfileView } from "@/components/profile/org-view";
-import { OrgEventsRefresher } from "@/components/profile/org-view/org-events-refresher";
-import type { Member } from "@/components/full-user-provider";
+import { auth } from "@/lib/auth";
+import { resolveRbac } from "@/rbac/resolve-permissions";
+import { can } from "@/rbac/can";
+import { OrgsManager } from "@/components/admin/orgs-manager.component";
+import { getTranslations } from "next-intl/server";
 
-export default async function OrgProfilePage() {
-    const { data: user } = await getCurrentUser();
-    if (!user) redirect("/");
+export const dynamic = "force-dynamic";
 
-    let members: Member[] = ((user as any).members as Member[] | undefined) ?? [];
-    if (members.length === 0) {
-        const dbMembers = await prisma.member.findMany({
-            where: { userId: user.id },
+/**
+ * Mi sucursal — la pantalla del Administrador.
+ *
+ * Es la MISMA pantalla que usa el Super Admin en el panel, alimentada solo con
+ * las sucursales de esta persona. No es una copia recortada a propósito: una
+ * segunda pantalla parecida acabaría divergiendo, y el día que se añada algo a
+ * una, la otra se quedaría atrás sin que nadie lo notara.
+ *
+ * Lo que de verdad protege son las comprobaciones del servidor: cada acción
+ * (`anadirPersona`, `removeOrgMember`, `setOrgMemberRoles`) vuelve a resolver el
+ * permiso EN esa sucursal. Traer aquí solo las suyas es comodidad, no
+ * seguridad — cambiar un identificador en la petición no sirve de nada.
+ */
+export default async function MiSucursalPage() {
+    const t = await getTranslations();
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) redirect("/");
+
+    // El Super Admin tiene el panel entero: mandarlo aquí sería enseñarle una
+    // versión más pobre de lo que ya tiene.
+    if (session.user.isSystemAdmin) redirect("/dashboard/organizations");
+
+    const miembros = await prisma.member.findMany({
+        where: { userId: session.user.id },
+        select: { organizationId: true },
+    });
+
+    // Solo las sucursales donde de verdad puede ver a la gente. Un Gestor es
+    // miembro de una sucursal y no tiene nada que hacer en esta pantalla.
+    const permitidas: string[] = [];
+    for (const m of miembros) {
+        const rbac = await resolveRbac(session.user.id, m.organizationId);
+        if (can(rbac, "member.read")) permitidas.push(m.organizationId);
+    }
+
+    if (permitidas.length === 0) redirect("/profile");
+
+    const [roles, orgs] = await Promise.all([
+        prisma.role.findMany({
+            orderBy: { name: "asc" },
+            select: { id: true, name: true, color: true, icon: true, isSystem: true },
+        }),
+        prisma.organization.findMany({
+            where: { id: { in: permitidas } },
+            orderBy: { name: "asc" },
             select: {
-                id: true,
-                role: true,
-                organizationId: true,
-                createdAt: true,
-                organization: {
+                id: true, name: true, slug: true, logo: true,
+                members: {
                     select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        logo: true,
-                        metadata: true,
-                        createdAt: true,
+                        id: true, userId: true, role: true,
+                        user: { select: { name: true, email: true } },
+                        memberRoles: { select: { roleId: true } },
                     },
                 },
             },
-        });
-        members = dbMembers.map((m) => ({
-            ...m,
-            createdAt: m.createdAt.toISOString(),
-            organization: {
-                ...m.organization,
-                createdAt: m.organization.createdAt.toISOString(),
-            },
-        }));
-    }
+        }),
+    ]);
 
-    const role = await resolveProfileRole({
-        id: user.id,
-        isSystemAdmin: user.isSystemAdmin ?? false,
-        members: members.map((m) => ({ role: m.role, organizationId: m.organizationId })),
-    });
-
-    // Admins may preview the owner view (they reach it from the account switcher).
-    // A client with no org is bounced to their personal profile.
-    if (role === "client") redirect("/profile");
-
-    // Sin propietarios, sin saldos y sin reservas: eso era el negocio de
-    // alojamientos de QuickBook. En Procovar una organizacion son SUCURSALES y
-    // PERSONAS, y lo que importa de cada persona es su rol en cada aplicacion.
-    const orgs = members.map((m) => ({
-        id: m.organization.id,
-        name: m.organization.name,
-        slug: m.organization.slug,
+    const data = orgs.map((o) => ({
+        id: o.id, name: o.name, slug: o.slug, logo: o.logo,
+        memberCount: o.members.length,
+        roles,
+        members: o.members.map((m) => ({
+            memberId: m.id, userId: m.userId, name: m.user.name, email: m.user.email,
+            legacyRole: m.role, roleIds: m.memberRoles.map((r) => r.roleId),
+        })),
     }));
 
     return (
-        <>
-            {/* Real-time: refresh this view when any reservation/payout changes in an owned org. */}
-            {orgs.map((o) => (
-                <OrgEventsRefresher key={o.id} orgId={o.id} />
-            ))}
-            <OrgProfileView
-                user={{ id: user.id, name: user.name, email: user.email, image: user.image ?? null, emailVerified: user.emailVerified }}
-            />
-        </>
+        <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
+            <div>
+                <p className="pv-rotulo">{t("navbar.section")}</p>
+                <h1 className="pv-titulo text-2xl">{t("orgPage.title")}</h1>
+                <p className="mt-1 text-sm text-pv-tinta-suave">{t("orgPage.subtitle")}</p>
+            </div>
+            <OrgsManager initialOrgs={data} />
+        </div>
     );
 }
