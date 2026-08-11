@@ -433,9 +433,12 @@ input:-webkit-autofill:focus {
 
 /* Tarjetas y modales: una línea y ninguna sombra difusa. La sombra de la
    librería es de aplicación de consumo; aquí la jerarquía la marca la línea. */
-[data-slot="base"].shadow-medium,
-[data-slot="base"].shadow-small,
-[data-slot="base"].shadow-large {
+/* OJO: acotado a las tarjetas. Antes decía `[data-slot="base"]` a secas y eso
+   alcanza también al contenedor de un campo, así que cada campo salía con DOS
+   recuadros: el suyo y este. Justo el defecto que se quería quitar. */
+[data-slot="base"]:has(> [data-slot="body"]).shadow-medium,
+[data-slot="base"]:has(> [data-slot="body"]).shadow-small,
+[data-slot="base"]:has(> [data-slot="body"]).shadow-large {
   box-shadow: none !important;
   border: 1px solid var(--border-soft) !important;
 }

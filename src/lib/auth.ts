@@ -261,15 +261,9 @@ export const auth = betterAuth({
                 type: "string",
                 required: false,
             },
-            nationality: {
-                type: "string",
-                required: false,
-            },
-            address: {
-                type: "string",
-                required: false,
-            },
-            passportId: {
+            // Nombre de usuario, para poder entrar sin correo. Va aquí porque
+            // better-auth solo lee del usuario los campos que se le declaran.
+            username: {
                 type: "string",
                 required: false,
             },

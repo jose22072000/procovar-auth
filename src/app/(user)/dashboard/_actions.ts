@@ -176,13 +176,13 @@ export async function adminDeleteUser(userId: string): Promise<{ error?: string 
 
 export async function updateUserProfile(
     userId: string,
-    data: { name?: string; phone?: string | null; nationality?: string | null; address?: string | null; passportId?: string | null },
+    data: { name?: string; phone?: string | null },
 ): Promise<{ error?: string }> {
     try {
         await requireAdmin();
         if (data.name !== undefined && data.name.trim() === "") return { error: "El nombre no puede estar vacío" };
         const patch: Record<string, unknown> = {};
-        for (const k of ["name", "phone", "nationality", "address", "passportId"] as const) {
+        for (const k of ["name", "phone"] as const) {
             if (k in data) patch[k] = data[k];
         }
         await prisma.user.update({ where: { id: userId }, data: patch });
