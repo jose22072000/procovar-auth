@@ -137,14 +137,10 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 </Link>
             </div>
 
-            {errors.root && (
-                <p
-                    role="alert"
-                    className="border-l-2 border-pv-cuno bg-pv-cuno/5 px-3 py-2.5 text-sm text-pv-cuno"
-                >
-                    {errors.root.message}
-                </p>
-            )}
+            {/* El fallo se enseña UNA vez, en el aviso emergente. Antes salía
+                también aquí dentro: el mismo texto dos veces en la misma
+                pantalla, y el de arriba empujaba el botón hacia abajo justo
+                cuando alguien va a volver a pulsarlo. */}
 
             <Button
                 className="pv-toque w-full bg-pv-azul font-semibold text-white data-[hover=true]:bg-pv-azul-hondo"

@@ -376,6 +376,32 @@ body {
   background: transparent !important;
 }
 
+/* El campo de dentro NO dibuja nada. Nunca.
+ *
+ * La librería le pone `!outline-solid` con `!important` y un
+ * `outline-transparent` que no lo es. Sin color propio, ese contorno cae a
+ * `currentColor` — negro — y aparece un recuadro dentro del campo, más grueso
+ * que el de fuera y desplazado.
+ *
+ * El selector va DUPLICADO a propósito (`[data-slot="input"][data-slot="input"]`).
+ * Con la misma especificidad gana la regla que se carga después, y las utilidades
+ * de la librería se cargan después que esto: doblarlo sube la especificidad y ya
+ * no depende del orden.
+ *
+ * Quitarle el contorno no deja el foco sin marcar: lo señala el contenedor, con
+ * su borde azul y su barra inferior.
+ */
+[data-slot="input"][data-slot="input"],
+[data-slot="input"][data-slot="input"]:focus,
+[data-slot="input"][data-slot="input"]:focus-visible,
+[data-slot="input"][data-slot="input"]:focus-within {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-width: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 /* Al pasar por encima, solo se oscurece la línea: mover algo al pasar el ratón
    sobre un formulario largo lo deja temblando. */
 .pv-campo:hover:not(:focus-within),

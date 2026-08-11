@@ -176,17 +176,30 @@ export const signIn = async (identificador: string, password: string, rememberMe
         const e = error as Error;
         logger.error("Sign in error", { error: e.message, stack: e.stack });
 
-        // Hide technical errors from the user
-        const isTechnicalError =
-            e.message.includes("Prisma") ||
-            e.message.includes("generate") ||
-            e.message.includes("database") ||
-            e.message.includes("connect");
+        /*
+         * Un fallo del SERVIDOR no puede presentarse como una contraseña mal
+         * escrita.
+         *
+         * Antes se decidía buscando "Prisma", "database" o "connect" en el
+         * mensaje. Un error real de la base —"Unknown field `nationality` for
+         * select statement on model `User`"— no contiene ninguna de esas
+         * palabras, así que caía en "credenciales inválidas". Resultado: la
+         * aplicación llevaba horas rota y el mensaje mandaba a mirar la
+         * contraseña. Jose lo dijo tres veces y las tres se miró donde no era.
+         *
+         * Ahora es al revés: SOLO es "usuario o contraseña" cuando better-auth
+         * lo dice con su código. Cualquier otra cosa se anuncia como avería,
+         * porque lo es.
+         */
+        const codigo = (error as { body?: { code?: string }; status?: number }).body?.code;
+        const esCredencial =
+            codigo === "INVALID_EMAIL_OR_PASSWORD" ||
+            codigo === "USER_NOT_FOUND" ||
+            (error as { status?: number }).status === 401;
 
-        // Generic error message for auth failures to prevent user enumeration
-        const errorMessage = isTechnicalError
-            ? "User does not exist or password is incorrect"
-            : "Invalid email or password";
+        const errorMessage = esCredencial
+            ? "Usuario o contraseña incorrectos."
+            : "No se pudo entrar: hay un problema en el servidor. Avisa a quien lleva el sistema.";
 
         return {
             errors: { root: errorMessage },
