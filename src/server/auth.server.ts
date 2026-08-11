@@ -88,8 +88,31 @@ export const getCurrentUser = async (): Promise<ApiResponse<typeof auth.$Infer.S
     };
 };
 
-export const signIn = async (email: string, password: string, rememberMe: boolean = true): Promise<ApiResponse> => {
+/**
+ * Entrar con **nombre de usuario o correo**.
+ *
+ * En PEDIDO la gente entra con `yasmani`, `claudia.hab`, `rene`… y muchos no
+ * tienen dirección de correo. better-auth solo sabe entrar por correo, así que
+ * si lo que escriben no lo parece, se busca a quién pertenece ese nombre y se
+ * usa su correo por debajo. Quien escriba su correo entra igual que siempre.
+ *
+ * Si el nombre no existe se sigue adelante con lo que sea que escribieron, para
+ * que el fallo sea el mismo —"usuario o contraseña incorrectos"— tanto si el
+ * nombre no existe como si la contraseña está mal. Decir "ese usuario no existe"
+ * le confirma a cualquiera qué nombres son reales.
+ */
+export const signIn = async (identificador: string, password: string, rememberMe: boolean = true): Promise<ApiResponse> => {
     try {
+        let email = identificador.trim();
+
+        if (!email.includes("@")) {
+            const persona = await prisma.user.findUnique({
+                where: { username: email.toLowerCase() },
+                select: { email: true },
+            });
+            if (persona) email = persona.email;
+        }
+
         await auth.api.signInEmail({
             body: {
                 email,
@@ -101,7 +124,7 @@ export const signIn = async (email: string, password: string, rememberMe: boolea
         // Handle custom "Remember Email" cookie
         const cookieStore = await cookies();
         if (rememberMe) {
-            cookieStore.set("remember-email", email, {
+            cookieStore.set("remember-email", identificador.trim(), {
                 path: "/",
                 maxAge: 60 * 60 * 24 * 30, // 30 days
                 httpOnly: true,

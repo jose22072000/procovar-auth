@@ -1,24 +1,30 @@
 "use client";
 
 import React from "react";
-import { Button, Input, Checkbox, Link, Divider, Alert, addToast } from "@heroui/react";
+import { Button, Input, Checkbox, Link, addToast } from "@heroui/react";
 import { Icons } from "../icons/iconify";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "@/server/auth.server";
-import { authClient } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 
+/**
+ * Lo que se comprueba ANTES de mandar el formulario.
+ *
+ * Solo que haya algo. Aquí se comprueba una contraseña que YA existe, no se está
+ * eligiendo una: exigirle mayúsculas, números y símbolos deja fuera a quien la
+ * tenga puesta por un administrador y no cumpla esas reglas — y el formulario ni
+ * siquiera llega a enviarse, así que la persona ve un error sobre su contraseña
+ * sin haber intentado entrar. Las reglas de fortaleza van donde se ELIGE la
+ * contraseña, no donde se usa.
+ */
 const signInSchema = z.object({
-    email: z.string().email("Invalid email address format"),
-    password: z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+    // Nombre de usuario O correo: en PEDIDO la gente entra con `yasmani` o
+    // `claudia.hab` y muchos no tienen correo. Exigir aquí formato de correo
+    // dejaría fuera a la mitad de la casa antes de llegar al servidor.
+    email: z.string().min(1, "Escribe tu usuario o tu correo."),
+    password: z.string().min(1, "Escribe tu contraseña."),
     remember: z.boolean().optional(),
 });
 
@@ -43,18 +49,14 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
             password: "",
             remember: !!savedEmail,
         },
-        mode: "all",
     });
 
-    const onFieldChange = () => {
-        if (errors.root) {
-            clearErrors("root");
-        }
-    };
+    const onFieldChange = () => clearErrors("root");
 
     const onSubmit = async (data: SignInSchema) => {
-        const response = await signIn(data.email, data.password, !!data.remember);
-        const hasError = response.errors && Object.keys(response.errors).length > 0;
+        const response = await signIn(data.email, data.password, data.remember ?? false);
+        const hasError = !!response.errors;
+
         if (response.errors) {
             if (response.errors.root) {
                 setError("root", { message: response.errors.root as string });
@@ -65,121 +67,94 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 title: response.toast.title,
                 description: response.toast.description,
                 color: hasError ? "danger" : "success",
-            })
+            });
         }
-        
+
         if (!hasError) {
-            // Redirect URL is consumed and returned by the signIn server action
-            const redirectUrl = (response.data as { redirectUrl?: string } | undefined)?.redirectUrl || "/profile";
+            const redirectUrl =
+                (response.data as { redirectUrl?: string } | undefined)?.redirectUrl || "/profile";
             window.location.assign(redirectUrl);
         }
     };
 
-    const handleGoogleSignIn = async () => {
-        try {
-            await authClient.signIn.social({
-                provider: "google",
-                callbackURL: "/api/auth/callback",
-            });
-        } catch {
-            addToast({
-                title: "Error",
-                description: "Failed to connect to Google Sign In",
-                color: "danger",
-            });
-        }
-    };
-
     return (
-        <div className="flex w-full max-w-sm flex-col gap-4">
-            <div className="flex gap-2 pb-10">
-                <span aria-label="waving hand" role="img" className="text-4xl">
-                    👋
-                </span>
-                <h1 className="text-4xl font-medium">{t('auth.signIn')}</h1>
-            </div>
-            <div className="flex flex-col items-center pb-6">
-                <p className="text-xl font-medium">{t('auth.welcomeBack')}</p>
-                <p className="text-small ">{t('auth.logInToContinue')}</p>
-            </div>
-            <div className="flex flex-col gap-2">
-                <Button
-                    className="w-full font-semibold border-[#0A2252]/70 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
-                    startContent={<Icons.google className="!size-6" />}
-                    variant="bordered"
-                    size="lg"
-                    onPress={handleGoogleSignIn}
+        <form className="flex w-full flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+            <Input
+                isRequired
+                autoComplete="username"
+                label={t("auth.userOrEmail")}
+                labelPlacement="outside"
+                placeholder={t("auth.userOrEmailPlaceholder")}
+                type="text"
+                variant="bordered"
+                radius="none"
+                size="lg"
+                startContent={<Icons.mailOutline className="!size-4 text-pv-tinta-suave" />}
+                isInvalid={!!errors.email}
+                errorMessage={errors.email?.message}
+                {...register("email", { onChange: onFieldChange })}
+            />
+
+            <Input
+                isRequired
+                label={t("auth.password")}
+                labelPlacement="outside"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                type={isVisible ? "text" : "password"}
+                variant="bordered"
+                radius="none"
+                size="lg"
+                startContent={<Icons.keyMinimalistic className="!size-4 text-pv-tinta-suave" />}
+                endContent={
+                    <button
+                        type="button"
+                        onClick={toggleVisibility}
+                        className="cursor-pointer text-pv-tinta-suave"
+                        aria-label={isVisible ? t("auth.hidePassword") : t("auth.showPassword")}
+                    >
+                        {isVisible ? (
+                            <Icons.eyeClosed className="pointer-events-none text-xl" />
+                        ) : (
+                            <Icons.eye className="pointer-events-none text-xl" />
+                        )}
+                    </button>
+                }
+                isInvalid={!!errors.password}
+                errorMessage={errors.password?.message}
+                {...register("password", { onChange: onFieldChange })}
+            />
+
+            <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                <Checkbox size="sm" radius="none" {...register("remember")}>
+                    {t("auth.rememberMe")}
+                </Checkbox>
+                <Link
+                    className="text-sm text-pv-azul underline underline-offset-4"
+                    href="/forgot-password"
                 >
-                    {t('auth.continueWithGoogle')}
-                </Button>
-            </div>
-            <div className="flex items-center gap-4 py-2">
-                <Divider className="flex-1" />
-                <p className="text-tiny  shrink-0">{t('auth.or')}</p>
-                <Divider className="flex-1" />
-            </div>
-            <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
-                <Input
-                    isRequired
-                    autoComplete="username"
-                    startContent={<Icons.mailOutline className="!size-4" />}
-                    label={t('auth.emailAddress')}
-                    type="email"
-                    variant="bordered"
-                    isInvalid={!!errors.email}
-                    errorMessage={errors.email?.message}
-                    {...register("email", { onChange: onFieldChange })}
-                />
-                <Input
-                    isRequired
-                    startContent={<Icons.keyMinimalistic className="!size-4" />}
-                    endContent={
-                        <button type="button" onClick={toggleVisibility} className="cursor-pointer">
-                            {isVisible ? (
-                                <Icons.eyeClosed
-                                    className=" pointer-events-none text-2xl"
-                                />
-                            ) : (
-                                <Icons.eye
-                                    className=" pointer-events-none text-2xl"
-                                />
-                            )}
-                        </button>
-                    }
-                    label={t('auth.password')}
-                    autoComplete="current-password"
-                    type={isVisible ? "text" : "password"}
-                    variant="bordered"
-                    isInvalid={!!errors.password}
-                    errorMessage={errors.password?.message}
-                    {...register("password", { onChange: onFieldChange })}
-                />
-                <div className="flex w-full items-center justify-between px-1 py-2">
-                    <Checkbox size="sm" {...register("remember")}>
-                        {t('auth.rememberMe')}
-                    </Checkbox>
-                    <Link className="text-primary-700 underline underline-offset-4" href="/forgot-password" size="sm">
-                        {t('auth.forgotPassword')}
-                    </Link>
-                </div>
-                {errors.root && <Alert color="danger" title={errors.root.message} />}
-                <Button
-                    className="w-full font-semibold border-[#0A2252] text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
-                    variant="bordered"
-                    type="submit"
-                    size="lg"
-                    isLoading={isSubmitting}
-                    startContent={!isSubmitting && <Icons.shieldKey className="!size-6" />}
-                >
-                    {t('auth.signIn')}
-                </Button>
-            </form>
-            <p className="text-small text-center">
-                {t('auth.needAccount')}&nbsp;
-                <Link href="/sign-up" size="sm" className="text-primary-700 underline underline-offset-4">
-                    {t('auth.signUp')}
+                    {t("auth.forgotPassword")}
                 </Link>
-            </p>
-        </div>
+            </div>
+
+            {errors.root && (
+                <p
+                    role="alert"
+                    className="border-l-2 border-pv-cuno bg-pv-cuno/5 px-3 py-2.5 text-sm text-pv-cuno"
+                >
+                    {errors.root.message}
+                </p>
+            )}
+
+            <Button
+                className="pv-toque w-full bg-pv-azul font-semibold text-white data-[hover=true]:bg-pv-azul-hondo"
+                radius="none"
+                type="submit"
+                size="lg"
+                isLoading={isSubmitting}
+            >
+                {t("auth.signIn")}
+            </Button>
+        </form>
     );
 }

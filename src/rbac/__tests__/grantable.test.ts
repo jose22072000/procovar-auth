@@ -7,7 +7,6 @@ const financeReader: ResolvedRbac = {
     org: 'o1',
     wildcard: false,
     global: ['finance.read'],
-    byProperty: {},
 }
 
 describe('ungrantablePermissionKeys (privilege-escalation guard)', () => {
@@ -35,7 +34,6 @@ describe('ungrantablePermissionKeys (privilege-escalation guard)', () => {
             org: 'o1',
             wildcard: false,
             global: ['finance.read', 'role.delete', 'role.create'],
-            byProperty: {},
         }
         expect(ungrantablePermissionKeys(owner, ['finance.read', 'role.delete'])).toEqual([])
     })
@@ -45,7 +43,6 @@ describe('ungrantablePermissionKeys (privilege-escalation guard)', () => {
             org: 'o1',
             wildcard: false,
             global: [],
-            byProperty: { p1: ['role.delete'] },
         }
         expect(ungrantablePermissionKeys(perProp, ['role.delete'])).toEqual(['role.delete'])
     })

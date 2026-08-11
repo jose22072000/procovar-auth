@@ -60,7 +60,11 @@
     "forgotPasswordHint": "Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña",
     "emailInvalidFormat": "Formato de correo electrónico no válido",
     "sendResetLinkButton": "Enviar enlace de restablecimiento",
-    "rememberYourPassword": "¿Recuerdas tu contraseña?"
+    "rememberYourPassword": "¿Recuerdas tu contraseña?",
+    "userOrEmail": "Usuario o correo",
+    "userOrEmailPlaceholder": "yasmani  ·  nombre@procovar.cloud",
+    "showPassword": "Ver la contraseña",
+    "hidePassword": "Ocultar la contraseña"
   },
   "account": {
     "welcomeBack": "Bienvenido de nuevo",
@@ -404,13 +408,15 @@
       "selectRolesPlaceholder": "Selecciona roles",
       "addPerson": "Añadir persona",
       "personName": "Nombre y apellidos",
-      "personEmail": "Correo",
-      "personEmailHelp": "Con este correo entra. Si ya tiene cuenta, se le añade esta sucursal.",
+      "personEmail": "Correo (opcional)",
+      "personEmailHelp": "Si no tiene, déjalo vacío: entrará con su usuario.",
       "personPassword": "Contraseña",
       "personPasswordHelp": "Ocho caracteres o más. Se la das tú; ella puede cambiarla después.",
       "personRole": "Rol",
       "personCreated": "Persona creada y añadida a la sucursal.",
-      "personLinked": "Ya tenía cuenta: se le añadió {orgName}."
+      "personLinked": "Ya tenía cuenta: se le añadió {orgName}.",
+      "personUser": "Usuario",
+      "personUserHelp": "Con el que entra, como en PEDIDO: yasmani, claudia.hab…"
     },
     "rolesManager": {
       "avisoGlobal": "Lo que marques aquí vale para las ocho sucursales.",
@@ -1049,5 +1055,12 @@
   "orgPage": {
     "title": "Mi sucursal",
     "subtitle": "La gente de tu sucursal y lo que puede hacer cada uno."
+  },
+  "entrada": {
+    "titulo": "Entra una vez y entras en todas.",
+    "explicacion": "La misma cuenta para los pedidos, la analítica, el reparto y el tablero. Tu sucursal y lo que puedes hacer viajan contigo.",
+    "rotuloFormulario": "Tu cuenta",
+    "sinCuenta": "¿No tienes cuenta? Te la crea el administrador de tu sucursal.",
+    "pie": "Procovar · uso interno"
   }
 }

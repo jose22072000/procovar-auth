@@ -17,6 +17,16 @@ model User {
   id            String         @id @default(cuid())
   name          String
   email         String         @unique
+  /// Nombre de usuario, para entrar sin correo.
+  ///
+  /// En PEDIDO la gente entra con `yasmani`, `claudia.hab`, `rene`… y muchos no
+  /// tienen correo. Obligarles a uno para poder entrar aquí sería inventarles
+  /// una dirección que no leen y una forma de identificarse que no reconocen.
+  ///
+  /// El correo sigue siendo obligatorio porque better-auth lo usa como clave de
+  /// la cuenta; a quien no tenga se le pone uno interno (`usuario@procovar.local`)
+  /// que no recibe nada y que nadie necesita saberse.
+  username      String?        @unique
   emailVerified Boolean
   image         String?
   isSystemAdmin Boolean        @default(false)

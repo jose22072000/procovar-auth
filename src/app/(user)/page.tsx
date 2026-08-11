@@ -1,4 +1,4 @@
-import { SignInForm } from '@/components/forms/sign-in';
+import { PantallaDeEntrada } from '@/components/pantalla-de-entrada';
 import { AccountView } from '@/components/account-view';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
@@ -97,18 +97,16 @@ export default async function SignInPage({
   const cookieStore = await cookies();
   const savedEmail = cookieStore.get("remember-email")?.value;
 
-  return (
-    <div className="">
-      {/* Left Side - Form */}
-      <div className="flex items-center justify-center p-8 lg:p-12">
-        <Suspense fallback={<div className="animate-pulse h-96 w-full max-w-md bg-muted rounded-sm" />}>
-          {user ? (
-            <AccountView user={user} role={await resolveProfileRole({ id: user.id, isSystemAdmin: user.isSystemAdmin ?? false })} />
-          ) : (
-            <SignInForm savedEmail={savedEmail} />
-          )}
-        </Suspense>
-      </div>
+  return user ? (
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <Suspense fallback={<div className="h-96 w-full animate-pulse bg-pv-trazo-tenue" />}>
+        <AccountView
+          user={user}
+          role={await resolveProfileRole({ id: user.id, isSystemAdmin: user.isSystemAdmin ?? false })}
+        />
+      </Suspense>
     </div>
+  ) : (
+    <PantallaDeEntrada savedEmail={savedEmail} />
   );
 }

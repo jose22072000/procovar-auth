@@ -4,10 +4,25 @@ import { legacyRoleToSystemRole } from '@/rbac/seed-core';
 
 export interface AltaPersona {
   nombre: string;
-  email: string;
+  /** Con el que entra. Si no tiene correo, basta con esto. */
+  usuario?: string;
+  /** Opcional si hay usuario: mucha gente de PEDIDO no tiene correo. */
+  email?: string;
   password: string;
   organizationId: string;
   roleId: string;
+}
+
+/**
+ * El correo interno de quien no tiene correo.
+ *
+ * better-auth usa el correo como clave de la cuenta, así que hace falta uno
+ * aunque la persona entre por su nombre de usuario. `.local` no es un dominio
+ * real y nunca sale a internet: si algo intentara escribir ahí, no llega a
+ * ninguna parte en vez de acabar en el buzón de un desconocido.
+ */
+function correoInterno(usuario: string): string {
+  return `${usuario}@procovar.local`;
 }
 
 export interface ResultadoAlta {
@@ -42,11 +57,21 @@ export interface ResultadoAlta {
  * historial en dos y la auditoría dejaría de poder responder quién hizo qué.
  */
 export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
-  const email = datos.email.trim().toLowerCase();
   const nombre = datos.nombre.trim();
+  const usuario = datos.usuario?.trim().toLowerCase() || null;
+  const email = datos.email?.trim().toLowerCase() || (usuario ? correoInterno(usuario) : '');
 
-  if (!email || !email.includes('@')) return { error: 'Hace falta un correo válido.' };
   if (!nombre) return { error: 'Hace falta el nombre.' };
+  if (!usuario && !email) return { error: 'Hace falta un usuario o un correo.' };
+  if (email && !email.includes('@')) return { error: 'Ese correo no parece válido.' };
+  if (usuario && !/^[a-z0-9._-]+$/.test(usuario)) {
+    return { error: 'El usuario solo puede llevar letras, números, punto, guion y guion bajo.' };
+  }
+
+  if (usuario) {
+    const ocupado = await prisma.user.findUnique({ where: { username: usuario }, select: { id: true } });
+    if (ocupado) return { error: `El usuario "${usuario}" ya está cogido.` };
+  }
 
   const sucursal = await prisma.organization.findUnique({
     where: { id: datos.organizationId },
@@ -73,6 +98,7 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
         data: {
           name: nombre,
           email,
+          username: usuario,
           // La da de alta quien administra, en persona. Mandar a verificar un
           // correo que quizá no existe solo serviría para dejarla a medias.
           emailVerified: true,

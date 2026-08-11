@@ -213,15 +213,10 @@ export const UserNavbarBasic = () => {
                     </DropdownMenu>
                 </Dropdown>
             ) : (
-                <Button
-                    endContent={<Icons.started className="!size-6 text-yellow-200" />}
-                    as={Link}
-                    href="/sign-up"
-                    variant="bordered"
-                    className="h-10 min-w-[132px] font-semibold rounded-sm text-white border-[#0A2252]/80 bg-transparent hover:bg-[#0A2252]/10"
-                >
-                    {t('auth.getStarted')}
-                </Button>
+                // Sin sesión no hay nada que ofrecer aquí: las cuentas las crea
+                // un administrador, no se registra uno solo. Antes había un
+                // "Empezar" que llevaba al registro.
+                null
             )}
             <LogoutModal />
         </>

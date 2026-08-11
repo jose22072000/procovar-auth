@@ -40,7 +40,7 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
   const [memberRoleIds, setMemberRoleIds] = useState<string[]>([]);
   const alta = useDisclosure();
-  const [altaForm, setAltaForm] = useState({ nombre: "", email: "", password: "", roleId: "" });
+  const [altaForm, setAltaForm] = useState({ nombre: "", usuario: "", email: "", password: "", roleId: "" });
 
   const orgs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -70,7 +70,7 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
     // acaba dándole a Guardar sin mirar, y equivocarse hacia abajo se arregla
     // con un clic; hacia arriba, no se nota.
     const gestor = selected.roles.find((r) => r.name === "GESTOR");
-    setAltaForm({ nombre: "", email: "", password: "", roleId: gestor?.id ?? selected.roles[0]?.id ?? "" });
+    setAltaForm({ nombre: "", usuario: "", email: "", password: "", roleId: gestor?.id ?? selected.roles[0]?.id ?? "" });
     alta.onOpen();
   }
 
@@ -224,6 +224,9 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
           <ModalBody className="gap-3">
             <Input autoFocus label={t('dashboard.orgsManager.personName')} variant="bordered"
               value={altaForm.nombre} onValueChange={(v) => setAltaForm((f) => ({ ...f, nombre: v }))} />
+            <Input label={t('dashboard.orgsManager.personUser')} variant="bordered"
+              value={altaForm.usuario} onValueChange={(v) => setAltaForm((f) => ({ ...f, usuario: v }))}
+              description={t('dashboard.orgsManager.personUserHelp')} />
             <Input label={t('dashboard.orgsManager.personEmail')} type="email" variant="bordered"
               value={altaForm.email} onValueChange={(v) => setAltaForm((f) => ({ ...f, email: v }))}
               description={t('dashboard.orgsManager.personEmailHelp')} />
@@ -244,7 +247,7 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
               {t('dashboard.common.cancel')}
             </Button>
             <Button color="primary" isLoading={busy} onPress={guardarAlta}
-              isDisabled={!altaForm.nombre.trim() || !altaForm.email.trim() || !altaForm.roleId}
+              isDisabled={!altaForm.nombre.trim() || (!altaForm.usuario.trim() && !altaForm.email.trim()) || !altaForm.roleId}
               startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
               {t('dashboard.orgsManager.addPerson')}
             </Button>

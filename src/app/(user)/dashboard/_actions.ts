@@ -42,7 +42,8 @@ async function exigirEnSucursal(organizationId: string, permiso: string) {
 export async function anadirPersona(datos: {
     organizationId: string;
     nombre: string;
-    email: string;
+    usuario?: string;
+    email?: string;
     password: string;
     roleId: string;
 }): Promise<{ error?: string; yaExistia?: boolean }> {
