@@ -109,6 +109,35 @@ body {
     font-feature-settings: "cv05" 1;
 }
 
+/* ── Los nombres de shadcn, apuntando a los de la casa ─────────────────────
+   El tema compartido (`procovar-theme.css`, en la skill) está escrito sobre el
+   contrato de variables de shadcn: `--input`, `--ring`, `--card`… Esta hoja
+   nació antes y usa `--pv-*`.
+   
+   Sin este puente, las reglas copiadas del tema referencian variables que aquí
+   no existen: `border: 1px solid var(--input)` con `--input` sin definir es una
+   declaración inválida, y el navegador la tira entera. Resultado: el campo se
+   quedaba SIN borde y al enfocarlo solo se veía el recuadro interno de la
+   librería — justo lo que había que arreglar.
+   
+   Los dos juegos de nombres apuntan a los mismos valores a propósito. Cuando
+   esta aplicación pase a shadcn, se quedan solo los de abajo.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+    --card:        var(--pv-blanco);
+    --background:  var(--pv-papel);
+    --foreground:  var(--pv-tinta);
+    --muted-foreground: var(--pv-tinta-suave);
+    --border:      var(--pv-trazo);
+    --border-soft: var(--pv-trazo-tenue);
+    --input:       var(--pv-trazo);
+    --ring:        var(--pv-azul);
+    --primary:     var(--pv-azul);
+    --destructive: var(--pv-cuno);
+    --success:     var(--pv-visto);
+    --warning:     var(--pv-ambar);
+}
+
 /* ── Tipografía ────────────────────────────────────────────────────────────
    Tres papeles, tres letras:
    · Archivo, estrecha y de remates planos, es la del logotipo. Titula.
@@ -332,6 +361,19 @@ body {
 [data-slot="input-wrapper"]:focus-within::after,
 [data-slot="trigger"][data-focus="true"]::after {
   transform: scaleX(1);
+}
+
+/* El recuadro lo dibuja SOLO el contenedor. La librería pinta además uno en el
+   campo de dentro y otro en su envoltorio interior: al enfocar salían dos cajas,
+   una metida dentro de la otra y desplazada. */
+[data-slot="input-wrapper"] input,
+[data-slot="input-wrapper"] textarea,
+[data-slot="inner-wrapper"],
+[data-slot="innerWrapper"] {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 /* Al pasar por encima, solo se oscurece la línea: mover algo al pasar el ratón
