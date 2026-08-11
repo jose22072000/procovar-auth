@@ -31,7 +31,7 @@ export const ROLE_DESCRIPTIONS: Record<SystemRoleName, string> = {
   ADMINISTRADOR: 'Gestiona las sucursales a las que pertenece, y solo esas.',
   SUPERVISOR: 'Ve lo suyo y lo de sus gestores dentro de su sucursal, y puede actuar.',
   GESTOR: 'Solo sus propios datos: sus vendedores, sus pedidos, sus clientes.',
-  OPERADOR: 'El facturador. Lee los datos de su sucursal y consulta la analítica.',
+  OPERADOR: 'El facturador. Lee y completa los pedidos de su sucursal. Sin informes.',
 }
 
 const allKeys = () => PERMISSION_CATALOG.filter((p) => !p.isDeprecated).map((p) => p.key)
@@ -47,19 +47,17 @@ const GESTOR_KEYS = [
 
 /**
  * El Operador factura: lee los pedidos de su sucursal, los completa y copia los
- * datos al sistema de facturación.
+ * datos al sistema de facturación. Y nada más.
  *
- * NO lleva `pedido.import` ni `reporte.read` a propósito — subir un CSV
- * equivocado no es cosa suya, y así está funcionando hoy en PEDIDO. Sí lleva
- * `analitics.read`: Jose lo llamó "el facturador analítico, que puede revisar
- * reportes y ver datos", y esos reportes son los de analitics.
+ * Sin informes en NINGUNA aplicación y sin importar: "no, reportes no, pedidos
+ * nada más, como está hasta ahora está correcto" (Jose, 11/08). Es exactamente
+ * lo que hace hoy en PEDIDO, así que conectar PEDIDO a este login no le cambia
+ * el día a día a ninguna operadora.
  */
 const OPERADOR_KEYS = [
   ...GESTOR_KEYS,
   'pedido.complete',
   'cliente.edit',
-  'analitics.read',
-  'ccsa.read',
 ]
 
 /** El Supervisor hace el trabajo de la sucursal, menos tocar accesos. */

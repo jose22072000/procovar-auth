@@ -43,15 +43,17 @@ describe('los roles de Procovar', () => {
     expect(sup).not.toContain('member.invite')
   })
 
-  it('el Operador factura: ni sube CSV ni saca informes de PEDIDO', () => {
+  it('el Operador factura y nada más: ni CSV, ni informes en ninguna aplicación', () => {
     const op = systemRolePermissionKeys('OPERADOR')
     expect(op).toContain('pedido.read')
     expect(op).toContain('pedido.complete')
-    // Así funciona hoy en PEDIDO, y romperlo aquí lo rompe allí.
+    // "no, reportes no, pedidos nada más, como está hasta ahora está correcto"
+    // (Jose, 11/08). Así funciona hoy en PEDIDO, y cambiarlo aquí lo cambiaría
+    // allí en cuanto PEDIDO empiece a leer los permisos de este login.
     expect(op).not.toContain('pedido.import')
     expect(op).not.toContain('reporte.read')
-    // Pero sí la analítica: "el facturador analítico", dijo Jose.
-    expect(op).toContain('analitics.read')
+    expect(op).not.toContain('analitics.read')
+    expect(op).not.toContain('ccsa.read')
   })
 
   it('el Gestor solo lee, y ni siquiera puede completar un pedido', () => {
