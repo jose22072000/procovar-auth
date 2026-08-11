@@ -69,7 +69,6 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
         { href: "/dashboard/permissions", icono: "lucide:shield-check", texto: t("rail.permisos"), soloGlobal: true },
         { href: "/dashboard/auditoria", icono: "lucide:scroll-text", texto: t("rail.auditoria"), soloGlobal: true },
         { href: "/apikeys", icono: "lucide:key-round", texto: t("rail.aplicaciones"), soloGlobal: true },
-        { href: "/dashboard/settings", icono: "lucide:settings", texto: t("rail.ajustes"), soloGlobal: true },
     ];
 
     const visibles = APARTADOS.filter((a) => {

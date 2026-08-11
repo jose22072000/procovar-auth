@@ -2,18 +2,24 @@ import { prisma } from "@/lib/prisma";
 import { UsersManager } from "@/components/admin/users-manager.component";
 import { getTranslations } from "next-intl/server";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Todas las personas de Procovar, de todas las sucursales.
+ *
+ * Ya no se traen las suscripciones: eran planes de pago del producto del que
+ * salió este código. Aquí nadie paga una suscripción — lo que define a una
+ * persona es en qué sucursales trabaja y con qué rol.
+ */
 export default async function DashboardUsersPage() {
   const t = await getTranslations();
+
   const rows = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, name: true, email: true, emailVerified: true, image: true, isSystemAdmin: true,
-      phone: true, nationality: true, address: true, passportId: true, createdAt: true,
+      id: true, name: true, email: true, username: true, emailVerified: true,
+      image: true, isSystemAdmin: true, phone: true, createdAt: true,
       _count: { select: { members: true, sessions: true } },
-      subscriptions: {
-        where: { status: "ACTIVE" }, orderBy: { currentPeriodEnd: "desc" }, take: 1,
-        select: { status: true, billingCycle: true, currentPeriodEnd: true, plan: { select: { key: true, name: true } } },
-      },
       members: {
         select: {
           organization: { select: { name: true, slug: true } },
@@ -22,19 +28,35 @@ export default async function DashboardUsersPage() {
       },
     },
   });
+
   const users = rows.map((u) => ({
-    id: u.id, name: u.name, email: u.email, emailVerified: u.emailVerified, image: u.image,
-    isSystemAdmin: u.isSystemAdmin, phone: u.phone, nationality: u.nationality, address: u.address,
-    passportId: u.passportId, createdAt: u.createdAt.toISOString(),
-    orgCount: u._count.members, sessionCount: u._count.sessions,
-    subscription: u.subscriptions[0]
-      ? { planKey: u.subscriptions[0].plan.key, planName: u.subscriptions[0].plan.name, status: u.subscriptions[0].status, currentPeriodEnd: u.subscriptions[0].currentPeriodEnd.toISOString() }
-      : null,
-    orgs: u.members.map((m) => ({ name: m.organization.name, slug: m.organization.slug, roles: m.memberRoles.map((r) => r.role.name) })),
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    username: u.username,
+    emailVerified: u.emailVerified,
+    image: u.image,
+    isSystemAdmin: u.isSystemAdmin,
+    phone: u.phone,
+    createdAt: u.createdAt.toISOString(),
+    orgCount: u._count.members,
+    sessionCount: u._count.sessions,
+    orgs: u.members.map((m) => ({
+      name: m.organization.name,
+      slug: m.organization.slug,
+      roles: m.memberRoles.map((r) => r.role.name),
+    })),
   }));
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('dashboard.usersPage.title')}</h1>
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
+      <div>
+        <p className="pv-rotulo">{t("rail.personas")}</p>
+        <h1 className="pv-titulo mt-1 text-2xl">{t("dashboard.usersPage.title")}</h1>
+        <p className="mt-1 text-sm text-pv-tinta-suave">
+          {t("dashboard.usersPage.subtitle", { n: users.length })}
+        </p>
+      </div>
       <UsersManager initialUsers={users} />
     </div>
   );

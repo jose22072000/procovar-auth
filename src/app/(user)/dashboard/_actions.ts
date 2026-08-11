@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/server/auth.server";
 import { revalidatePath } from "next/cache";
-import { getSystemConfig, setSystemConfig, clampHoldMinutes } from "@/lib/system-config";
 import { getRedis } from "@/lib/redis";
 import { audit } from "@/lib/audit";
 import { altaPersona } from "@/lib/alta-persona";
@@ -173,20 +172,7 @@ export async function adminDeleteUser(userId: string): Promise<{ error?: string 
     }
 }
 
-export async function getHoldMinutes(): Promise<number> {
-    return clampHoldMinutes(await getSystemConfig("BOOKING_HOLD_MINUTES"));
-}
 
-export async function setHoldMinutes(minutes: number): Promise<{ ok: boolean; error?: string }> {
-    try {
-        await requireAdmin();
-        const v = clampHoldMinutes(minutes);
-        await setSystemConfig("BOOKING_HOLD_MINUTES", String(v));
-        return { ok: true };
-    } catch (e) {
-        return { ok: false, error: (e as Error).message };
-    }
-}
 
 export async function updateUserProfile(
     userId: string,

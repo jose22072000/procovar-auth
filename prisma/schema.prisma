@@ -31,16 +31,12 @@ model User {
   image         String?
   isSystemAdmin Boolean        @default(false)
   phone         String?
-  nationality   String?
-  address       String?
-  passportId    String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   sessions      Session[]
   accounts      Account[]
   members       Member[]
   invitations   Invitation[]
-  subscriptions Subscription[]
 
   @@map("user")
 }
@@ -139,58 +135,9 @@ model Invitation {
   @@map("invitation")
 }
 
-// ── Subscription Plans ──────────────────────────────────
-
-model Plan {
-  id            String         @id @default(cuid())
-  key           String         @unique /// Stable identifier: "basic", "pro", "pro_plus"
-  name          String /// Display name: "Basic", "Pro", "Pro Plus"
-  description   String?
-  priceMonthly  Decimal        @default(0) @db.Decimal(10, 2) /// Monthly price in USD
-  priceYearly   Decimal        @default(0) @db.Decimal(10, 2) /// Yearly price in USD
-  features      Json           @default("{}") /// Flexible feature flags & limits (JSON)
-  sortOrder     Int            @default(0) /// Display ordering
-  isActive      Boolean        @default(true) /// Soft-disable without deleting
-  icon          String?
-  color         String?
-  popular       Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  subscriptions Subscription[]
-
-  @@map("plan")
-}
-
-model Subscription {
-  id                 String             @id @default(cuid())
-  userId             String
-  planId             String
-  status             SubscriptionStatus @default(ACTIVE)
-  billingCycle       BillingCycle       @default(MONTHLY)
-  currentPeriodStart DateTime           @default(now())
-  currentPeriodEnd   DateTime
-  cancelledAt        DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
-
-  @@index([userId, status])
-  @@map("subscription")
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELLED
-  PAST_DUE
-  TRIALING
-  EXPIRED
-}
-
-enum BillingCycle {
-  MONTHLY
-  YEARLY
-}
+// Aquí vivían Plan y Subscription, con sus enums de estado y ciclo de
+// facturación: planes de pago del producto del que salió este código. Procovar
+// no le cobra una suscripción a su propia gente. Estaban vacíos.
 
 // ── Identity Hub: Service-to-Service & API keys ──────────
 
@@ -216,22 +163,10 @@ model ClientApp {
   @@map("client_app")
 }
 
-/// Owner custom domains that qb-auth trusts as SSO callback hosts.
-/// Manually created + verified + activated by an admin for now; the future
-/// per-property UI writes to this same table. The validation gate is `active`.
-model TenantDomain {
-  id         String   @id @default(cuid())
-  host       String   @unique /// host only, no scheme/path, lowercase (e.g. "dozzze-romeo.com")
-  clientId   String /// the ClientApp.clientId that serves this domain (e.g. "qb-sites")
-  propertyId String? /// optional link to a property (future)
-  verified   Boolean  @default(false) /// admin sets after confirming ownership
-  active     Boolean  @default(false) /// admin sets; ONLY active domains pass validation
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+// TenantDomain también se fue: servía para que cada propietario de
+// alojamientos pusiera su propio dominio como destino de vuelta del login. Las
+// aplicaciones de Procovar son cuatro y sus dominios están en client_app.
 
-  @@index([clientId])
-  @@map("tenant_domain")
-}
 
 /// API key for human/script access. The plaintext key is shown once on
 /// creation and then only its argon2id hash is stored.

@@ -34,9 +34,6 @@ export interface FullUser {
     image: string | null;
     isSystemAdmin: boolean;
     phone?: string | null;
-    nationality?: string | null;
-    address?: string | null;
-    passportId?: string | null;
     createdAt: string;
     updatedAt: string;
     members: Member[];

@@ -121,29 +121,6 @@ export async function GET() {
                         // NOT including: password, accessToken, refreshToken, idToken
                     },
                 },
-                // Active subscription with plan details
-                subscriptions: {
-                    where: { status: 'ACTIVE' },
-                    select: {
-                        id: true,
-                        status: true,
-                        billingCycle: true,
-                        currentPeriodStart: true,
-                        currentPeriodEnd: true,
-                        createdAt: true,
-                        plan: {
-                            select: {
-                                id: true,
-                                key: true,
-                                name: true,
-                                description: true,
-                                features: true,
-                            },
-                        },
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: 1,
-                },
                 // NOT including sessions - contains tokens
             },
         });

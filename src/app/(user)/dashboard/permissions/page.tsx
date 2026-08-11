@@ -1,10 +1,20 @@
 import { headers } from "next/headers";
-import { PermissionsCatalog } from "@/components/profile/admin-view/permissions-catalog";
-import { RolesManager } from "@/components/admin/roles-manager.component";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { RolesManager } from "@/components/admin/roles-manager.component";
 import { getTranslations } from "next-intl/server";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Qué puede hacer cada rol.
+ *
+ * Debajo había un segundo bloque que listaba el catálogo de permisos entero, de
+ * solo lectura. Enseñaba exactamente lo mismo que el gestor de arriba —los
+ * mismos permisos, agrupados igual— pero sin poder tocar nada: media pantalla
+ * repitiendo lo de la otra media. Se fue; su único botón útil, el de
+ * sincronizar, subió a la cabecera.
+ */
 export default async function DashboardPermissionsPage() {
     const t = await getTranslations();
 
@@ -46,17 +56,23 @@ export default async function DashboardPermissionsPage() {
     }));
 
     // El catálogo es de toda Procovar: quien lo cambia lo cambia para las ocho
-    // sucursales. Esto solo oculta el botón — quien manda es el servidor, que
-    // vuelve a comprobarlo en PATCH /api/rbac/roles/[roleId].
+    // sucursales. Esto solo apaga el botón — quien manda es el servidor, que lo
+    // vuelve a comprobar en PATCH /api/rbac/roles/[roleId].
     const puedeEditar = Boolean(session?.user?.isSystemAdmin);
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {t('dashboard.permissionsPage.title')}
-            </h1>
+        <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
+            <div>
+                <p className="pv-rotulo">{t("rail.permisos")}</p>
+                <h1 className="pv-titulo mt-1 text-2xl">{t("dashboard.permissionsPage.title")}</h1>
+                <p className="mt-1 max-w-2xl text-sm text-pv-tinta-suave">
+                    {t("dashboard.permissionsPage.subtitle", {
+                        roles: roles.length,
+                        permisos: permissions.length,
+                    })}
+                </p>
+            </div>
             <RolesManager roles={roles} permisos={permissions} puedeEditar={puedeEditar} />
-            <PermissionsCatalog permissions={permissions} />
         </div>
     );
 }

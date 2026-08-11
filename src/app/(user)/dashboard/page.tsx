@@ -1,20 +1,15 @@
-import { getCurrentUser } from "@/server/auth.server";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 
-export default async function DashboardPage() {
-    const { data: user } = await getCurrentUser();
-    if (!user) redirect("/");
-
-    if (!user.isSystemAdmin) {
-        const t = await getTranslations();
-        return (
-            <div className="flex flex-col items-center justify-center h-[50vh]">
-                <h1 className="text-2xl font-bold text-red-600 mb-4">{t('dashboard.accessDenied.title')}</h1>
-                <p className="text-slate-500">{t('dashboard.accessDenied.description')}</p>
-            </div>
-        );
-    }
-
-    redirect("/dashboard/settings");
+/**
+ * `/dashboard` no es una pantalla: es la puerta del panel.
+ *
+ * Lleva a las sucursales, que es donde empieza el trabajo — dar de alta gente y
+ * ponerle su rol. Antes llevaba a Ajustes, que ya no existe: su único contenido
+ * propio era un campo de "minutos para completar la reserva", del negocio de
+ * alojamientos del que salió este código.
+ *
+ * Quien no sea Super Admin no llega hasta aquí: lo para el armazón del panel.
+ */
+export default function DashboardPage() {
+    redirect("/dashboard/organizations");
 }

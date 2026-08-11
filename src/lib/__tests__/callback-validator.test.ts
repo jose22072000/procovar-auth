@@ -6,7 +6,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('../prisma', () => ({
     prisma: {
         clientApp: { findFirst: vi.fn() },
-        tenantDomain: { findFirst: vi.fn() },
     },
 }))
 
@@ -14,7 +13,6 @@ import { validateCallbackPayload, CallbackValidationError } from '../callback-va
 import { prisma } from '../prisma'
 
 const mockClientAppFindFirst = vi.mocked(prisma.clientApp.findFirst)
-const mockTenantFindFirst = vi.mocked(prisma.tenantDomain.findFirst)
 
 // The active client the ?op= redirect path resolves before honouring an origin.
 const CLIENT = {
@@ -29,7 +27,6 @@ const CLIENT = {
 beforeEach(() => {
     vi.resetAllMocks()
     // No tenant domains registered → only the static allowlist applies.
-    mockTenantFindFirst.mockResolvedValue(null as any)
 })
 
 describe('validateCallbackPayload (the check the ?op= path now performs)', () => {

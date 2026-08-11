@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Input } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
@@ -9,9 +9,7 @@ import { authClient } from "@/lib/auth-client";
 import {
     PROFILE_FIELDS,
     type ProfileFieldKey,
-    computeProfileCompleteness,
 } from "@/lib/profile-completeness";
-import { ProfileProgressRing } from "./profile-progress-ring";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -22,13 +20,9 @@ export function ProfileEditor() {
     const [values, setValues] = useState<Record<ProfileFieldKey, string>>({
         name: user?.name ?? "",
         phone: user?.phone ?? "",
-        nationality: user?.nationality ?? "",
-        address: user?.address ?? "",
-        passportId: user?.passportId ?? "",
     });
     const [fieldState, setFieldState] = useState<Record<string, SaveState>>({});
 
-    const completeness = useMemo(() => computeProfileCompleteness(values), [values]);
 
     async function saveField(key: ProfileFieldKey) {
         const current = (values[key] ?? "").trim();
@@ -48,26 +42,11 @@ export function ProfileEditor() {
 
     return (
         <div className="space-y-5">
-            <div className="flex items-center gap-4">
-                <ProfileProgressRing percent={completeness.percent} />
-                <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                        {completeness.isComplete ? t("myProfile.editor.complete") : t("myProfile.editor.yourProfile")}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {completeness.isComplete
-                            ? t("myProfile.editor.allSetDescription")
-                            : t("myProfile.editor.missingFieldsDescription", { count: completeness.missing.length })}
-                    </p>
-                </div>
-                {completeness.isComplete && (
-                    <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                        <Icon icon="lucide:badge-check" className="size-4" aria-hidden />
-                        {t("myProfile.editor.complete")}
-                    </span>
-                )}
-            </div>
-
+            {/* Aquí había un anillo de progreso con el porcentaje de perfil
+                completado, y confeti al llegar al cien. Eso es de un producto
+                que necesita que un desconocido rellene sus datos. Aquí entra
+                gente de la casa a cambiar su teléfono: el formulario, y ya.
+                Cada campo se guarda solo al salir de él y lo dice. */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* Email — read-only, not part of completeness */}
                 <Input
@@ -117,7 +96,7 @@ export function ProfileEditor() {
                             classNames={{
                                 label: "text-sm font-medium text-gray-700 dark:text-gray-300",
                                 inputWrapper:
-                                    "bg-white dark:bg-slate-900 border-gray-300 dark:border-slate-600 data-[hover=true]:border-purple-400 group-data-[focus=true]:border-purple-500",
+                                    "bg-white dark:bg-slate-900 border-gray-300 dark:border-slate-600 data-[hover=true]:border-pv-azul/50 group-data-[focus=true]:border-pv-azul",
                             }}
                         />
                     );

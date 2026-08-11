@@ -56,18 +56,16 @@ function matchesDomain(allowed: string[], candidate: URL): boolean {
     });
 }
 
-/**
- * A host is a trusted tenant callback host when it is an `active` TenantDomain
- * registered for this client. This is the dynamic complement to the static
- * `allowedCallbackUrls` / `allowedDomains` lists.
+/*
+ * Aquí había una segunda lista de destinos permitidos: los dominios propios que
+ * cada propietario de alojamientos registraba para recibir la vuelta del login.
+ *
+ * En Procovar las aplicaciones son cuatro, las suyas, y sus destinos están en
+ * `client_app`. Una lista dinámica de dominios de terceros en el camino de vuelta
+ * del login es exactamente donde no conviene tener una puerta de más: cualquier
+ * fila mal metida ahí es un sitio al que se puede mandar una sesión recién
+ * abierta.
  */
-async function isActiveTenantHost(clientId: string, host: string): Promise<boolean> {
-    const found = await prisma.tenantDomain.findFirst({
-        where: { clientId, host: host.toLowerCase(), active: true },
-        select: { id: true },
-    });
-    return Boolean(found);
-}
 
 export async function loadActiveClient(clientId: string): Promise<ValidatedClient | null> {
     const c = await prisma.clientApp.findFirst({
@@ -96,12 +94,7 @@ export async function validateCallbackPayload(payload: CallbackPayload): Promise
         throw new CallbackValidationError('invalid_callback_url', 'callbackUrl is not a valid http(s) URL');
     }
     if (!matchesCallback(client.allowedCallbackUrls, cb)) {
-        const tenantOk =
-            cb.pathname === '/api/auth/callback' &&
-            (await isActiveTenantHost(client.clientId, cb.host));
-        if (!tenantOk) {
-            throw new CallbackValidationError('callback_not_allowed', `callbackUrl is not in allowlist for ${client.clientId}`);
-        }
+        throw new CallbackValidationError('callback_not_allowed', `callbackUrl is not in allowlist for ${client.clientId}`);
     }
 
     if (payload.returnTo) {
@@ -109,7 +102,7 @@ export async function validateCallbackPayload(payload: CallbackPayload): Promise
         if (!rt || !['http:', 'https:'].includes(rt.protocol)) {
             throw new CallbackValidationError('invalid_return_to', 'returnTo is not a valid http(s) URL');
         }
-        if (!matchesDomain(client.allowedDomains, rt) && !(await isActiveTenantHost(client.clientId, rt.host))) {
+        if (!matchesDomain(client.allowedDomains, rt)) {
             throw new CallbackValidationError('return_to_not_allowed', `returnTo host not in allowedDomains for ${client.clientId}`);
         }
     }

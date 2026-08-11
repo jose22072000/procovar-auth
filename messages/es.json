@@ -251,10 +251,12 @@
       "title": "Organizaciones"
     },
     "permissionsPage": {
-      "title": "Permisos"
+      "title": "Permisos",
+      "subtitle": "{roles} roles · {permisos} permisos repartidos entre las aplicaciones."
     },
     "usersPage": {
-      "title": "Usuarios"
+      "title": "Usuarios",
+      "subtitle": "{n} personas en todas las sucursales."
     },
     "emailBanner": {
       "title": "Verifica tu email",
@@ -355,9 +357,6 @@
       "editProfileTitle": "Editar perfil",
       "nameLabel": "Nombre",
       "phoneLabel": "Teléfono",
-      "nationalityLabel": "Nacionalidad",
-      "addressLabel": "Dirección",
-      "passportLabel": "Pasaporte/ID",
       "detailTitle": "Detalle",
       "organizationsSection": "Sucursales",
       "noOrganizations": "Sin sucursales asignadas.",
@@ -375,7 +374,9 @@
       "alreadyRevoked": "Ya revocada",
       "revokeSessionTooltip": "Revocar sesión",
       "revokeAriaLabel": "Revocar",
-      "colFrom": "Desde dónde"
+      "colFrom": "Desde dónde",
+      "sinUsuario": "sin usuario",
+      "sinCorreo": "sin correo"
     },
     "orgsManager": {
       "memberRemoved": "Miembro eliminado",

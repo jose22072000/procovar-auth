@@ -251,10 +251,12 @@
       "title": "Organizations"
     },
     "permissionsPage": {
-      "title": "Permissions"
+      "title": "Permissions",
+      "subtitle": "{roles} roles · {permisos} permissions across the applications."
     },
     "usersPage": {
-      "title": "Users"
+      "title": "Users",
+      "subtitle": "{n} people across all sucursales."
     },
     "emailBanner": {
       "title": "Verify your email",
@@ -355,9 +357,6 @@
       "editProfileTitle": "Edit profile",
       "nameLabel": "Name",
       "phoneLabel": "Phone",
-      "nationalityLabel": "Nationality",
-      "addressLabel": "Address",
-      "passportLabel": "Passport/ID",
       "detailTitle": "Detail",
       "organizationsSection": "Sucursales",
       "noOrganizations": "No sucursales assigned.",
@@ -375,7 +374,9 @@
       "alreadyRevoked": "Already revoked",
       "revokeSessionTooltip": "Revoke session",
       "revokeAriaLabel": "Revoke",
-      "colFrom": "From where"
+      "colFrom": "From where",
+      "sinUsuario": "no username",
+      "sinCorreo": "no email"
     },
     "orgsManager": {
       "memberRemoved": "Member removed",

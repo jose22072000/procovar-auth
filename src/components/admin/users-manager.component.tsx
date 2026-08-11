@@ -15,13 +15,12 @@ import {
 import { useTranslations } from "next-intl";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
 
-interface UserSubscription { planKey: string; planName: string; status: string; currentPeriodEnd: string }
 interface UserOrg { name: string; slug: string; roles: string[] }
 interface UserRow {
   id: string; name: string; email: string; emailVerified: boolean; image: string | null;
-  isSystemAdmin: boolean; phone: string | null; nationality: string | null; address: string | null;
-  passportId: string | null; createdAt: string; orgCount: number; sessionCount: number;
-  subscription: UserSubscription | null; orgs: UserOrg[];
+  isSystemAdmin: boolean; phone: string | null; username: string | null;
+  createdAt: string; orgCount: number; sessionCount: number;
+  orgs: UserOrg[];
 }
 interface SessionRow { id: string; ipAddress: string | null; userAgent: string | null; clientId: string | null; createdAt: string; expiresAt: string; revokedAt: string | null }
 
@@ -35,13 +34,18 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
   const [detail, setDetail] = useState<UserRow | null>(null);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", nationality: "", address: "", passportId: "" });
+  const [form, setForm] = useState({ name: "", phone: "" });
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return initialUsers;
-    return initialUsers.filter((u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    return initialUsers.filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.username ?? "").toLowerCase().includes(q),
+    );
   }, [initialUsers, query]);
 
   const adminCount = useMemo(() => initialUsers.filter((u) => u.isSystemAdmin).length, [initialUsers]);
@@ -58,14 +62,13 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
 
   function openEdit(u: UserRow) {
     setEditing(u);
-    setForm({ name: u.name, phone: u.phone ?? "", nationality: u.nationality ?? "", address: u.address ?? "", passportId: u.passportId ?? "" });
+    setForm({ name: u.name, phone: u.phone ?? "" });
     editModal.onOpen();
   }
   async function saveEdit() {
     if (!editing) return;
     const ok = await run(() => updateUserProfile(editing.id, {
-      name: form.name, phone: form.phone || null, nationality: form.nationality || null,
-      address: form.address || null, passportId: form.passportId || null,
+      name: form.name, phone: form.phone || null,
     }), t('dashboard.usersManager.profileUpdated'));
     if (ok) editModal.onClose();
   }
@@ -132,13 +135,19 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
                           </Tooltip>
                         )}
                       </div>
-                      <div className="text-xs text-slate-400">{t('dashboard.usersManager.joinedOn', { date: new Date(u.createdAt).toLocaleDateString() })}</div>
+                      <div className="pv-codigo text-xs text-pv-tinta-suave">
+                        {u.username ?? t('dashboard.usersManager.sinUsuario')}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600 dark:text-slate-300">{u.email}</span>
+                    <span className="text-slate-600 dark:text-slate-300">
+                      {u.email.endsWith("@procovar.local")
+                        ? t('dashboard.usersManager.sinCorreo')
+                        : u.email}
+                    </span>
                     <Chip
                       size="sm" variant="flat" color={u.emailVerified ? "success" : "warning"}
                       startContent={<Icon icon={u.emailVerified ? "lucide:badge-check" : "lucide:mail-warning"} className="ml-1 size-3.5" aria-hidden />}
@@ -203,9 +212,6 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
           <ModalBody className="gap-3">
             <Input label={t('dashboard.usersManager.nameLabel')} variant="bordered" value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} />
             <Input label={t('dashboard.usersManager.phoneLabel')} variant="bordered" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} startContent={<Icon icon="lucide:phone" className="size-4 text-slate-400" aria-hidden />} />
-            <Input label={t('dashboard.usersManager.nationalityLabel')} variant="bordered" value={form.nationality} onValueChange={(v) => setForm((f) => ({ ...f, nationality: v }))} />
-            <Input label={t('dashboard.usersManager.addressLabel')} variant="bordered" value={form.address} onValueChange={(v) => setForm((f) => ({ ...f, address: v }))} startContent={<Icon icon="lucide:map-pin" className="size-4 text-slate-400" aria-hidden />} />
-            <Input label={t('dashboard.usersManager.passportLabel')} variant="bordered" value={form.passportId} onValueChange={(v) => setForm((f) => ({ ...f, passportId: v }))} />
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" startContent={<Icon icon="lucide:x-circle" className="size-4" aria-hidden />} onPress={editModal.onClose}>{t('dashboard.common.cancel')}</Button>
@@ -214,7 +220,7 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
         </ModalContent>
       </Modal>
 
-      {/* Detail: subscription / orgs / sessions */}
+      {/* Ficha: sucursales y sesiones */}
       <Modal isOpen={detailModal.isOpen} onOpenChange={detailModal.onOpenChange} size="2xl" scrollBehavior="inside">
         <ModalContent>
           <ModalHeader>
