@@ -1,19 +1,27 @@
 import { NavBarBasic } from "@/components/layout/navbar";
+import { getCurrentUser } from "@/server/auth.server";
 
 // Páginas de una persona concreta: nunca se generan por adelantado.
 export const dynamic = "force-dynamic";
 
 /**
- * El armazón de todo lo que hay dentro de la sesión.
+ * El armazón de lo que hay dentro de la sesión.
  *
- * Antes buscaba en la base las direcciones de la web de reservas y del panel del
- * producto del que salió este código, para poner dos enlaces en la barra. Esas
- * dos aplicaciones no existen en Procovar, así que eran dos consultas a la base
- * en cada carga para acabar apuntando a `hostravel.net`.
+ * **Sin sesión no hay barra.** La de arriba es el menú de la persona y el
+ * selector de idioma: con la sesión cerrada no tiene a quién enseñar ni adónde
+ * llevar, y encima le comía el borde a la pantalla de entrada, que va a sangre.
+ *
+ * Tampoco hay pie. El que había identificaba a la empresa y enlazaba los
+ * documentos legales, que es lo que necesita una web que vende a desconocidos.
+ * Esto es la herramienta de casa: quien entra ya sabe dónde trabaja.
  */
 export default async function UserLayout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
+    const { data: user } = await getCurrentUser();
+
+    if (!user) return <>{children}</>;
+
     return (
         <div className="min-h-svh bg-pv-papel">
             <NavBarBasic />

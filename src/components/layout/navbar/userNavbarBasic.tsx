@@ -20,6 +20,7 @@ import { useLogoutModalContext } from "./LogoutModalProvider";
 import { authClient } from "@/lib/auth-client";
 import { Icons } from "@/components/icons/iconify";
 import { useTranslations } from "next-intl";
+import { useFullUser } from "@/components/full-user-provider";
 
 type SubscriptionPlanKey = "basic" | "pro" | "pro_plus";
 
@@ -51,6 +52,12 @@ const PLAN_AVATAR_STYLE: Record<SubscriptionPlanKey, { glow: string; ring: strin
 export const UserNavbarBasic = () => {
     const { data: session, isPending } = authClient.useSession();
         const isAdmin = !!(session?.user as { isSystemAdmin?: boolean } | undefined)?.isSystemAdmin;
+        // ¿Lleva alguna sucursal? Basta con pertenecer a una: la pantalla de
+        // "Mi sucursal" comprueba el permiso de verdad y devuelve al perfil a
+        // quien no lo tenga. Aquí solo se decide si merece la pena enseñar la
+        // entrada — esconderla al Administrador era dejarle sin su panel.
+        const { user: fichaCompleta } = useFullUser();
+        const puedeLlevarSucursal = isAdmin || (fichaCompleta?.members?.length ?? 0) > 0;
     const { openModal } = useLogoutModalContext();
     const t = useTranslations();
     const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -173,7 +180,10 @@ export const UserNavbarBasic = () => {
                                 <span className="text-xs font-semibold text-default-600">{subscription?.plan.name}</span>
                             </DropdownItem>
                         </DropdownSection>
-                        <DropdownSection showDivider className={isAdmin ? "hidden" : undefined}>
+                        {/* Lo de cada cual: su cuenta, sus avisos, sus datos. Lo
+                            ve todo el mundo, incluido el Super Admin — también
+                            tiene cuenta propia. Antes se le escondía. */}
+                        <DropdownSection showDivider>
                             <DropdownItem key="profile" startContent={<Icons.userCircle className={iconClasses} />} as={NextLink} href="/profile">
                                 {t('nav.profile')}
                             </DropdownItem>
@@ -184,15 +194,24 @@ export const UserNavbarBasic = () => {
                                 {t('nav.settings')}
                             </DropdownItem>
                         </DropdownSection>
-                        <DropdownSection showDivider aria-label="Admin" className={isAdmin ? undefined : "hidden"}>
-                            <DropdownItem key="admin-dashboard" startContent={<Icons.system className={iconClasses} />} as={NextLink} href="/dashboard">
-                                {t('account.goToDashboard')}
-                            </DropdownItem>
+
+                        {/* Mi sucursal: para quien lleva una.
+                            Iba dentro del bloque del Super Admin, así que un
+                            Administrador no veía la entrada a SU PROPIO panel y
+                            solo llegaba escribiendo la dirección a mano. La
+                            pantalla ya comprueba el permiso por su cuenta: si
+                            alguien entra sin llevar ninguna sucursal, la propia
+                            página lo devuelve a su perfil. */}
+                        <DropdownSection showDivider aria-label="Sucursal" className={puedeLlevarSucursal ? undefined : "hidden"}>
                             <DropdownItem key="admin-org" startContent={<Icons.building className={iconClasses} />} as={NextLink} href="/profile/org">
                                 {t('account.orgDashboard')}
                             </DropdownItem>
-                            <DropdownItem key="admin-client" startContent={<Icons.userCircle className={iconClasses} />} as={NextLink} href="/profile?view=client">
-                                {t('account.myPersonalProfile')}
+                        </DropdownSection>
+
+                        {/* Y el panel de toda Procovar, solo para el Super Admin. */}
+                        <DropdownSection showDivider aria-label="Admin" className={isAdmin ? undefined : "hidden"}>
+                            <DropdownItem key="admin-dashboard" startContent={<Icons.system className={iconClasses} />} as={NextLink} href="/dashboard">
+                                {t('account.goToDashboard')}
                             </DropdownItem>
                         </DropdownSection>
                         {/* Facturas, reservas, servicios y bonos son del negocio de

@@ -275,6 +275,164 @@ body {
 }
 .pv-tabla tbody tr:hover { background: var(--pv-azul-tinte); }
 
+/* ── Campos de formulario ──────────────────────────────────────────────────
+   Una sola línea, y el foco se ANUNCIA.
+
+   Lo que había: la librería dibuja el borde del contenedor y encima un anillo
+   propio, así que al entrar en un campo aparecían dos líneas superpuestas de
+   grosores distintos. Con esquinas cuadradas se nota más todavía: parece un
+   fallo de pintado, no un estado.
+
+   Aquí el campo en reposo es una caja de línea fina sobre blanco. Al recibir el
+   foco, el borde pasa al azul de la marca y **crece una barra desde el centro**
+   por debajo — el mismo gesto que un subrayado hecho de una pasada. Dura 140 ms:
+   lo justo para verlo sin que estorbe a quien va rápido con el tabulador.
+
+   Se anima `transform`, no el ancho: el ancho obliga al navegador a recalcular
+   la disposición en cada fotograma y en un ordenador modesto se ve a tirones.
+
+   Para HeroUI se aplica sobre sus `data-slot`; en un `<input>` normal, la misma
+   clase `pv-campo` en el contenedor.
+   ────────────────────────────────────────────────────────────────────────── */
+.pv-campo,
+[data-slot="input-wrapper"],
+[data-slot="trigger"] {
+  position: relative;
+  background: var(--card) !important;
+  border: 1px solid var(--input) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: border-color .14s ease;
+}
+
+.pv-campo::after,
+[data-slot="input-wrapper"]::after,
+[data-slot="trigger"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ring);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .14s ease;
+}
+
+.pv-campo:focus-within,
+[data-slot="input-wrapper"][data-focus="true"],
+[data-slot="input-wrapper"]:focus-within,
+[data-slot="trigger"][data-focus="true"] {
+  border-color: var(--ring) !important;
+}
+
+.pv-campo:focus-within::after,
+[data-slot="input-wrapper"][data-focus="true"]::after,
+[data-slot="input-wrapper"]:focus-within::after,
+[data-slot="trigger"][data-focus="true"]::after {
+  transform: scaleX(1);
+}
+
+/* Al pasar por encima, solo se oscurece la línea: mover algo al pasar el ratón
+   sobre un formulario largo lo deja temblando. */
+.pv-campo:hover:not(:focus-within),
+[data-slot="input-wrapper"][data-hover="true"]:not([data-focus="true"]) {
+  border-color: color-mix(in srgb, var(--ring) 45%, var(--input)) !important;
+}
+
+/* Mal rellenado: la línea de abajo se queda puesta y en rojo de cuño, sin
+   esperar al foco. El color no basta por sí solo —hay quien no lo distingue—,
+   así que el mensaje de error va siempre debajo, con palabras. */
+.pv-campo[data-invalido="true"],
+[data-slot="input-wrapper"][data-invalid="true"] {
+  border-color: var(--destructive) !important;
+}
+.pv-campo[data-invalido="true"]::after,
+[data-slot="input-wrapper"][data-invalid="true"]::after {
+  background: var(--destructive);
+  transform: scaleX(1);
+}
+
+/* La etiqueta, encima y tranquila. Nada de etiquetas que flotan y saltan al
+   escribir: en un formulario de ocho campos, ocho cosas moviéndose marean. */
+[data-slot="label"] {
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+/* El texto de ejemplo se lee como ejemplo, no como algo ya escrito. */
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--muted-foreground) 70%, transparent) !important;
+}
+
+/* El relleno automático del navegador pinta el fondo de amarillo y rompe el
+   tema. Se le da el color de la casa con una sombra interior enorme, que es la
+   única forma de ganarle. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--card) inset;
+  caret-color: var(--foreground);
+}
+
+/* ── Los demás componentes, sin dobles líneas ──────────────────────────────
+   La corrección del campo vale para todos los `Input` y `Select` de la
+   aplicación, no solo los de la entrada: se aplica sobre los `data-slot` de la
+   librería, que son los mismos en todas partes.
+
+   Falta el resto, que traen su propio borde y su propia sombra y acaban
+   dibujando dos líneas cuando se apoyan sobre una superficie que ya tiene la
+   suya. Con esquinas cuadradas se ve mucho más.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Tarjetas y modales: una línea y ninguna sombra difusa. La sombra de la
+   librería es de aplicación de consumo; aquí la jerarquía la marca la línea. */
+[data-slot="base"].shadow-medium,
+[data-slot="base"].shadow-small,
+[data-slot="base"].shadow-large {
+  box-shadow: none !important;
+  border: 1px solid var(--border-soft) !important;
+}
+
+/* El modal sí lleva sombra: tiene que despegarse del fondo o no se lee como
+   algo que está por encima. */
+[role="dialog"] {
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 18px 48px -12px rgb(0 0 0 / .28) !important;
+}
+
+/* Casillas y botones de opción: cuadrados, como todo. */
+[data-slot="wrapper"]:has(> input[type="checkbox"]),
+[data-slot="wrapper"]:has(> input[type="radio"]) {
+  border-radius: 0 !important;
+}
+
+/* Los avisos (`Alert`) llevaban fondo saturado y esquinas redondas. Se quedan en
+   una barra de color a la izquierda: se distingue igual de rápido y no compite
+   con el contenido. */
+[data-slot="base"][data-has-title="true"] {
+  border-radius: 0 !important;
+}
+
+/* Las etiquetas de la librería (`Chip`) también van cuadradas, para que no
+   convivan pastillas y rectángulos en la misma fila. */
+[data-slot="content"]:has(> [data-slot="dot"]),
+.heroui-chip {
+  border-radius: 0 !important;
+}
+
+/* Un botón que se está pulsando se hunde un punto. Es el único movimiento de la
+   interfaz aparte del subrayado del foco: confirma que el clic entró, que en una
+   conexión lenta es la diferencia entre esperar y volver a pulsar. */
+button:active:not(:disabled),
+[role="button"]:active {
+  transform: translateY(1px);
+}
+
 /* ── Accesibilidad, sin anunciarla ────────────────────────────────────────── */
 :focus-visible {
     outline: 2px solid var(--pv-azul);
@@ -304,11 +462,9 @@ body {
 [data-slot="input"] { color: var(--pv-tinta) !important; }
 [data-slot="input"]::placeholder { color: var(--pv-tinta-suave) !important; }
 [data-slot="label"] { color: var(--pv-tinta-suave) !important; }
-[data-slot="input-wrapper"] { background-color: var(--pv-blanco) !important; }
 [data-slot="item-title"] { color: var(--pv-tinta) !important; }
 [data-slot="description"] { color: var(--pv-tinta-suave) !important; }
 [data-slot="value"] { color: var(--pv-tinta) !important; }
-[data-slot="trigger"] { background-color: var(--pv-blanco) !important; }
 [data-slot="textarea"] { color: var(--pv-tinta) !important; }
 [data-slot="textarea"]::placeholder { color: var(--pv-tinta-suave) !important; }
 [data-slot="base"] { color: inherit; }
@@ -318,6 +474,4 @@ body {
 [data-color="danger"] [data-slot="alert-title"] {
     color: var(--pv-cuno) !important;
 }
-[data-invalid="true"] [data-slot="input-wrapper"] {
-    border-color: var(--pv-cuno) !important;
-}
+

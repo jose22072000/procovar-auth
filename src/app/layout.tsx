@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -72,7 +71,6 @@ export default async function RootLayout({
           <Providers>
             <div className="flex min-h-svh flex-col">
               <div className="flex-1">{children}</div>
-              <SiteFooter />
             </div>
           </Providers>
         </NextIntlClientProvider>
