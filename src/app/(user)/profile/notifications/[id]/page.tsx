@@ -81,11 +81,6 @@ export default function NotificationDetailPage() {
         <ProfilePageShell
             title={title}
             backPath="/profile/notifications"
-            icon={
-                <div className="rounded-sm bg-blue-100 p-2 dark:bg-blue-900/30">
-                    <Icons.bell className="size-5 text-blue-600 dark:text-blue-400" />
-                </div>
-            }
         >
             {children}
         </ProfilePageShell>

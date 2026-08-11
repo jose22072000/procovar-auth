@@ -1,56 +1,66 @@
 "use client";
 
-import { Card, CardBody, CardHeader } from "@heroui/react";
+import Link from "next/link";
+import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
-import { Icons } from "@/components/icons/iconify";
-import { useRouter } from "next/navigation";
 
 interface ProfilePageShellProps {
     title: string;
-    icon: React.ReactNode;
+    /** Rótulo de encima del título: dice de qué apartado es esta pantalla. */
+    rotulo?: string;
     count?: number;
     backPath?: string;
     children: React.ReactNode;
+    /** Se acepta y se ignora: ver la nota de abajo. */
+    icon?: React.ReactNode;
 }
 
+/**
+ * El marco de las pantallas de "mi cuenta".
+ *
+ * Antes era una tarjeta blanca con sombra grande sobre fondo gris, dentro de un
+ * contenedor con relleno superior a ojo para dejar sitio a la barra fija que ya
+ * no existe. Resultado: un hueco enorme arriba y la pantalla flotando.
+ *
+ * Ahora es lo mismo que el resto de la aplicación: rótulo, título, contenido.
+ * Sin tarjeta y sin sombra — la jerarquía la marcan la letra y las líneas, no
+ * una caja levantada del fondo.
+ *
+ * `icon` se sigue aceptando para no romper a quien lo pasa, pero no se dibuja:
+ * cada pantalla tenía un icono dentro de un cuadro de color distinto —morado,
+ * azul, verde— y era el único sitio del sistema donde aparecían esos colores.
+ */
 export function ProfilePageShell({
     title,
-    icon,
+    rotulo,
     count,
     backPath = "/profile",
     children,
 }: ProfilePageShellProps) {
-    const router = useRouter();
     const t = useTranslations();
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <div className="container mx-auto pt-16 md:pt-20 lg:pt-24 pb-6 md:pb-8 px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl">
-                <Card className="bg-white dark:bg-slate-900 shadow-xl shadow-gray-200/50 dark:shadow-none rounded-sm md:rounded-sm">
-                    <CardHeader className="flex justify-between items-center p-3 md:p-5 pb-2 md:pb-3">
-                        <div className="flex items-center gap-2 md:gap-3">
-                            <button
-                                onClick={() => router.push(backPath)}
-                                className="p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-sm transition-colors"
-                            >
-                                <Icons.arrowLeft className="size-4 md:size-5 text-blue-600 dark:text-blue-300" />
-                            </button>
-                            {icon}
-                            <div>
-                                <h1 className="text-lg md:text-xl font-bold text-black dark:text-white">{title}</h1>
-                                {count !== undefined && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {t('profilePages.shell.itemsCount', { count })}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardBody className="pt-1 md:pt-2 px-2 md:px-5 pb-4 md:pb-5">
-                        {children}
-                    </CardBody>
-                </Card>
+        <div className="mx-auto max-w-5xl px-4 py-6">
+            <div className="mb-5 flex items-start gap-3">
+                <Link
+                    href={backPath}
+                    aria-label={t("profilePages.shell.back")}
+                    className="pv-toque -ml-2 mt-0.5 flex size-8 shrink-0 items-center justify-center text-pv-tinta-suave transition-colors hover:text-pv-azul"
+                >
+                    <Icon icon="lucide:arrow-left" className="size-4" aria-hidden />
+                </Link>
+                <div className="min-w-0">
+                    {rotulo && <p className="pv-rotulo">{rotulo}</p>}
+                    <h1 className="pv-titulo text-2xl">{title}</h1>
+                    {count !== undefined && (
+                        <p className="mt-0.5 text-sm text-pv-tinta-suave">
+                            {t("profilePages.shell.itemsCount", { count })}
+                        </p>
+                    )}
+                </div>
             </div>
+
+            {children}
         </div>
     );
 }

@@ -109,7 +109,7 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
                 className={
                   "flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors " +
                   (active
-                    ? "border-[#0A2252]/40 bg-[#0A2252]/8 dark:border-white/25 dark:bg-white/10"
+                    ? "border-pv-azul/40 bg-pv-azul/8 dark:border-white/25 dark:bg-white/10"
                     : "border-gray-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800")
                 }
               >

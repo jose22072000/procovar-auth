@@ -57,7 +57,7 @@ export function UserCard({ user, userInitial }: { user: User; userInitial: strin
                         as={Link}
                         href="/profile/me"
                         variant="bordered"
-                        className="shrink-0 font-medium hidden sm:flex border-[#0A2252]/85 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
+                        className="shrink-0 font-medium hidden sm:flex border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8"
                         startContent={<Icons.userCircle className="size-4" />}
                     >
                         {t('profile.settings')}
@@ -67,7 +67,7 @@ export function UserCard({ user, userInitial }: { user: User; userInitial: strin
                         href="/profile/me"
                         variant="bordered"
                         isIconOnly
-                        className="shrink-0 sm:hidden border-[#0A2252]/85 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
+                        className="shrink-0 sm:hidden border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8"
                     >
                         <Icons.userCircle className="size-4" />
                     </Button>

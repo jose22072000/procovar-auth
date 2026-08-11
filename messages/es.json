@@ -572,7 +572,8 @@
   },
   "profilePages": {
     "shell": {
-      "itemsCount": "{count} elementos"
+      "itemsCount": "{count} elementos",
+      "back": "Volver"
     },
     "completeness": {
       "complete": "Perfil completo",

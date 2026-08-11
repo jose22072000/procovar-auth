@@ -200,7 +200,7 @@ export function RolesManager({
                             type="button"
                             onClick={() => cambiarRol(r.id)}
                             className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${activo
-                                ? "border-[#0A2252] bg-[#0A2252] text-white dark:border-sky-500 dark:bg-sky-600"
+                                ? "border-pv-azul bg-pv-azul text-white dark:border-sky-500 dark:bg-sky-600"
                                 : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900"
                                 }`}
                         >

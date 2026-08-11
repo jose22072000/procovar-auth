@@ -4,7 +4,7 @@
 // /profile/config form, which no longer exists).
 
 export const outlinedButtonClass =
-    "font-semibold border-[#0A2252]/85 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
+    "font-semibold border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
 
 export function SectionCard({
     icon,

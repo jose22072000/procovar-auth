@@ -131,7 +131,7 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
                         <span className="truncate font-medium text-slate-900 dark:text-slate-100">{u.name}</span>
                         {u.isSystemAdmin && (
                           <Tooltip content={t('dashboard.usersManager.systemAdminTooltip')}>
-                            <span className="inline-flex"><Icon icon="lucide:shield-check" className="size-3.5 text-[#0A2252] dark:text-sky-400" aria-hidden /></span>
+                            <span className="inline-flex"><Icon icon="lucide:shield-check" className="size-3.5 text-pv-azul dark:text-sky-400" aria-hidden /></span>
                           </Tooltip>
                         )}
                       </div>
@@ -245,9 +245,8 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
                 <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-slate-700/60 dark:border-slate-700">
                   {detail.orgs.map((o) => (
                     <div key={o.slug} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
-                      <Avatar name={o.name} radius="sm" size="sm" className="shrink-0" />
-                      <span className="font-medium text-slate-900 dark:text-slate-100">{o.name}</span>
-                      <span className="text-slate-400">@{o.slug}</span>
+                      <span className="pv-etiqueta pv-etiqueta-gris shrink-0">{o.slug.toUpperCase()}</span>
+                      <span className="font-medium">{o.name}</span>
                       <div className="ml-auto flex flex-wrap gap-1">
                         {o.roles.map((r) => <Chip key={r} size="sm" variant="flat">{r}</Chip>)}
                       </div>

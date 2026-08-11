@@ -139,13 +139,13 @@ function ClientModal({
         } finally { setSaving(false); }
     }
 
-    const btnClass = "font-semibold border-[#0A2252]/85 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
+    const btnClass = "font-semibold border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
             <ModalContent>
                 <ModalHeader className="flex items-center gap-2">
-                    <Icons.settings className="size-5 text-[#0A2252] dark:text-sky-400" />
+                    <Icons.settings className="size-5 text-pv-azul dark:text-sky-400" />
                     {initial ? t('dashboard.clientsManager.editClientTitle', { clientId: initial.clientId }) : t('dashboard.clientsManager.newClientTitle')}
                 </ModalHeader>
                 <ModalBody className="space-y-4 pb-2">
@@ -192,7 +192,7 @@ function ClientModal({
 
 function SigningKeyModal({ signingKey, onClose }: { signingKey: string; onClose: () => void }) {
     const t = useTranslations();
-    const btnClass = "font-semibold border-[#0A2252]/85 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8 dark:text-white dark:border-white/35";
+    const btnClass = "font-semibold border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8 dark:text-white dark:border-white/35";
     return (
         <Modal isOpen onClose={onClose} size="lg">
             <ModalContent>
@@ -280,7 +280,7 @@ function ClientsTab({ initialClients }: { initialClients: ClientApp[] }) {
         }
     }
 
-    const btnClass = "font-semibold border-[#0A2252]/85 text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
+    const btnClass = "font-semibold border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
 
     if (loading) return <div className="flex justify-center py-12"><Spinner /></div>;
     if (fetchErr) return (
@@ -306,7 +306,7 @@ function ClientsTab({ initialClients }: { initialClients: ClientApp[] }) {
             <div className="space-y-3">
                 {clients.map((client) => (
                     <div key={client.id}
-                        className="p-4 rounded-sm bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 space-y-3 transition-colors hover:border-[#0A2252]/30 dark:hover:border-white/25">
+                        className="p-4 rounded-sm bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 space-y-3 transition-colors hover:border-pv-azul/30 dark:hover:border-white/25">
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
