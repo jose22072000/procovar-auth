@@ -1,31 +1,49 @@
 import { describe, it, expect } from 'vitest'
 import { PERMISSION_CATALOG } from '../permissions.catalog'
 
-describe('PERMISSION_CATALOG', () => {
-  it('has unique keys', () => {
+const SERVICIOS = ['pedido', 'analitics', 'delivery', 'ccsa', 'auth']
+
+describe('el catálogo de permisos', () => {
+  it('no repite claves', () => {
     const keys = PERMISSION_CATALOG.map((p) => p.key)
     expect(new Set(keys).size).toBe(keys.length)
   })
-  it('has reservation.read only (lifecycle actions are not permissions)', () => {
-    const keys = PERMISSION_CATALOG.map((p) => p.key)
-    expect(keys).toContain('reservation.read')
-    // guests create reservations in QBT; cancel/modify/check-in/out are done by
-    // anyone in the org — none of these are gated permissions.
-    for (const k of ['reservation.create', 'reservation.cancel', 'reservation.modify', 'reservation.checkin', 'reservation.checkout']) {
-      expect(keys).not.toContain(k)
-    }
-  })
-  it('includes core management permissions', () => {
-    const keys = PERMISSION_CATALOG.map((p) => p.key)
-    for (const k of ['property.edit', 'media.upload', 'role.create', 'member.invite']) {
-      expect(keys).toContain(k)
-    }
-  })
-  it('every entry has es+en labels and a group', () => {
+
+  it('cada permiso dice de qué aplicación es', () => {
+    // `service` es lo que permite que el Operador sí vea reportes en analitics y
+    // no en PEDIDO. Sin él volvemos a un único interruptor para las cuatro apps.
     for (const p of PERMISSION_CATALOG) {
-      expect(p.label.es).toBeTruthy()
-      expect(p.label.en).toBeTruthy()
-      expect(p.group).toBeTruthy()
+      expect(SERVICIOS, `"${p.key}" es del servicio "${p.service}"`).toContain(p.service)
+    }
+  })
+
+  it('las cuatro aplicaciones tienen permisos', () => {
+    for (const s of SERVICIOS) {
+      expect(PERMISSION_CATALOG.some((p) => p.service === s), `falta ${s}`).toBe(true)
+    }
+  })
+
+  it('la clave es recurso.acción, y así se guarda', () => {
+    for (const p of PERMISSION_CATALOG) {
+      expect(p.key.split('.'), `"${p.key}"`).toHaveLength(2)
+      expect(p.key).toBe(`${p.resource}.${p.action}`)
+    }
+  })
+
+  it('están los que Jose pidió expresamente', () => {
+    const keys = PERMISSION_CATALOG.map((p) => p.key)
+    // La auditoría ("saber qué se hizo en cada cliente") y el alta de las
+    // aplicaciones externas fueron peticiones suyas, no adornos.
+    expect(keys).toContain('audit.read')
+    expect(keys).toContain('app.manage')
+    expect(keys).toContain('member.assignRole')
+  })
+
+  it('todo permiso se puede enseñar en pantalla', () => {
+    for (const p of PERMISSION_CATALOG) {
+      expect(p.label.es, p.key).toBeTruthy()
+      expect(p.label.en, p.key).toBeTruthy()
+      expect(p.group, p.key).toBeTruthy()
     }
   })
 })

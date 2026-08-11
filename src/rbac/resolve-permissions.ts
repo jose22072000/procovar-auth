@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import type { ResolvedRbac } from './types'
 
 const empty = (org: string | null, wildcard = false): ResolvedRbac => ({
-  org, wildcard, global: [], byProperty: {},
+  org, wildcard, global: [],
 })
 
 export async function resolveRbac(userId: string, orgId: string | null): Promise<ResolvedRbac> {
@@ -22,40 +22,28 @@ export async function resolveRbac(userId: string, orgId: string | null): Promise
   })
   if (!member) return empty(orgId)
 
-  const globalSet = new Set<string>()
-  const byProperty: Record<string, Set<string>> = {}
+  // A member can hold several roles, and the result is the UNION of what they
+  // grant. Roles only add — there is no "deny" permission — so no rule can ever
+  // depend on which of a person's roles happened to be read first.
+  const granted = new Set<string>()
 
   for (const mr of member.memberRoles) {
-    // Null-guard: role_permission has NO FK on permissionId, so a row can point
-    // at a permission id that is no longer in the catalog (e.g. left behind by
-    // an earlier catalog generation). Prisma's `include: { permission: true }`
-    // then yields `rp.permission === null` for that row, and a bare
-    // `rp.permission.key` threw `Cannot read properties of null (reading 'key')`
-    // — which surfaced as a 500 from POST /api/auth/verify-session and made
-    // qb-back downgrade the whole session to 401, silently breaking RBAC for
-    // EVERY non-systemadmin member whose role carried even one orphaned row.
-    // Skip the dangling rows; a role still resolves to the permissions that DO
-    // still exist. (The orphaned rows themselves are a data-integrity issue to
-    // clean up / re-key separately — this guard only stops them from crashing
-    // session verification.)
-    const keys = mr.role.permissions
-      .map((rp) => rp.permission?.key)
-      .filter((k): k is string => Boolean(k))
-    if (mr.scopeAllProperties) {
-      for (const k of keys) globalSet.add(k)
-    } else {
-      const propertyIds = Array.isArray(mr.propertyIds) ? (mr.propertyIds as string[]) : []
-      for (const pid of propertyIds) {
-        byProperty[pid] ??= new Set<string>()
-        for (const k of keys) byProperty[pid].add(k)
-      }
+    // `rp.permission` can be null: role_permission has NO foreign key on
+    // permissionId, so a row may point at a permission that is no longer in the
+    // catalog — left behind by an earlier seed. Reading `rp.permission.key`
+    // directly threw `Cannot read properties of null (reading 'key')`, which
+    // came out as a 500 from verify-session; the calling app read that as "no
+    // session" and logged the person out. One stale row was enough to break
+    // every member holding that role.
+    //
+    // Skipping the dangling rows keeps the rest of the role working. The rows
+    // themselves still need cleaning up — this guard only stops them from
+    // taking down session verification.
+    for (const rp of mr.role.permissions) {
+      const key = rp.permission?.key
+      if (key) granted.add(key)
     }
   }
 
-  return {
-    org: orgId,
-    wildcard: false,
-    global: [...globalSet],
-    byProperty: Object.fromEntries(Object.entries(byProperty).map(([k, v]) => [k, [...v]])),
-  }
+  return { org: orgId, wildcard: false, global: [...granted] }
 }

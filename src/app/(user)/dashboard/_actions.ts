@@ -173,15 +173,17 @@ export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Pr
         await requireAdmin();
         const member = await prisma.member.findUnique({ where: { id: memberId } });
         if (!member) return { error: "Miembro no encontrado" };
-        const valid = await prisma.role.findMany({ where: { id: { in: roleIds }, organizationId: member.organizationId }, select: { id: true } });
-        if (valid.length !== roleIds.length) return { error: "Rol inválido para esta organización" };
+        // El catálogo de roles es de toda Procovar: basta con que el rol exista.
+        // Lo que ata a la persona a su sucursal es el miembro, no el rol.
+        const valid = await prisma.role.findMany({ where: { id: { in: roleIds } }, select: { id: true } });
+        if (valid.length !== roleIds.length) return { error: "Rol inválido" };
         const existing = await prisma.memberRole.findMany({ where: { memberId }, select: { roleId: true } });
         const have = new Set(existing.map((r) => r.roleId));
         const want = new Set(roleIds);
         const toAdd = roleIds.filter((id) => !have.has(id));
         const toRemove = existing.filter((r) => !want.has(r.roleId)).map((r) => r.roleId);
         await prisma.$transaction([
-            ...toAdd.map((roleId) => prisma.memberRole.create({ data: { memberId, roleId, scopeAllProperties: true, propertyIds: [] } })),
+            ...toAdd.map((roleId) => prisma.memberRole.create({ data: { memberId, roleId } })),
             ...(toRemove.length ? [prisma.memberRole.deleteMany({ where: { memberId, roleId: { in: toRemove } } })] : []),
         ]);
         revalidatePath("/dashboard");

@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed:rbac": "tsx scripts/seed-rbac.ts"
+    "seed:rbac": "tsx scripts/seed-rbac.ts",
+    "seed:procovar": "tsx scripts/seed-procovar.ts"
   },
   "dependencies": {
     "@heroui/react": "^2.8.7",

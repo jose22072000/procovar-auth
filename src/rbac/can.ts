@@ -1,17 +1,14 @@
 import type { ResolvedRbac } from './types'
 
 /**
- * Single RBAC decision function. Order: wildcard → global → byProperty.
- * Deny by default. Same signature is mirrored in qb-back and qb-panel.
+ * The single RBAC decision. Deny by default.
+ *
+ * Order: system admin → does this member hold the permission in this sucursal.
+ * Every app asks the same question the same way, so an answer cannot drift
+ * between PEDIDO, analitics, delivery and ccsa.
  */
-export function can(
-  rbac: ResolvedRbac | null | undefined,
-  permission: string,
-  propertyId?: string,
-): boolean {
+export function can(rbac: ResolvedRbac | null | undefined, permission: string): boolean {
   if (!rbac) return false
   if (rbac.wildcard) return true
-  if (rbac.global.includes(permission)) return true
-  if (propertyId && rbac.byProperty[propertyId]?.includes(permission)) return true
-  return false
+  return rbac.global.includes(permission)
 }

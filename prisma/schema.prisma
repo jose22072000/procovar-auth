@@ -92,7 +92,6 @@ model Organization {
   updatedAt   DateTime     @updatedAt
   members     Member[]
   invitations Invitation[]
-  roles       Role[]
 
   @@map("organization")
 }
@@ -124,8 +123,6 @@ model Invitation {
   createdAt          DateTime     @default(now())
   acceptedAt         DateTime?
   roleId             String?
-  propertyIds        Json         @default("[]")
-  scopeAllProperties Boolean      @default(true)
   organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inviter            User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
@@ -309,21 +306,29 @@ model Permission {
   @@map("permission")
 }
 
+/// Catálogo de roles, ÚNICO para todo Procovar.
+///
+/// NO cuelga de la organización a propósito. La organización es la SUCURSAL, y
+/// los roles son los mismos en las ocho: Super Admin, Administrador, Supervisor,
+/// Gestor, Operador. Colgarlo de cada una obligaría a crear "Operador" ocho
+/// veces y, el día que cambie lo que puede hacer, a tocarlas todas — o quedarían
+/// distintas sin que nadie lo notara.
+///
+/// Lo que cambia de una persona a otra no es el rol: es EN QUÉ SUCURSAL lo
+/// tiene, y eso ya lo dice su `Member`. El rol se le asigna a la PERSONA
+/// (`MemberRole`), y lo editan el Super Admin o el Administrador.
 model Role {
-  id             String           @id @default(cuid())
-  organizationId String
-  name           String
-  description    String?
-  color          String?
-  icon           String?
-  isSystem       Boolean          @default(false)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  permissions    RolePermission[]
-  memberRoles    MemberRole[]
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  color       String?
+  icon        String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  memberRoles MemberRole[]
 
-  @@unique([organizationId, name])
   @@map("role")
 }
 
@@ -338,14 +343,21 @@ model RolePermission {
   @@map("role_permission")
 }
 
+/// Esta persona tiene este rol.
+///
+/// El ALCANCE no se guarda aquí: sale del `Member`, que ya pertenece a una
+/// sucursal. "Yasmani es Operador en Camagüey" es esta fila más su miembro.
+/// Si mañana lleva también Holguín, es otro miembro con el mismo rol — sin
+/// duplicar el rol.
+///
+/// Se quitó el alcance por PROPIEDAD (`scopeAllProperties`, `propertyIds`): era
+/// del negocio de alojamientos. En Procovar no hay propiedades.
 model MemberRole {
-  id                 String  @id @default(cuid())
-  memberId           String
-  roleId             String
-  scopeAllProperties Boolean @default(true)
-  propertyIds        Json    @default("[]")
-  member             Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  role               Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  memberId String
+  roleId   String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role     Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([memberId, roleId])
   @@map("member_role")

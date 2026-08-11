@@ -46,12 +46,17 @@ export async function PATCH(request: Request, { params }: Params) {
   const role = await prisma.role.findUnique({ where: { id: roleId } })
   if (!role) return NextResponse.json({ error: 'Role not found' }, { status: 404 })
 
-  if (role.isSystem && !user.isSystemAdmin) {
-    return NextResponse.json({ error: 'System roles can only be edited by a system admin' }, { status: 403 })
-  }
-  const actorRbac = await resolveRbac(user.id, role.organizationId)
-  if (!role.isSystem && !can(actorRbac, 'role.edit')) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // The role catalog is shared by all eight sucursales, so editing "Operador"
+  // changes what every Operador in Procovar can do. Resolving with `null` gives
+  // a wildcard to a Super Admin and nothing to anyone else — which is the rule
+  // we want: an Administrador of Camagüey must not be able to widen a role that
+  // is also in use in Holguín. They assign roles; they do not redefine them.
+  const actorRbac = await resolveRbac(user.id, null)
+  if (!can(actorRbac, 'role.edit')) {
+    return NextResponse.json(
+      { error: 'Solo un Super Admin puede cambiar los permisos de un rol: el catálogo es de toda Procovar' },
+      { status: 403 },
+    )
   }
 
   const { name, description, color, icon, permissionKeys } = await request.json()
@@ -96,9 +101,11 @@ export async function DELETE(request: Request, { params }: Params) {
     where: { id: roleId }, include: { _count: { select: { memberRoles: true } } },
   })
   if (!role) return NextResponse.json({ error: 'Role not found' }, { status: 404 })
+  // The five Procovar roles are not deletable: every app resolves people through
+  // them, so removing one would leave those members with no access at all.
   if (role.isSystem) return NextResponse.json({ error: 'System roles cannot be deleted' }, { status: 400 })
 
-  const rbac = await resolveRbac(user.id, role.organizationId)
+  const rbac = await resolveRbac(user.id, null)
   if (!can(rbac, 'role.delete')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (role._count.memberRoles > 0) {
     return NextResponse.json({ error: 'Role has members assigned; reassign them first' }, { status: 409 })

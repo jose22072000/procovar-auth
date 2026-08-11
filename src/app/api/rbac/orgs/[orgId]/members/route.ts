@@ -37,11 +37,7 @@ export async function GET(request: Request, { params }: Params) {
   return NextResponse.json({
     members: members.map((m) => ({
       id: m.id, user: m.user, legacyRole: m.role,
-      roles: m.memberRoles.map((mr) => ({
-        id: mr.role.id, name: mr.role.name,
-        scopeAllProperties: mr.scopeAllProperties,
-        propertyIds: Array.isArray(mr.propertyIds) ? mr.propertyIds : [],
-      })),
+      roles: m.memberRoles.map((mr) => ({ id: mr.role.id, name: mr.role.name })),
     })),
   })
 }

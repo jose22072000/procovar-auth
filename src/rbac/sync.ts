@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { PERMISSION_CATALOG } from './permissions.catalog'
-import { SYSTEM_ROLE_NAMES, systemRolePermissionKeys } from './system-roles'
+import { SYSTEM_ROLE_NAMES, systemRolePermissionKeys, ROLE_DESCRIPTIONS } from './system-roles'
 import { legacyRoleToSystemRole } from './seed-core'
 
 /**
@@ -55,32 +55,37 @@ export async function syncRbac(): Promise<{
     })
   }
 
-  // 2. System roles + their permissions per org.
-  const orgs = await prisma.organization.findMany({ select: { id: true } })
-  for (const org of orgs) {
-    for (const name of SYSTEM_ROLE_NAMES) {
-      const role = await prisma.role.upsert({
-        where: { organizationId_name: { organizationId: org.id, name } },
-        update: { isSystem: true },
-        create: { organizationId: org.id, name, isSystem: true },
+  // 2. The five roles. ONE catalog for all of Procovar, not one per sucursal.
+  //
+  // A role that already exists is left ALONE. Its permissions are seeded once,
+  // when this creates it; after that the permissions screen owns them. If this
+  // kept adding the seed keys on every boot, every deploy would quietly hand
+  // back a permission somebody had deliberately taken away, and nobody would
+  // connect the two events.
+  for (const name of SYSTEM_ROLE_NAMES) {
+    const existente = await prisma.role.findUnique({ where: { name }, select: { id: true } })
+    if (existente) {
+      await prisma.role.update({ where: { id: existente.id }, data: { isSystem: true } })
+      continue
+    }
+
+    const role = await prisma.role.create({
+      data: { name, isSystem: true, description: ROLE_DESCRIPTIONS[name] },
+    })
+    const wantIds = systemRolePermissionKeys(name)
+      .map((k) => permByKey.get(k))
+      .filter((id): id is string => Boolean(id))
+    if (wantIds.length) {
+      await prisma.rolePermission.createMany({
+        data: wantIds.map((permissionId) => ({ roleId: role.id, permissionId })),
+        skipDuplicates: true,
       })
-      const wantKeys = systemRolePermissionKeys(name)
-      const existing = await prisma.rolePermission.findMany({
-        where: { roleId: role.id }, select: { permissionId: true },
-      })
-      const have = new Set(existing.map((e) => e.permissionId))
-      const wantIds = wantKeys.map((k) => permByKey.get(k)).filter(Boolean) as string[]
-      const toAdd = wantIds.filter((id) => !have.has(id))
-      if (toAdd.length) {
-        await prisma.rolePermission.createMany({
-          data: toAdd.map((permissionId) => ({ roleId: role.id, permissionId })),
-          skipDuplicates: true,
-        })
-      }
     }
   }
 
-  // 3. Backfill MemberRole for members lacking one.
+  // 3. A member with no role at all can do nothing and cannot be fixed from the
+  // screen (the screen lists roles, and they hold none). Give them the one their
+  // `member.role` string says.
   let membersBackfilled = 0
   const members = await prisma.member.findMany({
     include: { memberRoles: { select: { id: true } } },
@@ -88,14 +93,13 @@ export async function syncRbac(): Promise<{
   for (const m of members) {
     if (m.memberRoles.length > 0) continue
     const role = await prisma.role.findUnique({
-      where: { organizationId_name: { organizationId: m.organizationId, name: legacyRoleToSystemRole(m.role) } },
+      where: { name: legacyRoleToSystemRole(m.role) },
     })
     if (!role) continue
-    await prisma.memberRole.create({
-      data: { memberId: m.id, roleId: role.id, scopeAllProperties: true, propertyIds: [] },
-    })
+    await prisma.memberRole.create({ data: { memberId: m.id, roleId: role.id } })
     membersBackfilled++
   }
 
-  return { permissions: PERMISSION_CATALOG.length, orgs: orgs.length, membersBackfilled }
+  const orgs = await prisma.organization.count()
+  return { permissions: PERMISSION_CATALOG.length, orgs, membersBackfilled }
 }

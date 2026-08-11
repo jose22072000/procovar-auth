@@ -285,15 +285,8 @@ export async function POST(request: Request) {
             if (memberRecord) {
                 await prisma.memberRole.upsert({
                     where: { memberId_roleId: { memberId: memberRecord.id, roleId: invitation.roleId } },
-                    update: {
-                        scopeAllProperties: invitation.scopeAllProperties,
-                        propertyIds: invitation.scopeAllProperties ? [] : (invitation.propertyIds as string[]),
-                    },
-                    create: {
-                        memberId: memberRecord.id, roleId: invitation.roleId,
-                        scopeAllProperties: invitation.scopeAllProperties,
-                        propertyIds: invitation.scopeAllProperties ? [] : (invitation.propertyIds as string[]),
-                    },
+                    update: {},
+                    create: { memberId: memberRecord.id, roleId: invitation.roleId },
                 });
             }
         }

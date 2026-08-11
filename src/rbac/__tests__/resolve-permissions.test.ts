@@ -26,43 +26,62 @@ beforeEach(() => {
 })
 
 describe('resolveRbac', () => {
-  it('system admin → wildcard', async () => {
-    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: true } as any)
+  it('el Super Admin llega a todo', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: true } as never)
     const r = await resolveRbac('u1', 'o1')
     expect(r.wildcard).toBe(true)
   })
 
-  it('no org → empty', async () => {
-    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as any)
+  it('sin sucursal, nada — salvo el Super Admin', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as never)
     const r = await resolveRbac('u1', null)
-    expect(r).toEqual({ org: null, wildcard: false, global: [], byProperty: {} })
+    expect(r).toEqual({ org: null, wildcard: false, global: [] })
   })
 
-  it('not a member → empty', async () => {
-    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as any)
+  it('quien no es de la sucursal no puede nada en ella', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as never)
     mockMemberFindUnique.mockResolvedValue(null)
     const r = await resolveRbac('u1', 'o1')
     expect(r.global).toEqual([])
   })
 
-  it('unions roles and splits by scope', async () => {
-    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as any)
+  it('con varios roles, suma lo que dan todos', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as never)
     mockMemberFindUnique.mockResolvedValue({
       id: 'm1',
       memberRoles: [
-        { scopeAllProperties: true, propertyIds: [],
-          role: { permissions: [
-            { permission: { key: 'property.read' } },
-            { permission: { key: 'media.read' } },
-          ] } },
-        { scopeAllProperties: false, propertyIds: ['p1', 'p2'],
-          role: { permissions: [
-            { permission: { key: 'property.edit' } },
-          ] } },
+        { role: { permissions: [
+          { permission: { key: 'pedido.read' } },
+          { permission: { key: 'cliente.read' } },
+        ] } },
+        { role: { permissions: [
+          { permission: { key: 'pedido.complete' } },
+          // Repetido a propósito: dos roles pueden dar el mismo permiso y no
+          // debe aparecer dos veces.
+          { permission: { key: 'pedido.read' } },
+        ] } },
       ],
-    } as any)
+    } as never)
     const r = await resolveRbac('u1', 'o1')
-    expect(r.global.sort()).toEqual(['media.read', 'property.read'])
-    expect(r.byProperty).toEqual({ p1: ['property.edit'], p2: ['property.edit'] })
+    expect(r.global.sort()).toEqual(['cliente.read', 'pedido.complete', 'pedido.read'])
+  })
+
+  it('un permiso que ya no existe en el catálogo no tumba la sesión', async () => {
+    // role_permission no tiene clave foránea: una fila puede apuntar a un
+    // permiso borrado y Prisma devuelve `permission: null`. Leerlo a pelo
+    // reventaba verify-session con un 500, y la aplicación que preguntaba lo
+    // interpretaba como "no hay sesión" y echaba fuera a la persona.
+    mockUserFindUnique.mockResolvedValue({ id: 'u1', isSystemAdmin: false } as never)
+    mockMemberFindUnique.mockResolvedValue({
+      id: 'm1',
+      memberRoles: [
+        { role: { permissions: [
+          { permission: null },
+          { permission: { key: 'pedido.read' } },
+        ] } },
+      ],
+    } as never)
+    const r = await resolveRbac('u1', 'o1')
+    expect(r.global).toEqual(['pedido.read'])
   })
 })

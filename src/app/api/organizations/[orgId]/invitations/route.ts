@@ -4,11 +4,17 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { notifyOrganizationInvitation, humanizeExpirationDays } from '@/lib/notifications';
+import { resolveRbac } from '@/rbac/resolve-permissions';
+import { can } from '@/rbac/can';
+import { SYSTEM_ROLE_NAMES, ROL_MINIMO } from '@/rbac/system-roles';
 
 type Params = { params: Promise<{ orgId: string }> };
 
 /** Single source of truth: drives both the DB expiry and the email copy. */
 const INVITATION_EXPIRES_IN_DAYS = 7;
+
+/** Roles nobody but a Super Admin may hand out. */
+const SOLO_SUPER_ADMIN = new Set(['SUPER ADMIN', 'ADMINISTRADOR']);
 
 function getBearerToken(request: Request): string | null {
     const authHeader = request.headers.get('authorization') || '';
@@ -177,39 +183,46 @@ export async function POST(request: Request, { params }: Params) {
         let inviterId: string;
 
         if (isServiceAuth(request)) {
-            // For service auth, get inviterId from the request body
-            const owner = await prisma.member.findFirst({
-                where: { organizationId: orgId, role: 'owner' },
+            // Trusted service call with nobody acting: attribute it to a Super
+            // Admin of the sucursal so the invitation still has an author.
+            const responsable = await prisma.member.findFirst({
+                where: { organizationId: orgId, role: 'SUPER ADMIN' },
             });
-            inviterId = owner?.userId ?? 'system';
+            inviterId = responsable?.userId ?? 'system';
         } else {
             const session = await auth.api.getSession({ headers: await headers() });
-            
+
             if (!session?.user) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
             }
 
-            const membership = await getMembership(session.user.id, orgId);
-            
-            if (!membership || !['owner', 'admin'].includes(membership.role)) {
+            const rbac = await resolveRbac(session.user.id, orgId);
+            if (!can(rbac, 'member.invite')) {
                 return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
             }
 
-            // Validate role permissions
-            const body_peek = await request.clone().json();
-            if (membership.role !== 'owner' && body_peek.role === 'admin') {
-                return NextResponse.json({ error: 'Only owners can invite admins' }, { status: 403 });
+            // Nobody hands out a role they could not use themselves: an
+            // Administrador inviting a Super Admin would be promoting themselves
+            // through a second account.
+            const peek = await request.clone().json();
+            const pedido = String(peek.role ?? '').toUpperCase();
+            if (SOLO_SUPER_ADMIN.has(pedido) && !can(rbac, 'app.manage')) {
+                return NextResponse.json({ error: 'Solo un Super Admin puede dar ese rol' }, { status: 403 });
             }
 
             inviterId = session.user.id;
         }
 
         const body = await request.json();
-        const { email, role = 'agent', roleId, propertyIds = [], scopeAllProperties = true } = body;
+        const { email, roleId } = body;
+        const role = String(body.role ?? ROL_MINIMO).toUpperCase();
 
         let resolvedRoleId: string | null = null;
         if (roleId) {
-            const r = await prisma.role.findFirst({ where: { id: roleId, organizationId: orgId }, select: { id: true } });
+            // The role catalog is global — no organization to check it against.
+            // What binds the person to a sucursal is the membership created when
+            // the invitation is accepted.
+            const r = await prisma.role.findUnique({ where: { id: roleId }, select: { id: true } });
             if (!r) return NextResponse.json({ error: 'Invalid roleId' }, { status: 400 });
             resolvedRoleId = r.id;
         }
@@ -218,9 +231,7 @@ export async function POST(request: Request, { params }: Params) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
-        // Validate role — owner is never assigned via invitation
-        const validInviteRoles = ['admin', 'staff', 'agent'];
-        if (!validInviteRoles.includes(role)) {
+        if (!(SYSTEM_ROLE_NAMES as readonly string[]).includes(role)) {
             return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
         }
 
@@ -263,8 +274,6 @@ export async function POST(request: Request, { params }: Params) {
                 inviterId: inviterId,
                 expiresAt: new Date(Date.now() + INVITATION_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000),
                 roleId: resolvedRoleId,
-                propertyIds: scopeAllProperties ? [] : propertyIds,
-                scopeAllProperties,
             },
             include: {
                 organization: {

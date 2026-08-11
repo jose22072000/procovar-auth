@@ -1,5 +1,26 @@
 import type { PermissionEntry } from './types'
 
+/**
+ * Everything a person can be allowed to do, across every Procovar app.
+ *
+ * One list, on purpose. Today each app decides for itself who may do what, so
+ * "the Operador cannot run reports" lives in PEDIDO's code, "this user only sees
+ * Las Tunas" lives in the Parranda dashboard, and nobody can answer "what can
+ * Yasmani do?" without reading four codebases. Here the answer is one query.
+ *
+ * `service` says which app a permission belongs to. It is what lets the same
+ * person be an Operador who runs reports in analitics but not in PEDIDO — the
+ * two are different keys, not one flag reused.
+ *
+ * A key is `resource.action`, exactly two parts: `resource` and `action` are
+ * split back out of it and stored as columns.
+ *
+ * Adding to this list is safe and is the normal way to grow: the sync upserts
+ * new entries and roles pick them up. REMOVING a key deletes the permission row
+ * and orphans the grants pointing at it — the sync prunes them, so a removal
+ * silently takes access away. Deprecate with `isDeprecated` instead when the
+ * key is still referenced anywhere.
+ */
 const e = (
   key: string, group: string, service: string, es: string, en: string,
 ): PermissionEntry => {
@@ -8,48 +29,50 @@ const e = (
 }
 
 export const PERMISSION_CATALOG: PermissionEntry[] = [
-  // Propiedades (qb-back)
-  e('property.read',   'Propiedades', 'qb-back', 'Ver propiedades', 'View properties'),
-  e('property.create', 'Propiedades', 'qb-back', 'Crear propiedades', 'Create properties'),
-  e('property.edit',   'Propiedades', 'qb-back', 'Editar propiedades', 'Edit properties'),
-  e('property.delete', 'Propiedades', 'qb-back', 'Eliminar propiedades', 'Delete properties'),
-  // Room types / rooms (qb-back)
-  e('roomType.read', 'Tipos de habitación', 'qb-back', 'Ver tipos de habitación', 'View room types'),
-  e('roomType.edit', 'Tipos de habitación', 'qb-back', 'Editar tipos de habitación', 'Edit room types'),
-  e('room.manage',   'Tipos de habitación', 'qb-back', 'Gestionar habitaciones', 'Manage rooms'),
-  // Media (qb-back)
-  e('media.read',   'Media', 'qb-back', 'Ver media', 'View media'),
-  e('media.upload', 'Media', 'qb-back', 'Subir media', 'Upload media'),
-  e('media.edit',   'Media', 'qb-back', 'Editar media', 'Edit media'),
-  e('media.delete', 'Media', 'qb-back', 'Eliminar media', 'Delete media'),
-  // Tarifas / precios (qb-back)
-  e('rate.read',       'Tarifas', 'qb-back', 'Ver tarifas', 'View rates'),
-  e('rate.edit',       'Tarifas', 'qb-back', 'Editar tarifas', 'Edit rates'),
-  e('pricing.manage',  'Tarifas', 'qb-back', 'Gestionar precios', 'Manage pricing'),
-  // Reservas (qb-back) — solo control de VISIBILIDAD del panel de reservas.
-  // Las acciones (crear/modificar/cancelar/check-in/out) no son permiso: el
-  // huésped las crea en QBT y la operativa la hace cualquiera de la org.
-  e('reservation.read', 'Reservas', 'qb-back', 'Ver reservas', 'View reservations'),
-  // Miembros / roles (qb-auth)
-  e('member.read',       'Miembros', 'qb-auth', 'Ver miembros', 'View members'),
-  e('member.invite',     'Miembros', 'qb-auth', 'Invitar miembros', 'Invite members'),
-  e('member.remove',     'Miembros', 'qb-auth', 'Quitar miembros', 'Remove members'),
-  e('member.assignRole', 'Miembros', 'qb-auth', 'Asignar roles', 'Assign roles'),
-  e('role.read',   'Roles', 'qb-auth', 'Ver roles', 'View roles'),
-  e('role.create', 'Roles', 'qb-auth', 'Crear roles', 'Create roles'),
-  e('role.edit',   'Roles', 'qb-auth', 'Editar roles', 'Edit roles'),
-  e('role.delete', 'Roles', 'qb-auth', 'Eliminar roles', 'Delete roles'),
-  // Finanzas / reportes (qb-back) — declarado, enforcement luego
-  e('finance.read', 'Finanzas', 'qb-back', 'Ver finanzas', 'View finance'),
-  e('report.read',  'Finanzas', 'qb-back', 'Ver reportes', 'View reports'),
-  e('payout.read',  'Finanzas', 'qb-back', 'Ver pagos / payouts', 'View payouts'),
-  // Reembolsos (qb-back) — solicitud del huésped; owner/staff aprueba o rechaza.
-  e('refund.read',   'Reembolsos', 'qb-back', 'Ver solicitudes de reembolso', 'View refund requests'),
-  e('refund.manage', 'Reembolsos', 'qb-back', 'Aprobar / rechazar reembolsos', 'Approve / reject refunds'),
-  // Organización (qb-auth)
-  e('organization.read',     'Organización', 'qb-auth', 'Ver / gestionar organización', 'View organization page'),
-  e('organization.edit',     'Organización', 'qb-auth', 'Editar organización', 'Edit organization'),
-  e('organization.settings', 'Organización', 'qb-auth', 'Configuración de organización', 'Organization settings'),
-  // Planes / suscripción (qb-auth)
-  e('plan.read', 'Planes', 'qb-auth', 'Ver planes y suscripción', 'View plans & subscription'),
+  // ── PEDIDO ────────────────────────────────────────────────────────────────
+  e('pedido.read',      'Pedidos', 'pedido', 'Ver pedidos', 'View orders'),
+  e('pedido.complete',  'Pedidos', 'pedido', 'Completar pedidos', 'Complete orders'),
+  e('pedido.delete',    'Pedidos', 'pedido', 'Eliminar pedidos', 'Delete orders'),
+  e('pedido.import',    'Pedidos', 'pedido', 'Importar pedidos (CSV)', 'Import orders (CSV)'),
+  e('cliente.read',     'Clientes', 'pedido', 'Ver clientes', 'View clients'),
+  e('cliente.edit',     'Clientes', 'pedido', 'Editar clientes', 'Edit clients'),
+  e('vendedor.read',    'Vendedores', 'pedido', 'Ver vendedores', 'View sellers'),
+  e('vendedor.manage',  'Vendedores', 'pedido', 'Alta, baja y gestor de vendedores', 'Manage sellers'),
+  e('reporte.read',     'Informes', 'pedido', 'Ver informes de PEDIDO', 'View PEDIDO reports'),
+  e('comision.read',    'Comisiones', 'pedido', 'Ver comisiones', 'View commissions'),
+  e('comision.manage',  'Comisiones', 'pedido', 'Configurar comisiones', 'Configure commissions'),
+
+  // ── analitics ─────────────────────────────────────────────────────────────
+  e('analitics.read',   'Analítica', 'analitics', 'Ver la analítica', 'View analytics'),
+  e('analitics.export', 'Analítica', 'analitics', 'Exportar la analítica', 'Export analytics'),
+
+  // ── delivery ──────────────────────────────────────────────────────────────
+  e('reparto.read',   'Reparto', 'delivery', 'Ver los repartos', 'View deliveries'),
+  e('reparto.assign', 'Reparto', 'delivery', 'Asignar repartos', 'Assign deliveries'),
+  e('reparto.manage', 'Reparto', 'delivery', 'Gestionar el reparto', 'Manage delivery'),
+
+  // ── ccsa (tablero Parranda) ───────────────────────────────────────────────
+  e('ccsa.read',   'Parranda', 'ccsa', 'Ver el tablero de Parranda', 'View the Parranda dashboard'),
+  e('ccsa.export', 'Parranda', 'ccsa', 'Exportar del tablero', 'Export from the dashboard'),
+
+  // ── auth: personas y accesos ──────────────────────────────────────────────
+  e('member.read',       'Personas', 'auth', 'Ver las personas de la sucursal', 'View members'),
+  e('member.invite',     'Personas', 'auth', 'Dar de alta / invitar personas', 'Invite members'),
+  e('member.remove',     'Personas', 'auth', 'Dar de baja personas', 'Remove members'),
+  e('member.assignRole', 'Personas', 'auth', 'Asignar roles a las personas', 'Assign roles'),
+
+  e('role.read',   'Roles y permisos', 'auth', 'Ver los roles', 'View roles'),
+  e('role.create', 'Roles y permisos', 'auth', 'Crear roles', 'Create roles'),
+  e('role.edit',   'Roles y permisos', 'auth', 'Editar los permisos de un rol', "Edit a role's permissions"),
+  e('role.delete', 'Roles y permisos', 'auth', 'Eliminar roles', 'Delete roles'),
+
+  e('organization.read', 'Sucursales', 'auth', 'Ver las sucursales', 'View sucursales'),
+  e('organization.edit', 'Sucursales', 'auth', 'Editar las sucursales', 'Edit sucursales'),
+
+  // Quién entró, qué tocó y desde dónde. Jose lo pidió aparte: sin esto no se
+  // puede responder qué pasó con un pedido cuando alguien lo niega.
+  e('audit.read', 'Auditoría', 'auth', 'Ver la auditoría', 'View the audit log'),
+
+  // Dar de alta las aplicaciones que usan este login.
+  e('app.manage', 'Aplicaciones', 'auth', 'Registrar aplicaciones', 'Register applications'),
 ]

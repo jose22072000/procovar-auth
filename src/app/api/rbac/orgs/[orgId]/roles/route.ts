@@ -17,12 +17,16 @@ function isServiceAuth(request: Request): boolean {
 }
 
 /**
- * Returns the actor's resolved rbac so the caller can bound grants by it.
- * `rbac` is null only for a fully-trusted service call that did not identify an
- * acting user (qb-panel does its own gate; forward `x-acting-user-id` to also
- * enforce the escalation guard here).
+ * Resolve the actor so the caller can bound grants by what they themselves hold.
+ *
+ * `orgId` is the sucursal the actor is acting IN — it decides whether they may
+ * see this page at all. Pass `null` for the role catalog itself, which belongs
+ * to no single sucursal: resolving against null grants only a Super Admin.
+ *
+ * `rbac` comes back null for a fully-trusted service call that named no acting
+ * user; forward `x-acting-user-id` to have the escalation guard applied here too.
  */
-async function gate(request: Request, orgId: string, perm: string): Promise<
+async function gate(request: Request, orgId: string | null, perm: string): Promise<
   | { ok: true; rbac: ResolvedRbac | null }
   | { ok: false; status: number; error: string }
 > {
@@ -38,16 +42,23 @@ async function gate(request: Request, orgId: string, perm: string): Promise<
   return { ok: true, rbac }
 }
 
+/**
+ * The role catalog. It is the SAME list for every sucursal — the `orgId` in the
+ * path only says who is asking, not which roles exist. An Administrador of
+ * Camagüey and one of Holguín both see the same five roles; what differs is who
+ * in their own sucursal holds each one.
+ */
 export async function GET(request: Request, { params }: Params) {
   const { orgId } = await params
   const g = await gate(request, orgId, 'role.read')
   if (!g.ok) return NextResponse.json({ error: g.error }, { status: g.status })
 
   const roles = await prisma.role.findMany({
-    where: { organizationId: orgId },
     include: {
       permissions: { include: { permission: { select: { key: true } } } },
-      _count: { select: { memberRoles: true } },
+      // Cuántas personas lo tienen EN ESTA sucursal. El total de Procovar no
+      // sirve aquí: diría "12 operadores" a quien solo puede tocar los 2 suyos.
+      _count: { select: { memberRoles: { where: { member: { organizationId: orgId } } } } },
     },
     orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
   })
@@ -55,16 +66,26 @@ export async function GET(request: Request, { params }: Params) {
     roles: roles.map((r) => ({
       id: r.id, name: r.name, description: r.description, color: r.color, icon: r.icon,
       isSystem: r.isSystem,
-      permissionKeys: r.permissions.map((p) => p.permission.key),
+      permissionKeys: r.permissions
+        .map((p) => p.permission?.key)
+        .filter((k): k is string => Boolean(k)),
       memberCount: r._count.memberRoles,
     })),
   })
 }
 
-export async function POST(request: Request, { params }: Params) {
-  const { orgId } = await params
-  const g = await gate(request, orgId, 'role.create')
-  if (!g.ok) return NextResponse.json({ error: g.error }, { status: g.status })
+/**
+ * Create a role. This adds to the catalog of ALL of Procovar, so it is a Super
+ * Admin action — resolving against `null` is what enforces that.
+ */
+export async function POST(request: Request) {
+  const g = await gate(request, null, 'role.create')
+  if (!g.ok) {
+    return NextResponse.json(
+      { error: g.status === 403 ? 'Solo un Super Admin puede crear roles: el catálogo es de toda Procovar' : g.error },
+      { status: g.status },
+    )
+  }
 
   const { name, description, color, icon, permissionKeys = [] } = await request.json()
   if (!name || typeof name !== 'string') {
@@ -85,14 +106,16 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const role = await prisma.role.create({
       data: {
-        organizationId: orgId, name, description: description ?? null, color: color ?? null, icon: icon ?? null,
+        name, description: description ?? null, color: color ?? null, icon: icon ?? null,
         isSystem: false,
         permissions: { create: perms.map((p) => ({ permissionId: p.id })) },
       },
     })
     return NextResponse.json({ role: { id: role.id } }, { status: 201 })
-  } catch (e: any) {
-    if (e?.code === 'P2002') return NextResponse.json({ error: 'Role name already exists' }, { status: 409 })
+  } catch (e: unknown) {
+    if ((e as { code?: string })?.code === 'P2002') {
+      return NextResponse.json({ error: 'Ya existe un rol con ese nombre' }, { status: 409 })
+    }
     throw e
   }
 }

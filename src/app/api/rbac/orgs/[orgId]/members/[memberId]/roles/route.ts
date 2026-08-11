@@ -5,10 +5,10 @@ import { auth } from '@/lib/auth'
 import { resolveRbac } from '@/rbac/resolve-permissions'
 import { can } from '@/rbac/can'
 import { ungrantablePermissionKeys } from '@/rbac/grantable'
+import { PRECEDENCE, ROL_MINIMO } from '@/rbac/system-roles'
 import type { ResolvedRbac } from '@/rbac/types'
 
 type Params = { params: Promise<{ orgId: string; memberId: string }> }
-const PRECEDENCE = ['owner', 'admin', 'staff', 'agent']
 
 function isServiceAuth(request: Request): boolean {
   const m = (request.headers.get('authorization') || '').match(/^Bearer\s+(.+)$/i)
@@ -38,20 +38,28 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ error: 'Member not found' }, { status: 404 })
   }
 
-  const { assignments = [] } = await request.json() as {
-    assignments: { roleId: string; scopeAllProperties: boolean; propertyIds: string[] }[]
+  // An assignment is now just a role: the scope is the member's sucursal, which
+  // the member row already carries. `assignments` is still accepted so older
+  // callers keep working while the apps migrate.
+  const body = await request.json() as {
+    roleIds?: string[]
+    assignments?: { roleId: string }[]
   }
+  const roleIds = [...new Set(body.roleIds ?? (body.assignments ?? []).map((a) => a.roleId))]
+
   const roles = await prisma.role.findMany({
-    where: { id: { in: assignments.map((a) => a.roleId) }, organizationId: orgId },
+    where: { id: { in: roleIds } },
     select: { id: true, name: true, permissions: { select: { permission: { select: { key: true } } } } },
   })
   const validIds = new Set(roles.map((r) => r.id))
-  const valid = assignments.filter((a) => validIds.has(a.roleId))
+  const valid = roleIds.filter((id) => validIds.has(id))
 
   // Privilege-escalation guard: you may only assign a role whose permissions you
   // yourself hold. Skipped for a fully-trusted service call with no acting user.
   if (actorRbac) {
-    const assignedKeys = [...new Set(roles.flatMap((r) => r.permissions.map((p) => p.permission.key)))]
+    const assignedKeys = [...new Set(
+      roles.flatMap((r) => r.permissions.map((p) => p.permission?.key).filter((k): k is string => Boolean(k))),
+    )]
     const missing = ungrantablePermissionKeys(actorRbac, assignedKeys)
     if (missing.length) {
       return NextResponse.json({ error: 'cannot grant permissions you do not hold' }, { status: 403 })
@@ -60,19 +68,15 @@ export async function PUT(request: Request, { params }: Params) {
 
   await prisma.$transaction(async (tx) => {
     await tx.memberRole.deleteMany({ where: { memberId } })
-    for (const a of valid) {
-      await tx.memberRole.create({
-        data: {
-          memberId, roleId: a.roleId,
-          scopeAllProperties: a.scopeAllProperties,
-          propertyIds: a.scopeAllProperties ? [] : a.propertyIds,
-        },
-      })
+    for (const roleId of valid) {
+      await tx.memberRole.create({ data: { memberId, roleId } })
     }
-    // Sync legacy Member.role to highest-precedence system role assigned.
+    // `member.role` is a single string that better-auth keeps for itself. The
+    // real answer lives in memberRole, so this mirrors the highest-ranking role
+    // the person now holds, to keep the two from disagreeing.
     const names = roles.filter((r) => validIds.has(r.id)).map((r) => r.name)
-    const legacy = PRECEDENCE.find((p) => names.includes(p)) ?? names[0] ?? 'agent'
-    await tx.member.update({ where: { id: memberId }, data: { role: legacy } })
+    const principal = PRECEDENCE.find((p) => names.includes(p)) ?? names[0] ?? ROL_MINIMO
+    await tx.member.update({ where: { id: memberId }, data: { role: principal } })
   })
   return NextResponse.json({ ok: true })
 }
