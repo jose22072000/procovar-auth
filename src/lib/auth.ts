@@ -180,6 +180,29 @@ export const auth = betterAuth({
         user: {
             create: {
                 after: async (user) => {
+                    // La PRIMERA cuenta de una instalación vacía queda como Super
+                    // Admin. Si no, se llega a un punto muerto: nadie puede entrar
+                    // al panel porque no hay ningún administrador, y crear el
+                    // primero exige entrar al panel. Se resolvía a mano con un
+                    // UPDATE en la base, que es un paso que se olvida y que hay
+                    // que recordar cada vez que se levanta un entorno nuevo.
+                    //
+                    // Solo cuando NO hay ninguna otra cuenta: en cuanto existe una
+                    // persona, esta condición no se vuelve a cumplir nunca, así que
+                    // no es una puerta abierta sino el arranque.
+                    try {
+                        const cuantos = await prisma.user.count();
+                        if (cuantos === 1) {
+                            await prisma.user.update({
+                                where: { id: user.id },
+                                data: { isSystemAdmin: true },
+                            });
+                        }
+                    } catch {
+                        // Que no reviente el alta: sin esto se queda sin Super
+                        // Admin, pero con la cuenta creada y arreglable a mano.
+                    }
+
                     // Send welcome email for social login users (already verified)
                     // Fire and forget - don't block auth flow if notification fails
                     if (user.emailVerified) {
