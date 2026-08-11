@@ -401,6 +401,24 @@
       "memberRolesTitle": "Member roles",
       "rolesSelectLabel": "Roles",
       "selectRolesPlaceholder": "Select roles"
+    },
+    "rolesManager": {
+      "avisoGlobal": "What you tick here applies to all eight sucursales.",
+      "soloSuperAdmin": "Only a Super Admin can change a role's permissions, because the catalog is shared by all of Procovar.",
+      "rolDelSistema": "System role: cannot be deleted",
+      "personas": "{n} people",
+      "permisos": "{n} permissions",
+      "buscar": "Search a permission…",
+      "nadaQueCoincida": "No permission matches your search.",
+      "todo": "All",
+      "nada": "None",
+      "guardar": "Save",
+      "sinGuardar": "Unsaved",
+      "descartarCambios": "You have unsaved changes. Discard them?",
+      "guardadoTitulo": "{rol} updated",
+      "guardadoDescripcion": "{n} permissions active.",
+      "errorTitulo": "Could not save",
+      "sinRoles": "No roles yet. Run the seed."
     }
   },
   "myProfile": {

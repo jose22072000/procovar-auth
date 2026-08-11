@@ -401,6 +401,24 @@
       "memberRolesTitle": "Roles del miembro",
       "rolesSelectLabel": "Roles",
       "selectRolesPlaceholder": "Selecciona roles"
+    },
+    "rolesManager": {
+      "avisoGlobal": "Lo que marques aquí vale para las ocho sucursales.",
+      "soloSuperAdmin": "Solo un Super Admin puede cambiar los permisos de un rol, porque el catálogo es de toda Procovar.",
+      "rolDelSistema": "Rol del sistema: no se puede borrar",
+      "personas": "{n} personas",
+      "permisos": "{n} permisos",
+      "buscar": "Buscar un permiso…",
+      "nadaQueCoincida": "Ningún permiso coincide con la búsqueda.",
+      "todo": "Todo",
+      "nada": "Nada",
+      "guardar": "Guardar",
+      "sinGuardar": "Sin guardar",
+      "descartarCambios": "Tienes cambios sin guardar. ¿Los descartas?",
+      "guardadoTitulo": "{rol} actualizado",
+      "guardadoDescripcion": "{n} permisos activos.",
+      "errorTitulo": "No se pudo guardar",
+      "sinRoles": "Todavía no hay roles. Ejecuta la siembra."
     }
   },
   "myProfile": {
