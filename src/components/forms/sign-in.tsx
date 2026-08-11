@@ -84,7 +84,6 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 autoComplete="username"
                 label={t("auth.userOrEmail")}
                 labelPlacement="outside"
-                placeholder={t("auth.userOrEmailPlaceholder")}
                 type="text"
                 variant="bordered"
                 radius="none"
@@ -99,7 +98,6 @@ export function SignInForm({ savedEmail }: { savedEmail?: string }) {
                 isRequired
                 label={t("auth.password")}
                 labelPlacement="outside"
-                placeholder="••••••••"
                 autoComplete="current-password"
                 type={isVisible ? "text" : "password"}
                 variant="bordered"
