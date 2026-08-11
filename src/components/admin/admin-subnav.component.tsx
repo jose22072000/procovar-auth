@@ -5,11 +5,15 @@ import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
 
+// El orden es el del trabajo: primero las sucursales y su gente, después lo que
+// puede hacer cada cual, luego el historial, y al final los ajustes —que se
+// tocan una vez cada muchos meses.
 const TABS = [
-  { href: "/dashboard/settings", labelKey: "settings", icon: "lucide:settings" },
-  { href: "/dashboard/permissions", labelKey: "permissions", icon: "lucide:shield-check" },
-  { href: "/dashboard/users", labelKey: "users", icon: "lucide:users" },
   { href: "/dashboard/organizations", labelKey: "organizations", icon: "lucide:building-2" },
+  { href: "/dashboard/users", labelKey: "users", icon: "lucide:users" },
+  { href: "/dashboard/permissions", labelKey: "permissions", icon: "lucide:shield-check" },
+  { href: "/dashboard/auditoria", labelKey: "audit", icon: "lucide:scroll-text" },
+  { href: "/dashboard/settings", labelKey: "settings", icon: "lucide:settings" },
 ] as const;
 
 export function AdminSubnav() {

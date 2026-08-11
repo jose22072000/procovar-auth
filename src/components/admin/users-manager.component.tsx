@@ -13,6 +13,7 @@ import {
   listUserSessions, revokeUserSession, revokeAllUserSessions,
 } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
+import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
 
 interface UserSubscription { planKey: string; planName: string; status: string; currentPeriodEnd: string }
 interface UserOrg { name: string; slug: string; roles: string[] }
@@ -226,21 +227,10 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
             </div>
           </ModalHeader>
           <ModalBody className="gap-5">
-            {/* Subscription (read-only) */}
-            <section>
-              <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                <Icon icon="lucide:credit-card" className="size-4" aria-hidden /> {t('dashboard.usersManager.subscriptionSection')}
-              </p>
-              {detail?.subscription ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm dark:border-slate-700">
-                  <Chip size="sm" variant="flat" color="primary">{detail.subscription.planName}</Chip>
-                  <Chip size="sm" variant="flat">{detail.subscription.status}</Chip>
-                  <span className="text-slate-400">{t('dashboard.usersManager.until', { date: new Date(detail.subscription.currentPeriodEnd).toLocaleDateString() })}</span>
-                </div>
-              ) : <p className="rounded-lg border border-dashed border-gray-200 px-3 py-3 text-sm text-slate-400 dark:border-slate-700">{t('dashboard.usersManager.noActiveSubscription')}</p>}
-            </section>
-
-            {/* Organizations (read-only) */}
+            {/* Las sucursales de esta persona y el rol que tiene en cada una.
+                Aquí había además un bloque de "Suscripción" con planes de pago:
+                era del producto del que salió este código. Procovar no cobra
+                suscripciones a su propia gente. */}
             <section>
               <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300">
                 <Icon icon="lucide:building-2" className="size-4" aria-hidden /> {t('dashboard.usersManager.organizationsSection')}
@@ -282,7 +272,7 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
                 <div className="rounded-lg border border-gray-200 dark:border-slate-700">
                   <Table aria-label={t('dashboard.usersManager.sessionsTableAriaLabel')} removeWrapper classNames={{ th: "bg-transparent" }}>
                     <TableHeader>
-                      <TableColumn>{t('dashboard.usersManager.colIp')}</TableColumn>
+                      <TableColumn>{t('dashboard.usersManager.colFrom')}</TableColumn>
                       <TableColumn>{t('dashboard.usersManager.colClient')}</TableColumn>
                       <TableColumn>{t('dashboard.usersManager.colCreated')}</TableColumn>
                       <TableColumn>{t('dashboard.usersManager.colStatus')}</TableColumn>
@@ -291,9 +281,23 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
                     <TableBody emptyContent={t('dashboard.usersManager.noSessions')}>
                       {sessions.map((s) => (
                         <TableRow key={s.id}>
-                          <TableCell>{s.ipAddress ?? "—"}</TableCell>
-                          {/* No clientId = signed in straight at qb-accounts, not via a client app. */}
-                          <TableCell>{s.clientId ?? t('dashboard.usersManager.directClient')}</TableCell>
+                          {/* Desde dónde se entró: el sitio (IP) y el aparato.
+                              Un guion cuando no consta — mejor eso que un
+                              "Desconocido" que parece un dato. */}
+                          <TableCell>
+                            {(() => {
+                              const { ip, aparato } = desdeDonde(s.ipAddress, s.userAgent);
+                              if (!ip && !aparato) return "—";
+                              return (
+                                <div className="leading-tight">
+                                  {ip && <div className="pv-codigo">{ip}</div>}
+                                  {aparato && <div className="text-xs text-pv-tinta-suave">{aparato}</div>}
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                          {/* La aplicación por la que entró; sin ella, entró aquí mismo. */}
+                          <TableCell>{aplicacionDeSesion(s.clientId)}</TableCell>
                           <TableCell>{new Date(s.createdAt).toLocaleString()}</TableCell>
                           <TableCell>
                             <Chip size="sm" variant="flat" color={s.revokedAt ? "default" : "success"}>

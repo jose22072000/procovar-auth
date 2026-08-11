@@ -36,9 +36,11 @@ export const ROLE_DESCRIPTIONS: Record<SystemRoleName, string> = {
 
 const allKeys = () => PERMISSION_CATALOG.filter((p) => !p.isDeprecated).map((p) => p.key)
 
-/** Lo mínimo: leer lo que hace falta para trabajar. */
+/** Lo mínimo para trabajar: leer lo suyo. */
 const GESTOR_KEYS = [
   'pedido.read',
+  'pedido.copy',
+  'panel.read',
   'cliente.read',
   'vendedor.read',
   'comision.read',
@@ -57,26 +59,63 @@ const GESTOR_KEYS = [
 const OPERADOR_KEYS = [
   ...GESTOR_KEYS,
   'pedido.complete',
+  'pedido.edit',
+  'pedido.export',
+  'cliente.create',
   'cliente.edit',
+  'cliente.export',
 ]
 
-/** El Supervisor hace el trabajo de la sucursal, menos tocar accesos. */
+/**
+ * El Supervisor saca adelante el trabajo de la sucursal: importa, saca
+ * informes, lleva a los vendedores y mueve el reparto. Lo que NO hace es
+ * repartir accesos — para eso está el Administrador.
+ */
 const SUPERVISOR_KEYS = [
   ...OPERADOR_KEYS,
   'pedido.import',
   'reporte.read',
+  'reporte.export',
+  'vendedor.create',
+  'vendedor.edit',
   'vendedor.manage',
+  'analitics.read',
   'analitics.export',
+  'analitics.gestor',
+  'analitics.producto',
+  'analitics.meta',
   'reparto.assign',
+  'reparto.complete',
+  'reparto.report',
+  'ruta.read',
+  'ruta.manage',
+  'vehiculo.read',
+  'almacen.read',
+  'ccsa.read',
+  'ccsa.export',
+  'ccsa.territorio',
   'member.read',
+  'usuariopedido.read',
+  'integracion.read',
+  'sincronizacion.run',
 ]
 
 /**
- * El Administrador manda en SU sucursal: todo menos lo que es de toda la
- * empresa. Registrar aplicaciones y borrar roles del catálogo afectan a las
- * ocho sucursales a la vez, así que se quedan para el Super Admin.
+ * El Administrador manda en SU sucursal: todo lo que se hace ahí dentro,
+ * incluido dar de alta gente, ponerle rol y mirar la auditoría.
+ *
+ * Se le quedan fuera las cosas que son de TODA la empresa, no de una sucursal:
+ * el catálogo de roles (tocar "OPERADOR" lo cambia en las ocho), el alta de
+ * aplicaciones, y crear o borrar sucursales.
  */
-const ADMIN_EXCLUIDOS = new Set(['app.manage', 'role.delete'])
+const ADMIN_EXCLUIDOS = new Set([
+  'app.manage',
+  'role.create',
+  'role.edit',
+  'role.delete',
+  'organization.create',
+  'organization.delete',
+])
 
 export function systemRolePermissionKeys(role: string): string[] {
   switch (role) {

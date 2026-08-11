@@ -4,123 +4,320 @@
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @custom-variant dark (&:is(.dark *));
 
-/* ── Design tokens ────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   PROCOVAR — sistema visual
+   ══════════════════════════════════════════════════════════════════════════
+
+   Todo sale del logotipo: el azul del isotipo, las letras de trazo abierto y
+   el corchete que enmarca el monograma. Nada de esto es adorno tomado de otro
+   sitio; es la misma marca, aplicada.
+
+   Esto es una herramienta INTERNA. Se usa todos los días, muchas horas, en
+   ordenadores modestos y con conexión mala. Así que manda la lectura rápida:
+   contraste alto, tipos de letra estrechos para que quepan los nombres largos
+   de verdad, y monoespaciada para los códigos, que se comparan letra a letra.
+
+   Las clases `pv-*` son CSS plano a propósito. Este mismo sistema tiene que
+   servir en PEDIDO y analitics (React con otro Tailwind) y en el tablero de
+   Parranda (plantillas de Flask). Si viviera solo en clases de Tailwind, cada
+   aplicación tendría su copia y en tres meses serían cuatro diseños distintos.
+   ══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --background:            #fafafa;
-  --foreground:            #01072c;
-  --color-dozeblue:        #1e3a8a;
-  --qb-nav-bg:             #0A2252;
-  --qb-nav-accent:         #0a5bd3;
-  --color-dozebg1:         #f8f8f6;
-  --color-dozebg2:         #e6e4ff;
-  --color-dozegray:        #4b5563;
-  --page-builder-bg:       linear-gradient(180deg, #eef2ff 0%, #f9faff 55%, #ffffff 100%);
-  --page-builder-card:     rgba(255, 255, 255, 0.97);
-  --page-builder-border:   rgba(30, 58, 138, 0.15);
+    /* El azul del isotipo. No es "un azul": es EL azul, el mismo de PEDIDO. */
+    --pv-azul:        #054C74;
+    --pv-azul-hondo:  #04324C;
+    --pv-azul-tinte:  #E7EFF4;
+
+    /* Papel frío, no crema. El crema calienta la pantalla y esto se mira ocho
+       horas seguidas. */
+    --pv-papel:       #F1F4F3;
+    --pv-blanco:      #FFFFFF;
+    --pv-tinta:       #0F1518;
+    --pv-tinta-suave: #55646C;
+    --pv-trazo:       #CBD6DB;
+    --pv-trazo-tenue: #E3EAED;
+
+    /* Rojo de cuño. SOLO para lo que se niega, se quita o falla. Si se usa de
+       adorno deja de querer decir nada, y entonces un error de verdad no se
+       distingue del resto. */
+    --pv-cuno:        #A81F26;
+    --pv-cuno-tinte:  #FBECEC;
+
+    /* Verde de conforme. Igual de tacaño: solo lo que se completó. */
+    --pv-visto:       #1D6A4A;
+    --pv-visto-tinte: #E7F2ED;
+
+    --pv-ambar:       #8A5B12;
+    --pv-ambar-tinte: #FBF2E2;
+
+    /* Esquinas casi rectas: el logotipo es de ángulos, no de bordes redondos. */
+    --pv-radio:       3px;
+    --pv-radio-grande: 5px;
+
+    /* Compatibilidad con lo que quedaba escrito de antes. */
+    --background: var(--pv-papel);
+    --foreground: var(--pv-tinta);
 }
 
 .dark {
-  --background:            #121212;
-  --foreground:            #a09f9f;
-  --color-dozeblue:        #60a5fa;
-  --color-dozebg1:         #1e1e1e;
-  --color-dozebg2:         #2a2a2a;
-  --color-dozegray:        #9ca3af;
-  --page-builder-bg:       linear-gradient(180deg, #050b1f 0%, #0d1c34 55%, #04080f 100%);
-  --page-builder-card:     rgba(11, 20, 39, 0.95);
-  --page-builder-border:   rgba(191, 219, 254, 0.12);
+    --pv-azul:        #4E9EC9;
+    --pv-azul-hondo:  #0A1B24;
+    --pv-azul-tinte:  #102C3B;
+
+    --pv-papel:       #0B1418;
+    --pv-blanco:      #111D23;
+    --pv-tinta:       #E6EDF0;
+    --pv-tinta-suave: #94A6AF;
+    --pv-trazo:       #26383F;
+    --pv-trazo-tenue: #1A2A30;
+
+    --pv-cuno:        #E4808A;
+    --pv-cuno-tinte:  #2A1418;
+    --pv-visto:       #67C39C;
+    --pv-visto-tinte: #10251D;
+    --pv-ambar:       #D9AE63;
+    --pv-ambar-tinte: #241C0E;
+
+    --background: var(--pv-papel);
+    --foreground: var(--pv-tinta);
 }
 
-/* ── Tailwind v4 custom utilities ─────────────────── */
 @theme inline {
-  --color-dozeblue: var(--color-dozeblue);
-  --color-dozegray: var(--color-dozegray);
-  --color-dozebg1:  var(--color-dozebg1);
-  --font-montserrat: var(--font-montserrat), sans-serif;
-  --font-poppins:    var(--font-poppins), sans-serif;
+    --color-pv-azul:       var(--pv-azul);
+    --color-pv-azul-hondo: var(--pv-azul-hondo);
+    --color-pv-azul-tinte: var(--pv-azul-tinte);
+    --color-pv-papel:      var(--pv-papel);
+    --color-pv-blanco:     var(--pv-blanco);
+    --color-pv-tinta:      var(--pv-tinta);
+    --color-pv-tinta-suave: var(--pv-tinta-suave);
+    --color-pv-trazo:      var(--pv-trazo);
+    --color-pv-trazo-tenue: var(--pv-trazo-tenue);
+    --color-pv-cuno:       var(--pv-cuno);
+    --color-pv-visto:      var(--pv-visto);
+    --color-pv-ambar:      var(--pv-ambar);
+
+    --font-titulo: var(--font-archivo), system-ui, sans-serif;
+    --font-texto:  var(--font-plex), system-ui, sans-serif;
+    --font-codigo: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 body {
-    color: var(--foreground);
+    background: var(--pv-papel);
+    color: var(--pv-tinta);
+    font-family: var(--font-plex), system-ui, sans-serif;
+    font-feature-settings: "cv05" 1;
+}
+
+/* ── Tipografía ────────────────────────────────────────────────────────────
+   Tres papeles, tres letras:
+   · Archivo, estrecha y de remates planos, es la del logotipo. Titula.
+   · Plex Sans lee el texto corrido sin cansar.
+   · Plex Mono es para los CÓDIGOS —CAM, HOL, `pedido.read`, un folio— porque
+     se comparan carácter a carácter y en proporcional eso se hace mal.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.pv-titulo {
+    font-family: var(--font-archivo), system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+    color: var(--pv-tinta);
+}
+
+/* El rótulo pequeño de encima de cada título: dice DÓNDE estás. */
+.pv-rotulo {
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pv-tinta-suave);
+}
+
+.pv-codigo {
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 0.92em;
+    letter-spacing: 0.02em;
+}
+
+/* ── El marco de alcance ───────────────────────────────────────────────────
+   La pieza de la casa, y la que resuelve un problema real.
+   Casi todos los líos del último mes salieron de no saber CON QUÉ ALCANCE se
+   está mirando: "no puedo completar", "veo pedidos de otra sucursal", "entré
+   como administrador y luego con otra cuenta y seguía viendo lo de antes".
+   Así que el alcance no se deduce: se enseña, siempre, arriba y con la forma
+   del corchete del logotipo.
+   ────────────────────────────────────────────────────────────────────────── */
+.pv-marco {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 12px 5px 10px;
+    border: 1.5px solid var(--pv-azul);
+    border-right-width: 0;
+    box-shadow: inset -1.5px 0 0 var(--pv-azul), inset -6px 0 0 -4.5px transparent;
+    background: var(--pv-blanco);
     position: relative;
 }
-
-.radial-bg {
-    background: var(--page-builder-bg);
+/* El corchete se abre por abajo a la derecha, como en el isotipo. */
+.pv-marco::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 45%;
+    width: 1.5px;
+    background: var(--pv-azul);
+}
+.pv-marco::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    height: 30%;
+    width: 1.5px;
+    background: var(--pv-azul);
 }
 
+/* ── Superficies ──────────────────────────────────────────────────────────── */
+.pv-ficha {
+    background: var(--pv-blanco);
+    border: 1px solid var(--pv-trazo-tenue);
+    border-radius: var(--pv-radio);
+}
+
+.pv-ficha-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pv-trazo-tenue);
+}
+
+/* ── Etiquetas de estado ───────────────────────────────────────────────────
+   Sin relleno saturado: son datos, no avisos. El color dice qué es, el texto
+   dice cuál.
+   ────────────────────────────────────────────────────────────────────────── */
+.pv-etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+.pv-etiqueta-azul  { background: var(--pv-azul-tinte);  color: var(--pv-azul);  border-color: color-mix(in srgb, var(--pv-azul) 22%, transparent); }
+.pv-etiqueta-visto { background: var(--pv-visto-tinte); color: var(--pv-visto); border-color: color-mix(in srgb, var(--pv-visto) 22%, transparent); }
+.pv-etiqueta-cuno  { background: var(--pv-cuno-tinte);  color: var(--pv-cuno);  border-color: color-mix(in srgb, var(--pv-cuno) 22%, transparent); }
+.pv-etiqueta-ambar { background: var(--pv-ambar-tinte); color: var(--pv-ambar); border-color: color-mix(in srgb, var(--pv-ambar) 22%, transparent); }
+.pv-etiqueta-gris  { background: var(--pv-trazo-tenue); color: var(--pv-tinta-suave); border-color: var(--pv-trazo); }
+
+/* ── La barra lateral ─────────────────────────────────────────────────────── */
+.pv-rail {
+    background: var(--pv-azul-hondo);
+    color: #C9DBE5;
+}
+
+.pv-rail-enlace {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    font-family: var(--font-archivo), system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9FBACA;
+    border-left: 3px solid transparent;
+    transition: color .12s, background-color .12s, border-color .12s;
+}
+.pv-rail-enlace:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, .06);
+}
+.pv-rail-enlace[data-activo="true"] {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, .10);
+    border-left-color: #FFFFFF;
+}
+
+/* ── Tablas ───────────────────────────────────────────────────────────────
+   Listas largas: la fila tiene que leerse de un vistazo y el encabezado
+   quedarse fijo al desplazar.
+   ────────────────────────────────────────────────────────────────────────── */
+.pv-tabla { width: 100%; border-collapse: collapse; }
+.pv-tabla thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--pv-blanco);
+    text-align: left;
+    padding: 9px 12px;
+    font-family: var(--font-plex-mono), ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--pv-tinta-suave);
+    border-bottom: 1px solid var(--pv-trazo);
+}
+.pv-tabla tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--pv-trazo-tenue);
+    font-size: 14px;
+}
+.pv-tabla tbody tr:hover { background: var(--pv-azul-tinte); }
+
+/* ── Accesibilidad, sin anunciarla ────────────────────────────────────────── */
+:focus-visible {
+    outline: 2px solid var(--pv-azul);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+/* ── Correcciones de contraste de HeroUI ──────────────────────────────────
+   Sus valores por defecto no llegan a AA en varios sitios. Se quedan porque
+   el problema es de la librería, no del diseño.
+   ────────────────────────────────────────────────────────────────────────── */
 .text-danger[data-slot="error-message"] {
-    color: #b91c1c !important; /* HeroUI danger DEFAULT (#ff87b1) is 2.24:1 ❌ → red-700 = 6.5:1 ✅ AA */
+    color: var(--pv-cuno) !important;
     font-weight: 600 !important;
     font-size: 14px !important;
     padding-top: 4px !important;
 }
+.text-default-500 { color: var(--pv-tinta-suave) !important; }
+.text-default-400 { color: var(--pv-tinta-suave) !important; }
 
-/* ── HeroUI component text visibility (light theme) ── */
-/* text-default-500 was mapped to #d4d4d8 (1.45:1 ❌) → now zinc-500 (4.6:1 ✅ AA) */
-.text-default-500 {
-    color: #71717a !important;
-}
-.text-default-400 {
-    color: #a1a1aa !important;
-}
+[data-slot="input"] { color: var(--pv-tinta) !important; }
+[data-slot="input"]::placeholder { color: var(--pv-tinta-suave) !important; }
+[data-slot="label"] { color: var(--pv-tinta-suave) !important; }
+[data-slot="input-wrapper"] { background-color: var(--pv-blanco) !important; }
+[data-slot="item-title"] { color: var(--pv-tinta) !important; }
+[data-slot="description"] { color: var(--pv-tinta-suave) !important; }
+[data-slot="value"] { color: var(--pv-tinta) !important; }
+[data-slot="trigger"] { background-color: var(--pv-blanco) !important; }
+[data-slot="textarea"] { color: var(--pv-tinta) !important; }
+[data-slot="textarea"]::placeholder { color: var(--pv-tinta-suave) !important; }
+[data-slot="base"] { color: inherit; }
 
-[data-slot="input"] {
-    color: #01072c !important;
-}
-
-[data-slot="input"]::placeholder {
-    color: #71717a !important; /* was #9ca3af (2.54:1 ❌) → zinc-500 (4.6:1 ✅ AA) */
-}
-
-[data-slot="label"] {
-    color: #4b5563 !important;
-}
-
-[data-slot="input-wrapper"] {
-    background-color: #ffffff !important;
-}
-
-/* Dropdown items */
-[data-slot="item-title"] {
-    color: #01072c !important;
-}
-
-[data-slot="description"] {
-    color: #6b7280 !important;
-}
-
-/* Select */
-[data-slot="value"] {
-    color: #01072c !important;
-}
-
-[data-slot="trigger"] {
-    background-color: #ffffff !important;
-}
-
-/* Textarea */
-[data-slot="textarea"] {
-    color: #01072c !important;
-}
-
-[data-slot="textarea"]::placeholder {
-    color: #71717a !important; /* was #9ca3af (2.54:1 ❌) → zinc-500 (4.6:1 ✅ AA) */
-}
-
-/* Card & general content slots */
-[data-slot="base"] {
-    color: inherit;
-}
-
-/* ── Danger / Alert text: HeroUI danger DEFAULT (#ff87b1) is pink and fails WCAG ── */
-/* Alert danger: title and description */
 [data-color="danger"] [data-slot="title"],
 [data-color="danger"] [data-slot="description"],
 [data-color="danger"] [data-slot="alert-title"] {
-    color: #b91c1c !important; /* red-700, 6.5:1 on white ✅ AA */
+    color: var(--pv-cuno) !important;
 }
-/* Invalid input border color — darker red so the state is also visually clear */
 [data-invalid="true"] [data-slot="input-wrapper"] {
-    border-color: #b91c1c !important;
+    border-color: var(--pv-cuno) !important;
 }

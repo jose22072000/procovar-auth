@@ -5,6 +5,7 @@ import { Button, Checkbox, Chip, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { restablecerPermisosDelRol } from "@/app/(user)/dashboard/_actions";
 
 export type PermisoDisponible = {
     key: string;
@@ -69,6 +70,7 @@ export function RolesManager({
     );
     const [busca, setBusca] = useState("");
     const [guardando, setGuardando] = useState(false);
+    const [reponiendo, setReponiendo] = useState(false);
 
     const rolActivo = roles.find((r) => r.id === rolActivoId) ?? roles[0];
 
@@ -126,6 +128,27 @@ export function RolesManager({
             for (const k of claves) { if (marcar) s.add(k); else s.delete(k); }
             return s;
         });
+    }
+
+    async function reponer() {
+        if (!rolActivo) return;
+        if (!confirm(t("dashboard.rolesManager.confirmarRestablecer", { rol: rolActivo.name }))) return;
+        setReponiendo(true);
+        try {
+            const res = await restablecerPermisosDelRol(rolActivo.id);
+            if (res.error) {
+                addToast({ title: t("dashboard.rolesManager.errorTitulo"), description: res.error, color: "danger" });
+                return;
+            }
+            addToast({
+                title: t("dashboard.rolesManager.restablecido", { rol: rolActivo.name }),
+                description: t("dashboard.rolesManager.guardadoDescripcion", { n: res.permisos ?? 0 }),
+                color: "success",
+            });
+            router.refresh();
+        } finally {
+            setReponiendo(false);
+        }
     }
 
     async function guardar() {
@@ -215,6 +238,16 @@ export function RolesManager({
                             <Chip size="sm" color="warning" variant="flat">
                                 {t("dashboard.rolesManager.sinGuardar")}
                             </Chip>
+                        )}
+                        {rolActivo.isSystem && puedeEditar && (
+                            <Button
+                                variant="bordered"
+                                isLoading={reponiendo}
+                                onPress={reponer}
+                                startContent={!reponiendo ? <Icon icon="lucide:rotate-ccw" className="size-4" aria-hidden /> : undefined}
+                            >
+                                {t("dashboard.rolesManager.restablecer")}
+                            </Button>
                         )}
                         <Button
                             color="primary"

@@ -229,7 +229,8 @@
       "settings": "Settings",
       "permissions": "Permissions",
       "users": "Users",
-      "organizations": "Organizations"
+      "organizations": "Organizations",
+      "audit": "Audit"
     },
     "accessDenied": {
       "title": "Access denied",
@@ -350,27 +351,23 @@
       "addressLabel": "Address",
       "passportLabel": "Passport/ID",
       "detailTitle": "Detail",
-      "subscriptionSection": "Subscription",
-      "until": "until {date}",
-      "noActiveSubscription": "No active subscription.",
-      "organizationsSection": "Organizations",
-      "noOrganizations": "No organizations.",
+      "organizationsSection": "Sucursales",
+      "noOrganizations": "No sucursales assigned.",
       "sessionsSection": "Sessions",
       "activeSessionsCount": "({count} active)",
       "revokeAll": "Revoke all",
       "loadingSessions": "Loading sessions…",
       "sessionsTableAriaLabel": "Sessions",
-      "colIp": "IP",
       "colClient": "Client",
       "colCreated": "Created",
       "colStatus": "Status",
       "noSessions": "No sessions.",
-      "directClient": "Direct",
       "revokedStatus": "revoked",
       "activeStatus": "active",
       "alreadyRevoked": "Already revoked",
       "revokeSessionTooltip": "Revoke session",
-      "revokeAriaLabel": "Revoke"
+      "revokeAriaLabel": "Revoke",
+      "colFrom": "From where"
     },
     "orgsManager": {
       "memberRemoved": "Member removed",
@@ -400,7 +397,16 @@
       "deletePermanently": "Delete permanently",
       "memberRolesTitle": "Member roles",
       "rolesSelectLabel": "Roles",
-      "selectRolesPlaceholder": "Select roles"
+      "selectRolesPlaceholder": "Select roles",
+      "addPerson": "Add person",
+      "personName": "Full name",
+      "personEmail": "Email",
+      "personEmailHelp": "They sign in with this. If they already have an account, this sucursal is added to it.",
+      "personPassword": "Password",
+      "personPasswordHelp": "Eight characters or more. You set it; they can change it later.",
+      "personRole": "Role",
+      "personCreated": "Person created and added to the sucursal.",
+      "personLinked": "They already had an account: {orgName} was added to it."
     },
     "rolesManager": {
       "avisoGlobal": "What you tick here applies to all eight sucursales.",
@@ -418,7 +424,10 @@
       "guardadoTitulo": "{rol} updated",
       "guardadoDescripcion": "{n} permissions active.",
       "errorTitulo": "Could not save",
-      "sinRoles": "No roles yet. Run the seed."
+      "sinRoles": "No roles yet. Run the seed.",
+      "restablecer": "Reset",
+      "confirmarRestablecer": "This gives \"{rol}\" back its default permissions. Anything you changed by hand is lost. Continue?",
+      "restablecido": "{rol} reset"
     }
   },
   "myProfile": {

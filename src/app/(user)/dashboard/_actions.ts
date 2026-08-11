@@ -6,6 +6,11 @@ import { revalidatePath } from "next/cache";
 import { getSystemConfig, setSystemConfig, clampHoldMinutes } from "@/lib/system-config";
 import { getRedis } from "@/lib/redis";
 import { audit } from "@/lib/audit";
+import { altaPersona } from "@/lib/alta-persona";
+import { resolveRbac } from "@/rbac/resolve-permissions";
+import { can } from "@/rbac/can";
+import { ungrantablePermissionKeys } from "@/rbac/grantable";
+import { systemRolePermissionKeys } from "@/rbac/system-roles";
 
 async function requireAdmin() {
     const { data: user } = await getCurrentUser();
@@ -13,11 +18,126 @@ async function requireAdmin() {
     return user;
 }
 
+/**
+ * Quien pide esto, ¿puede hacerlo EN ESTA SUCURSAL?
+ *
+ * El Super Admin puede en todas. Cualquier otro solo en las suyas, y ni
+ * siquiera en todas ellas: hace falta además el permiso concreto. Esto es lo
+ * que impide que un Administrador de Camagüey toque la gente de Holguín
+ * cambiando un identificador en la petición.
+ */
+async function exigirEnSucursal(organizationId: string, permiso: string) {
+    const { data: user } = await getCurrentUser();
+    if (!user) throw new Error("No autorizado");
+    const rbac = await resolveRbac(user.id, organizationId);
+    if (!can(rbac, permiso)) throw new Error("No puedes hacer esto en esta sucursal.");
+    return user;
+}
+
+/**
+ * Dar de alta a una persona en una sucursal, con su rol.
+ *
+ * Se crea con contraseña, no por invitación: ver el porqué en `altaPersona`.
+ */
+export async function anadirPersona(datos: {
+    organizationId: string;
+    nombre: string;
+    email: string;
+    password: string;
+    roleId: string;
+}): Promise<{ error?: string; yaExistia?: boolean }> {
+    try {
+        const actor = await exigirEnSucursal(datos.organizationId, "member.invite");
+
+        // Nadie reparte un rol que no podría usar él mismo: si no, un
+        // Administrador se asciende creando una segunda cuenta y entrando con
+        // ella.
+        const rol = await prisma.role.findUnique({
+            where: { id: datos.roleId },
+            select: { permissions: { select: { permission: { select: { key: true } } } } },
+        });
+        if (!rol) return { error: "Ese rol no existe." };
+        const rbacActor = await resolveRbac(actor.id, datos.organizationId);
+        const claves = rol.permissions
+            .map((p) => p.permission?.key)
+            .filter((k): k is string => Boolean(k));
+        if (ungrantablePermissionKeys(rbacActor, claves).length) {
+            return { error: "No puedes dar un rol con permisos que tú no tienes." };
+        }
+
+        const res = await altaPersona(datos);
+        if (res.error) return { error: res.error };
+
+        audit({
+            action: "member.create",
+            resource: res.memberId,
+            userId: actor.id,
+            meta: {
+                sucursal: datos.organizationId,
+                personaCreada: res.userId,
+                cuentaNueva: !res.yaExistia,
+            },
+        });
+        revalidatePath("/dashboard");
+        return { yaExistia: res.yaExistia };
+    } catch (e) {
+        return { error: (e as Error).message };
+    }
+}
+
+/**
+ * Devolverle a un rol los permisos que trae de fábrica.
+ *
+ * Hace falta porque el catálogo CRECE. Cuando se añade "exportar informes", los
+ * roles que ya existían no lo tienen: la siembra solo pone permisos al crear un
+ * rol, precisamente para no devolver en cada despliegue algo que alguien quitó
+ * a propósito. Eso deja un hueco, y el hueco se nota como "a mí no me deja".
+ *
+ * Así que reponerlos es una acción de alguien, no un efecto de arrancar. Se ve
+ * lo que va a pasar y se decide.
+ */
+export async function restablecerPermisosDelRol(roleId: string): Promise<{ error?: string; permisos?: number }> {
+    try {
+        const actor = await requireAdmin();
+        const rol = await prisma.role.findUnique({ where: { id: roleId }, select: { id: true, name: true } });
+        if (!rol) return { error: "Ese rol no existe." };
+
+        const claves = systemRolePermissionKeys(rol.name);
+        if (!claves.length) {
+            return { error: `"${rol.name}" no es de los cinco de casa: no tiene permisos de fábrica que reponer.` };
+        }
+
+        const permisos = await prisma.permission.findMany({
+            where: { key: { in: claves }, isDeprecated: false },
+            select: { id: true },
+        });
+        await prisma.$transaction([
+            prisma.rolePermission.deleteMany({ where: { roleId } }),
+            prisma.rolePermission.createMany({
+                data: permisos.map((p) => ({ roleId, permissionId: p.id })),
+                skipDuplicates: true,
+            }),
+        ]);
+
+        audit({
+            action: "role.reset",
+            resource: roleId,
+            userId: actor.id,
+            meta: { rol: rol.name, permisos: permisos.length },
+        });
+        revalidatePath("/dashboard/permissions");
+        return { permisos: permisos.length };
+    } catch (e) {
+        return { error: (e as Error).message };
+    }
+}
+
 export async function toggleUserAdmin(userId: string, makeAdmin: boolean): Promise<{ error?: string }> {
     try {
         const admin = await requireAdmin();
         if (admin.id === userId && !makeAdmin) return { error: "No puedes quitarte los permisos de admin" };
         await prisma.user.update({ where: { id: userId }, data: { isSystemAdmin: makeAdmin } });
+        audit({ action: "user.admin", resource: userId, userId: admin.id, meta: { ahoraEsSuperAdmin: makeAdmin } });
         revalidatePath("/dashboard");
         return {};
     } catch (e) {
@@ -40,7 +160,11 @@ export async function adminDeleteUser(userId: string): Promise<{ error?: string 
     try {
         const admin = await requireAdmin();
         if (admin.id === userId) return { error: "No puedes eliminar tu propia cuenta" };
+        // El correo se lee ANTES de borrar: despues la fila ya no existe y el
+        // apunte diria "se elimino la cuenta cmxyz...", que no sirve de nada.
+        const victima = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
         await prisma.user.delete({ where: { id: userId } });
+        audit({ action: "user.delete", resource: userId, userId: admin.id, meta: { correo: victima?.email } });
         revalidatePath("/dashboard");
         return {};
     } catch (e) {
@@ -153,14 +277,32 @@ export async function revokeAllUserSessions(userId: string): Promise<{ error?: s
 
 export async function removeOrgMember(memberId: string): Promise<{ error?: string }> {
     try {
-        await requireAdmin();
-        const member = await prisma.member.findUnique({ where: { id: memberId } });
+        const actor = await requireAdmin();
+        const member = await prisma.member.findUnique({
+            where: { id: memberId },
+            include: { user: { select: { email: true } }, organization: { select: { name: true } } },
+        });
         if (!member) return { error: "Miembro no encontrado" };
-        if (member.role === "owner") {
-            const owners = await prisma.member.count({ where: { organizationId: member.organizationId, role: "owner" } });
-            if (owners <= 1) return { error: "No puedes quitar al último propietario de la organización" };
+
+        // No dejar una sucursal sin nadie que pueda administrarla: si se va el
+        // ultimo Administrador, ya nadie de dentro puede dar de alta a nadie y
+        // hay que venir a rescatarla desde fuera.
+        if (member.role === "ADMINISTRADOR") {
+            const cuantos = await prisma.member.count({
+                where: { organizationId: member.organizationId, role: "ADMINISTRADOR" },
+            });
+            if (cuantos <= 1) {
+                return { error: `${member.organization.name} se quedaria sin ningun Administrador. Nombra otro antes de quitar a este.` };
+            }
         }
+
         await prisma.member.delete({ where: { id: memberId } });
+        audit({
+            action: "member.remove",
+            resource: memberId,
+            userId: actor.id,
+            meta: { correo: member.user.email, sucursal: member.organization.name },
+        });
         revalidatePath("/dashboard");
         return {};
     } catch (e) {
@@ -186,6 +328,12 @@ export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Pr
             ...toAdd.map((roleId) => prisma.memberRole.create({ data: { memberId, roleId } })),
             ...(toRemove.length ? [prisma.memberRole.deleteMany({ where: { memberId, roleId: { in: toRemove } } })] : []),
         ]);
+        audit({
+            action: "member.roles",
+            resource: memberId,
+            userId: (await getCurrentUser()).data?.id ?? null,
+            meta: { roles: roleIds.length },
+        });
         revalidatePath("/dashboard");
         return {};
     } catch (e) {

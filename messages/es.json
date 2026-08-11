@@ -229,7 +229,8 @@
       "settings": "Configuración",
       "permissions": "Permisos",
       "users": "Usuarios",
-      "organizations": "Organizaciones"
+      "organizations": "Organizaciones",
+      "audit": "Auditoría"
     },
     "accessDenied": {
       "title": "Acceso denegado",
@@ -350,27 +351,23 @@
       "addressLabel": "Dirección",
       "passportLabel": "Pasaporte/ID",
       "detailTitle": "Detalle",
-      "subscriptionSection": "Suscripción",
-      "until": "hasta {date}",
-      "noActiveSubscription": "Sin suscripción activa.",
-      "organizationsSection": "Organizaciones",
-      "noOrganizations": "Sin organizaciones.",
+      "organizationsSection": "Sucursales",
+      "noOrganizations": "Sin sucursales asignadas.",
       "sessionsSection": "Sesiones",
       "activeSessionsCount": "({count} activas)",
       "revokeAll": "Revocar todas",
       "loadingSessions": "Cargando sesiones…",
       "sessionsTableAriaLabel": "Sesiones",
-      "colIp": "IP",
       "colClient": "Cliente",
       "colCreated": "Creada",
       "colStatus": "Estado",
       "noSessions": "Sin sesiones.",
-      "directClient": "Directo",
       "revokedStatus": "revocada",
       "activeStatus": "activa",
       "alreadyRevoked": "Ya revocada",
       "revokeSessionTooltip": "Revocar sesión",
-      "revokeAriaLabel": "Revocar"
+      "revokeAriaLabel": "Revocar",
+      "colFrom": "Desde dónde"
     },
     "orgsManager": {
       "memberRemoved": "Miembro eliminado",
@@ -400,7 +397,16 @@
       "deletePermanently": "Eliminar definitivamente",
       "memberRolesTitle": "Roles del miembro",
       "rolesSelectLabel": "Roles",
-      "selectRolesPlaceholder": "Selecciona roles"
+      "selectRolesPlaceholder": "Selecciona roles",
+      "addPerson": "Añadir persona",
+      "personName": "Nombre y apellidos",
+      "personEmail": "Correo",
+      "personEmailHelp": "Con este correo entra. Si ya tiene cuenta, se le añade esta sucursal.",
+      "personPassword": "Contraseña",
+      "personPasswordHelp": "Ocho caracteres o más. Se la das tú; ella puede cambiarla después.",
+      "personRole": "Rol",
+      "personCreated": "Persona creada y añadida a la sucursal.",
+      "personLinked": "Ya tenía cuenta: se le añadió {orgName}."
     },
     "rolesManager": {
       "avisoGlobal": "Lo que marques aquí vale para las ocho sucursales.",
@@ -418,7 +424,10 @@
       "guardadoTitulo": "{rol} actualizado",
       "guardadoDescripcion": "{n} permisos activos.",
       "errorTitulo": "No se pudo guardar",
-      "sinRoles": "Todavía no hay roles. Ejecuta la siembra."
+      "sinRoles": "Todavía no hay roles. Ejecuta la siembra.",
+      "restablecer": "Restablecer",
+      "confirmarRestablecer": "Se le devuelven a \"{rol}\" los permisos de fábrica. Lo que hayas cambiado a mano se pierde. ¿Sigues?",
+      "restablecido": "{rol} restablecido"
     }
   },
   "myProfile": {

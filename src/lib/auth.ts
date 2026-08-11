@@ -166,14 +166,34 @@ export const auth = betterAuth({
     databaseHooks: {
         session: {
             create: {
-                // Stamp the originating client app onto the session. The column
-                // existed but nothing ever wrote it, so the admin panel showed a
-                // dash for every session.
+                /**
+                 * Anotar de dónde salió la sesión: aplicación, IP y navegador.
+                 *
+                 * Esto es media auditoría. Cuando alguien dice "yo no completé
+                 * ese pedido" o "a mí me sacó del sistema", lo primero que hace
+                 * falta es desde dónde se entró — y la sesión es el único sitio
+                 * donde eso consta.
+                 *
+                 * better-auth trae su propia captura de IP y navegador, pero en
+                 * este despliegue las guardaba VACÍAS (cadena vacía, no null),
+                 * así que la columna existía y no decía nada. Se rellenan aquí,
+                 * que es donde tenemos las cabeceras a mano, y solo cuando
+                 * vienen en blanco: si better-auth acertó, se respeta.
+                 */
                 before: async (session, ctx) => {
                     if (!ctx) return;
+
                     const clientId = clientIdFromFlowCookie(ctx.headers?.get('cookie'));
-                    if (!clientId) return; // direct login at qb-accounts: no client app
-                    return { data: { ...session, clientId } };
+                    const ip = clientIpFrom(ctx.request);
+                    const agente = ctx.headers?.get('user-agent') ?? undefined;
+
+                    const datos: Record<string, unknown> = {};
+                    if (clientId) datos.clientId = clientId;
+                    if (!session.ipAddress && ip) datos.ipAddress = ip;
+                    if (!session.userAgent && agente) datos.userAgent = agente;
+
+                    if (Object.keys(datos).length === 0) return;
+                    return { data: { ...session, ...datos } };
                 },
             },
         },

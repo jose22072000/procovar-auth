@@ -7,7 +7,7 @@ import {
   Avatar, Button, Chip, Input, Select, SelectItem, Tooltip,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, addToast,
 } from "@heroui/react";
-import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin } from "@/app/(user)/dashboard/_actions";
+import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, anadirPersona } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 
 interface RoleRow { id: string; name: string; color: string | null; icon: string | null; isSystem: boolean }
@@ -39,6 +39,8 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
   const [delConfirm, setDelConfirm] = useState("");
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
   const [memberRoleIds, setMemberRoleIds] = useState<string[]>([]);
+  const alta = useDisclosure();
+  const [altaForm, setAltaForm] = useState({ nombre: "", email: "", password: "", roleId: "" });
 
   const orgs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -61,6 +63,32 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
   function openEditOrg() { if (!selected) return; setOrgForm({ name: selected.name, slug: selected.slug, logo: selected.logo ?? "" }); editOrg.onOpen(); }
   function openDelOrg() { setDelConfirm(""); delOrg.onOpen(); }
   function openRoles(m: MemberRow) { setEditingMember(m); setMemberRoleIds(m.roleIds); roleModal.onOpen(); }
+
+  function abrirAlta() {
+    if (!selected) return;
+    // El rol más limitado por defecto. Quien da de alta a diez personas seguidas
+    // acaba dándole a Guardar sin mirar, y equivocarse hacia abajo se arregla
+    // con un clic; hacia arriba, no se nota.
+    const gestor = selected.roles.find((r) => r.name === "GESTOR");
+    setAltaForm({ nombre: "", email: "", password: "", roleId: gestor?.id ?? selected.roles[0]?.id ?? "" });
+    alta.onOpen();
+  }
+
+  async function guardarAlta() {
+    if (!selected) return;
+    setBusy(true);
+    const res = await anadirPersona({ organizationId: selected.id, ...altaForm });
+    setBusy(false);
+    if (res.error) { addToast({ title: res.error, color: "danger" }); return; }
+    addToast({
+      title: res.yaExistia
+        ? t('dashboard.orgsManager.personLinked', { orgName: selected.name })
+        : t('dashboard.orgsManager.personCreated'),
+      color: "success",
+    });
+    alta.onClose();
+    router.refresh();
+  }
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
@@ -138,7 +166,13 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
 
           {/* Members */}
           <div>
-            <p className="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">{t('dashboard.orgsManager.membersLabel')}</p>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{t('dashboard.orgsManager.membersLabel')}</p>
+              <Button size="sm" color="primary" isDisabled={busy} onPress={abrirAlta}
+                startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
+                {t('dashboard.orgsManager.addPerson')}
+              </Button>
+            </div>
             <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-slate-700/60 dark:border-slate-700">
               {selected.members.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-slate-400">{t('dashboard.orgsManager.noMembers')}</div>
@@ -179,6 +213,44 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
           <p className="text-sm">{t('dashboard.orgsManager.selectOrgPrompt')}</p>
         </div>
       )}
+
+      {/* Alta de una persona en esta sucursal */}
+      <Modal isOpen={alta.isOpen} onOpenChange={alta.onOpenChange} size="lg">
+        <ModalContent>
+          <ModalHeader className="flex-col items-start gap-0.5">
+            <span>{t('dashboard.orgsManager.addPerson')}</span>
+            <span className="text-sm font-normal text-slate-500">{selected?.name}</span>
+          </ModalHeader>
+          <ModalBody className="gap-3">
+            <Input autoFocus label={t('dashboard.orgsManager.personName')} variant="bordered"
+              value={altaForm.nombre} onValueChange={(v) => setAltaForm((f) => ({ ...f, nombre: v }))} />
+            <Input label={t('dashboard.orgsManager.personEmail')} type="email" variant="bordered"
+              value={altaForm.email} onValueChange={(v) => setAltaForm((f) => ({ ...f, email: v }))}
+              description={t('dashboard.orgsManager.personEmailHelp')} />
+            <Input label={t('dashboard.orgsManager.personPassword')} variant="bordered"
+              value={altaForm.password} onValueChange={(v) => setAltaForm((f) => ({ ...f, password: v }))}
+              description={t('dashboard.orgsManager.personPasswordHelp')} />
+            <Select label={t('dashboard.orgsManager.personRole')} variant="bordered"
+              selectedKeys={altaForm.roleId ? [altaForm.roleId] : []}
+              onSelectionChange={(k) => setAltaForm((f) => ({ ...f, roleId: String([...k][0] ?? "") }))}>
+              {(selected?.roles ?? []).map((r) => (
+                <SelectItem key={r.id}>{r.name}</SelectItem>
+              ))}
+            </Select>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="bordered" onPress={alta.onClose}
+              startContent={<Icon icon="lucide:x-circle" className="size-4" aria-hidden />}>
+              {t('dashboard.common.cancel')}
+            </Button>
+            <Button color="primary" isLoading={busy} onPress={guardarAlta}
+              isDisabled={!altaForm.nombre.trim() || !altaForm.email.trim() || !altaForm.roleId}
+              startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
+              {t('dashboard.orgsManager.addPerson')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* Edit org */}
       <Modal isOpen={editOrg.isOpen} onOpenChange={editOrg.onOpenChange}>
