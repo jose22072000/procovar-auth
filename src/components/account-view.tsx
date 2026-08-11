@@ -1,152 +1,159 @@
-"use client";
-
-import { Avatar, Button, Card, CardBody, Divider, Link } from "@heroui/react";
-import { Icons } from "./icons/iconify";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { Icon } from "@iconify/react";
+import { getTranslations } from "next-intl/server";
+import { prisma } from "@/lib/prisma";
 import type { ProfileRole } from "@/lib/role-resolver";
 
-interface User {
-    name: string;
-    email: string;
-    image?: string | null;
-}
-
 interface AccountViewProps {
-    user: User;
+    user: { id: string; name: string; email: string; image?: string | null; isSystemAdmin?: boolean };
     role: ProfileRole;
 }
 
-export function AccountView({ user, role }: AccountViewProps) {
-    const router = useRouter();
-    const t = useTranslations();
+/**
+ * Lo primero que ve alguien que ya tiene la sesión abierta.
+ *
+ * Antes era una tarjeta con una cabecera en degradado morado y un "bienvenido de
+ * nuevo" enorme, y debajo tres botones de los que dos ya no llevaban a ninguna
+ * parte —"dashboard propietario", "mi perfil personal"— porque eran del producto
+ * del que salió este código.
+ *
+ * Ahora responde la única pregunta que trae quien llega aquí: **a dónde voy**.
+ * Se enseñan las aplicaciones a las que esta persona puede entrar, y su sucursal
+ * arriba, porque de eso depende lo que verá cuando llegue.
+ *
+ * No hay saludo. Se entra a trabajar, no de visita.
+ */
 
-    const handleSignOut = async () => {
-        await authClient.signOut();
-        router.refresh();
-    };
+interface Destino {
+    href: string;
+    icono: string;
+    titulo: string;
+    descripcion: string;
+    externo?: boolean;
+}
+
+const APLICACIONES: Destino[] = [
+    {
+        href: "https://pedidos.procovar.cloud",
+        icono: "lucide:clipboard-list",
+        titulo: "PEDIDO",
+        descripcion: "Pedidos, clientes y vendedores.",
+        externo: true,
+    },
+    {
+        href: "https://analitics.procovar.cloud",
+        icono: "lucide:bar-chart-3",
+        titulo: "Analitics",
+        descripcion: "Informes de ventas, gestores y productos.",
+        externo: true,
+    },
+    {
+        href: "https://delivery.procovar.cloud",
+        icono: "lucide:truck",
+        titulo: "Delivery",
+        descripcion: "Reparto y rutas.",
+        externo: true,
+    },
+];
+
+export async function AccountView({ user, role }: AccountViewProps) {
+    const t = await getTranslations();
+
+    const miembros = await prisma.member.findMany({
+        where: { userId: user.id },
+        select: { organization: { select: { name: true, slug: true } } },
+        orderBy: { createdAt: "asc" },
+    });
+
+    // El alcance, arriba y siempre: de él depende lo que se verá al llegar a
+    // cualquiera de las aplicaciones.
+    const alcance = user.isSystemAdmin
+        ? { codigo: "TODAS", nombre: t("cuenta.todasLasSucursales") }
+        : miembros[0]
+          ? { codigo: miembros[0].organization.slug.toUpperCase(), nombre: miembros[0].organization.name }
+          : null;
+
+    const gestion: Destino[] = [];
+    if (user.isSystemAdmin) {
+        gestion.push({
+            href: "/dashboard/organizations",
+            icono: "lucide:building-2",
+            titulo: t("cuenta.panel"),
+            descripcion: t("cuenta.panelDesc"),
+        });
+    } else if (role === "org-full") {
+        gestion.push({
+            href: "/profile/org",
+            icono: "lucide:building-2",
+            titulo: t("orgPage.title"),
+            descripcion: t("cuenta.miSucursalDesc"),
+        });
+    }
 
     return (
-        <div className="flex w-full max-w-sm flex-col gap-4">
-            <Card className="w-full overflow-hidden rounded-sm bg-content1 dark:bg-content1">
-                <div className="relative bg-gradient-to-b from-[#110D5B] to-[#2a257a]">
-                    <div className="flex gap-2 pt-8 pb-20 justify-center items-center">
-                        <span aria-label="waving hand" role="img" className="text-4xl">
-                            👋
-                        </span>
-                        <h1 className="text-4xl font-medium text-white font-sans">{t('account.welcomeBack')}</h1>
-                    </div>
-                    <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
-                        <Avatar
-                            src={user.image || undefined}
-                            icon={<Icons.user className="!size-16" />}
-                            className="w-24 h-24 text-2xl border-4 border-content1 bg-primary text-white"
-                            showFallback
-                            imgProps={{ referrerPolicy: "no-referrer" }}
-                        />
-                    </div>
+        <div className="space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p className="pv-rotulo">{t("cuenta.rotulo")}</p>
+                    <h1 className="pv-titulo mt-1 text-2xl">{user.name}</h1>
+                    <p className="mt-0.5 text-sm text-pv-tinta-suave">{user.email}</p>
                 </div>
-                <CardBody className="pt-14 items-center pb-8">
-                    <h2 className="text-2xl font-bold text-center">{user.name}</h2>
-                    <p className="text-medium text-center">{user.email}</p>
 
-                    <div className="w-full mt-8 flex flex-col gap-2">
-                        {role === "admin" && (
-                            <>
-                                <Button
-                                    as={Link}
-                                    href="/dashboard"
-                                    variant="bordered"
-                                    className="w-full font-semibold border-[#0A2252] text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
-                                    size="lg"
-                                    endContent={<Icons.system className="size-5" />}
-                                >
-                                    {t('account.goToDashboard')}
-                                </Button>
-                                {/* Admins can also preview the owner and client views (same user, all 3 roles). */}
-                                <Button
-                                    as={Link}
-                                    href="/profile/org"
-                                    variant="light"
-                                    className="w-full font-medium text-slate-500 hover:text-[#0A2252]"
-                                    size="md"
-                                    endContent={<Icons.building className="size-4" />}
-                                >
-                                    {t('account.orgDashboard')}
-                                </Button>
-                                <Button
-                                    as={Link}
-                                    href="/profile?view=client"
-                                    variant="light"
-                                    className="w-full font-medium text-slate-500 hover:text-[#0A2252]"
-                                    size="md"
-                                    endContent={<Icons.userCircle className="size-4" />}
-                                >
-                                    {t('account.myPersonalProfile')}
-                                </Button>
-                            </>
-                        )}
-
-                        {(role === "org-full" || role === "org-restricted") && (
-                            <>
-                                <Button
-                                    as={Link}
-                                    href="/profile/org"
-                                    variant="bordered"
-                                    className="w-full font-semibold border-[#0A2252] text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
-                                    size="lg"
-                                    endContent={<Icons.building className="size-5" />}
-                                >
-                                    {t('account.orgDashboard')}
-                                </Button>
-                                <Button
-                                    as={Link}
-                                    href="/profile?view=client"
-                                    variant="light"
-                                    className="w-full font-medium text-slate-500 hover:text-[#0A2252]"
-                                    size="md"
-                                    endContent={<Icons.userCircle className="size-4" />}
-                                >
-                                    {t('account.myPersonalProfile')}
-                                </Button>
-                            </>
-                        )}
-
-                        {role === "client" && (
-                            <Button
-                                as={Link}
-                                href="/profile"
-                                variant="bordered"
-                                className="w-full font-semibold border-[#0A2252] text-[#0A2252] bg-transparent hover:bg-[#0A2252]/8"
-                                size="lg"
-                                endContent={<Icons.userCircle className="size-5" />}
-                            >
-                                {t('account.continueToProfile')}
-                            </Button>
-                        )}
-                    </div>
-                </CardBody>
-            </Card>
-
-            <div className="flex items-center gap-4 py-2">
-                <Divider className="flex-1" />
-                <p className="text-tiny shrink-0">{t('auth.or')}</p>
-                <Divider className="flex-1" />
+                {alcance && (
+                    <span className="pv-marco">
+                        <span className="pv-rotulo">{t("cuenta.alcance")}</span>
+                        <span className="pv-codigo font-semibold text-pv-azul">{alcance.codigo}</span>
+                    </span>
+                )}
             </div>
 
-            <p className="text-small text-center">
-                {t('account.wantToSwitchAccounts')}&nbsp;
-                <Link
-                    as="button"
-                    onClick={handleSignOut}
-                    size="sm"
-                    color="danger"
-                    className="cursor-pointer"
-                >
-                    {t('account.signOut')}
+            <div>
+                <h2 className="pv-rotulo mb-2">{t("cuenta.aplicaciones")}</h2>
+                <div className="grid gap-px bg-pv-trazo-tenue sm:grid-cols-2 lg:grid-cols-3">
+                    {[...gestion, ...APLICACIONES].map((d) => (
+                        <Link
+                            key={d.href}
+                            href={d.href}
+                            target={d.externo ? "_blank" : undefined}
+                            rel={d.externo ? "noopener noreferrer" : undefined}
+                            className="group flex items-start gap-3 bg-pv-blanco p-4 transition-colors hover:bg-pv-azul-tinte"
+                        >
+                            <Icon
+                                icon={d.icono}
+                                className="mt-0.5 size-5 shrink-0 text-pv-tinta-suave transition-colors group-hover:text-pv-azul"
+                                aria-hidden
+                            />
+                            <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="font-semibold">{d.titulo}</span>
+                                    {d.externo && (
+                                        <Icon
+                                            icon="lucide:arrow-up-right"
+                                            className="size-3.5 shrink-0 text-pv-tinta-suave"
+                                            aria-hidden
+                                        />
+                                    )}
+                                </span>
+                                <span className="mt-0.5 block text-sm text-pv-tinta-suave">
+                                    {d.descripcion}
+                                </span>
+                            </span>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-pv-trazo-tenue pt-4 text-sm">
+                <Link href="/profile" className="text-pv-azul hover:underline">
+                    {t("nav.profile")}
                 </Link>
-            </p>
+                <Link href="/profile/me" className="text-pv-azul hover:underline">
+                    {t("nav.settings")}
+                </Link>
+                <Link href="/logout" className="ml-auto text-pv-cuno hover:underline">
+                    {t("nav.logOut")}
+                </Link>
+            </div>
         </div>
     );
 }

@@ -1,19 +1,18 @@
-import { NavBarBasic } from "@/components/layout/navbar";
 import { getCurrentUser } from "@/server/auth.server";
+import { prisma } from "@/lib/prisma";
+import { Armazon } from "@/components/layout/armazon";
 
-// Páginas de una persona concreta: nunca se generan por adelantado.
 export const dynamic = "force-dynamic";
 
 /**
  * El armazón de lo que hay dentro de la sesión.
  *
- * **Sin sesión no hay barra.** La de arriba es el menú de la persona y el
- * selector de idioma: con la sesión cerrada no tiene a quién enseñar ni adónde
- * llevar, y encima le comía el borde a la pantalla de entrada, que va a sangre.
+ * **Sin sesión no hay armazón.** La barra lateral es navegación para quien ya
+ * está dentro; en la pantalla de entrada no tiene adónde llevar y le comería el
+ * borde, que va a sangre.
  *
- * Tampoco hay pie. El que había identificaba a la empresa y enlazaba los
- * documentos legales, que es lo que necesita una web que vende a desconocidos.
- * Esto es la herramienta de casa: quien entra ya sabe dónde trabaja.
+ * El alcance —la sucursal— se calcula aquí, una vez, y baja al armazón para que
+ * salga en todas las pantallas sin que cada una tenga que acordarse.
  */
 export default async function UserLayout({
     children,
@@ -22,11 +21,27 @@ export default async function UserLayout({
 
     if (!user) return <>{children}</>;
 
+    const miembros = await prisma.member.findMany({
+        where: { userId: user.id },
+        select: { organization: { select: { slug: true } } },
+        orderBy: { createdAt: "asc" },
+    });
+
+    const esSuperAdmin = Boolean(user.isSystemAdmin);
+
     return (
-        <div className="min-h-svh bg-pv-papel">
-            <NavBarBasic />
-            {/* El hueco de arriba es exactamente el alto de la barra fija. */}
-            <main className="pt-14">{children}</main>
-        </div>
+        <Armazon
+            persona={{
+                nombre: user.name,
+                correo: user.email,
+                esSuperAdmin,
+                // El Super Admin no pertenece a ninguna sucursal: las ve todas, y
+                // decirlo así evita que parezca que le falta algo.
+                alcance: esSuperAdmin ? "TODAS" : (miembros[0]?.organization.slug.toUpperCase() ?? null),
+                llevaSucursal: miembros.length > 0,
+            }}
+        >
+            {children}
+        </Armazon>
     );
 }

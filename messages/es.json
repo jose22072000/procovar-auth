@@ -1062,5 +1062,25 @@
     "rotuloFormulario": "Tu cuenta",
     "sinCuenta": "¿No tienes cuenta? Te la crea el administrador de tu sucursal.",
     "pie": "Procovar · uso interno"
+  },
+  "cuenta": {
+    "rotulo": "Tu cuenta",
+    "alcance": "Sucursal",
+    "todasLasSucursales": "Todas las sucursales",
+    "aplicaciones": "A dónde ir",
+    "panel": "Panel de Procovar",
+    "panelDesc": "Sucursales, personas, permisos y auditoría.",
+    "miSucursalDesc": "La gente de tu sucursal y lo que puede hacer cada uno."
+  },
+  "rail": {
+    "sucursales": "Sucursales",
+    "miSucursal": "Mi sucursal",
+    "personas": "Personas",
+    "permisos": "Roles y permisos",
+    "auditoria": "Auditoría",
+    "aplicaciones": "Aplicaciones",
+    "ajustes": "Ajustes",
+    "abrirMenu": "Abrir el menú",
+    "cerrarMenu": "Cerrar el menú"
   }
 }

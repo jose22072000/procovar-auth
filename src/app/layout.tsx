@@ -44,10 +44,11 @@ export const metadata: Metadata = {
   title: "Procovar — Cuentas",
   description: "Centro de identidad de Procovar",
   icons: {
+    // El isotipo de Procovar. En claro sale el cuadrado azul; en oscuro se
+    // invierte, porque un cuadrado azul sobre una pestaña negra se pierde.
     icon: [
-      { url: "/favicon-dark-v2.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
-      { url: "/favicon-light-v2.svg", type: "image/svg+xml", media: "(prefers-color-scheme: light)" },
-      { url: "/favicon-dark-v2.svg", type: "image/svg+xml" },
+      { url: "/favicon-oscuro.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
+      { url: "/favicon-claro.svg", type: "image/svg+xml" },
     ],
     apple: "/logo-512.png",
   },

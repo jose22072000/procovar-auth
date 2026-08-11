@@ -1062,5 +1062,25 @@
     "rotuloFormulario": "Your account",
     "sinCuenta": "No account? Your sucursal administrator creates it for you.",
     "pie": "Procovar · internal use"
+  },
+  "cuenta": {
+    "rotulo": "Your account",
+    "alcance": "Sucursal",
+    "todasLasSucursales": "All sucursales",
+    "aplicaciones": "Where to go",
+    "panel": "Procovar panel",
+    "panelDesc": "Sucursales, people, permissions and audit.",
+    "miSucursalDesc": "The people in your sucursal and what each of them can do."
+  },
+  "rail": {
+    "sucursales": "Sucursales",
+    "miSucursal": "My sucursal",
+    "personas": "People",
+    "permisos": "Roles & permissions",
+    "auditoria": "Audit",
+    "aplicaciones": "Applications",
+    "ajustes": "Settings",
+    "abrirMenu": "Open menu",
+    "cerrarMenu": "Close menu"
   }
 }
