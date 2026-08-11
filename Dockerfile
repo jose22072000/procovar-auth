@@ -61,6 +61,19 @@ COPY --from=builder --chown=nextjs:nodejs /app/public           ./public
 COPY --from=builder --chown=nextjs:nodejs /app/prisma            ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.js  ./
 
+# Seed scripts, and the sources they import.
+#
+# The seed is not a one-off: a new sucursal, a new application, a permission
+# added to the catalog — all of them are "run the seed again". Without this the
+# only way to do it was to copy files into a running container by hand, which is
+# exactly the kind of step that gets done wrong at the worst moment.
+#
+# `tsx` and the TypeScript sources are already in the image (node_modules comes
+# whole from the builder), so this only adds the source tree itself.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts        ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/src            ./src
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json  ./
+
 # Full node_modules from the builder.
 # Trade-off: bigger image (~500 MB more), but ZERO extra install step in the
 # runner — every COPY hits BuildKit cache as long as deps don't change, so
