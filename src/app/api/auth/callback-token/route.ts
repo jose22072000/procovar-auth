@@ -18,7 +18,6 @@ import { z } from 'zod';
 import { withServiceAuth } from '@/lib/with-service-auth';
 import { encodeCallback } from '@/lib/callback-token';
 import { CallbackValidationError } from '@/lib/callback-validator';
-import { audit } from '@/lib/audit';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
@@ -63,11 +62,11 @@ export const POST = withServiceAuth(async (req: NextRequest, ctx) => {
 
     try {
         const { token, expiresIn } = await encodeCallback(parsed.data);
-        audit({
-            action: 'callback.create',
-            clientId: parsed.data.clientId,
-            meta: { callbackUrl: parsed.data.callbackUrl, returnTo: parsed.data.returnTo ?? null },
-        });
+        // Aquí se auditaba 'callback.create'. Se quitó: se dispara en CADA salto del
+        // SSO, no lleva usuario (es anterior a saber quién es) y solo dice que se
+        // firmó un token de ida y vuelta. Llenaba la auditoría de ruido y enterraba
+        // lo que de verdad hay que poder encontrar: quién entró, quién salió y qué
+        // tocó un administrador.
         return NextResponse.json({
             token,
             expiresIn,

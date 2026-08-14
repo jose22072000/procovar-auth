@@ -4,9 +4,9 @@
     "about": "Acerca de",
     "contact": "Contacto",
     "listProperty": "Lista tu propiedad",
-    "profile": "Perfil",
+    "profile": "Mi cuenta",
     "notifications": "Notificaciones",
-    "settings": "Mi perfil",
+    "settings": "Configurar perfil",
     "invoices": "Facturas",
     "reservations": "Reservas",
     "services": "Suscripciones",
@@ -375,7 +375,7 @@
       "revokeSessionTooltip": "Revocar sesión",
       "revokeAriaLabel": "Revocar",
       "colFrom": "Desde dónde",
-      "sinUsuario": "sin usuario",
+      "sinUsuario": "sin nombre de usuario",
       "sinCorreo": "sin correo"
     },
     "orgsManager": {
@@ -1083,6 +1083,8 @@
     "aplicaciones": "Aplicaciones",
     "ajustes": "Ajustes",
     "abrirMenu": "Abrir el menú",
-    "cerrarMenu": "Cerrar el menú"
+    "cerrarMenu": "Cerrar el menú",
+    "miCuenta": "Mi cuenta",
+    "configurarPerfil": "Configurar perfil"
   }
 }

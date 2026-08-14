@@ -62,6 +62,14 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
     const idioma = useLocale() as Locale;
     const [abierta, setAbierta] = useState(false);
 
+    // Los apartados de administración van primero y solo los ve quien manda; los
+    // dos últimos los ve TODO el mundo.
+    //
+    // "Mi cuenta" y "Configurar perfil" están aquí, en la navegación, y no solo
+    // colgando del nombre de abajo. Antes la única forma de llegar al perfil era
+    // pulsar el nombre en la esquina, que no parece un enlace: quien no es
+    // administrador entraba, no veía ningún apartado y se quedaba sin saber a
+    // dónde ir.
     const APARTADOS: Apartado[] = [
         { href: "/dashboard/organizations", icono: "lucide:building-2", texto: t("rail.sucursales"), soloGlobal: true },
         { href: "/profile/org", icono: "lucide:building-2", texto: t("rail.miSucursal"), soloSucursal: true },
@@ -69,6 +77,8 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
         { href: "/dashboard/permissions", icono: "lucide:shield-check", texto: t("rail.permisos"), soloGlobal: true },
         { href: "/dashboard/auditoria", icono: "lucide:scroll-text", texto: t("rail.auditoria"), soloGlobal: true },
         { href: "/apikeys", icono: "lucide:key-round", texto: t("rail.aplicaciones"), soloGlobal: true },
+        { href: "/profile", icono: "lucide:circle-user", texto: t("rail.miCuenta") },
+        { href: "/profile/me", icono: "lucide:settings", texto: t("rail.configurarPerfil") },
     ];
 
     const visibles = APARTADOS.filter((a) => {
@@ -92,7 +102,11 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
                         href={a.href}
                         onClick={() => setAbierta(false)}
                         className="pv-rail-enlace"
-                        data-activo={ruta.startsWith(a.href)}
+                        // Coincidencia exacta o de subruta con barra: con un
+                        // startsWith pelado, /profile se marcaría como activo
+                        // también estando en /profile/me y saldrían dos
+                        // apartados encendidos a la vez.
+                        data-activo={ruta === a.href || ruta.startsWith(`${a.href}/`)}
                     >
                         <Icon icon={a.icono} className="size-4 shrink-0" aria-hidden />
                         <span className="truncate">{a.texto}</span>

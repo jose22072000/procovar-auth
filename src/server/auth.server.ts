@@ -8,6 +8,7 @@ import { getFlowState, clearFlowState } from "@/lib/flow-state";
 import { resolveSessionUser } from "@/lib/require-admin";
 import { isSessionRevoked } from "@/lib/session-revocation";
 import { prisma } from "@/lib/prisma";
+import { audit } from "@/lib/audit";
 
 const SESSION_RESOLVE_TIMEOUT_MS = 5000;
 
@@ -114,11 +115,44 @@ export const signIn = async (identificador: string, password: string, rememberMe
         }
 
         await auth.api.signInEmail({
+            // Las cabeceras de la petición van SIEMPRE. Sin ellas better-auth no
+            // tiene de dónde sacar la IP ni el navegador y guarda la sesión con
+            // los dos en nulo: en Personas → Sesiones salía "—" en "Desde dónde"
+            // y no había forma de saber desde qué equipo entró nadie.
+            //
+            // Las únicas sesiones que sí tenían IP eran las de curl contra el
+            // healthcheck, y con 10.0.1.12: la IP interna de la red de Docker, que
+            // no es la de ningún cliente.
+            headers: await headers(),
             body: {
                 email,
                 password,
                 rememberMe,
             },
+        });
+
+        // El inicio de sesión SÍ se audita. Era el hueco grande: se registraba el
+        // cierre de sesión, las revocaciones y todo lo de administración, pero de
+        // las entradas no quedaba rastro. Preguntar "¿quién entró y desde dónde?"
+        // —que es la pregunta que se hace cuando algo huele mal— no tenía respuesta.
+        //
+        // Va después del signInEmail para que solo se apunten las entradas que de
+        // verdad ocurrieron: si la contraseña falla, salta al catch y no se audita.
+        const cabeceras = await headers();
+        const quienEntro = await prisma.user
+            .findUnique({ where: { email }, select: { id: true } })
+            .catch(() => null);
+
+        audit({
+            action: "auth.login",
+            userId: quienEntro?.id ?? null,
+            ip:
+                cabeceras.get("cf-connecting-ip") ??
+                cabeceras.get("x-real-ip") ??
+                cabeceras.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+                null,
+            userAgent: cabeceras.get("user-agent"),
+            meta: { identificador: identificador.trim() },
         });
 
         // Handle custom "Remember Email" cookie
@@ -215,6 +249,9 @@ export const signIn = async (identificador: string, password: string, rememberMe
 export const signUp = async (name: string, email: string, password: string): Promise<ApiResponse> => {
     try {
         await auth.api.signUpEmail({
+            // Igual que en signIn: al registrarse también se abre sesión, así que
+            // sin cabeceras esa primera sesión nace sin IP ni navegador.
+            headers: await headers(),
             body: {
                 name,
                 email,
