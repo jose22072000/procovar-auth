@@ -22,6 +22,18 @@ const clients: Array<{
     scopes: string[]
 }> = [
     {
+        clientId: 'procovar-rutas',
+        name: 'Procovar Rutas',
+        description: 'Panel de control de los recorridos GPS de los vendedores',
+        allowedCallbackUrls: [
+            'https://rutas.procovar.cloud/api/auth/callback',
+            'http://localhost:3600/api/auth/callback',
+        ],
+        // El puerto forma parte del host: `localhost` no casa con `localhost:3600`.
+        allowedDomains: ['rutas.procovar.cloud', 'localhost:3600', 'localhost:3601'],
+        scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
+    },
+    {
         clientId: 'qb-booking',
         name: 'QB Booking',
         description: 'Public booking flow',
