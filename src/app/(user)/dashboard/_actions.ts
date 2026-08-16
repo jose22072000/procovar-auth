@@ -86,6 +86,75 @@ export async function anadirPersona(datos: {
 }
 
 /**
+ * Añadir a una sucursal a alguien que YA tiene cuenta.
+ *
+ * Crear la persona y meterla en una sucursal son dos cosas distintas y se hacen en
+ * dos sitios distintos: la cuenta se abre en Personas, y aquí solo se dice en qué
+ * sucursales trabaja. Antes esta pantalla pedía nombre y contraseña, o sea que
+ * obligaba a crear una cuenta para poder mover a alguien a otra sucursal.
+ */
+export async function agregarMiembro(datos: {
+    organizationId: string;
+    userId: string;
+    roleId: string;
+}): Promise<{ error?: string; yaEstaba?: boolean }> {
+    try {
+        const actor = await exigirEnSucursal(datos.organizationId, "member.invite");
+
+        // Mismo cuidado que al dar de alta: nadie reparte un rol con permisos que
+        // él no tiene, o se asciende metiendo a un cómplice.
+        const rol = await prisma.role.findUnique({
+            where: { id: datos.roleId },
+            select: { permissions: { select: { permission: { select: { key: true } } } } },
+        });
+        if (!rol) return { error: "Ese rol no existe." };
+        const rbacActor = await resolveRbac(actor.id, datos.organizationId);
+        const claves = rol.permissions
+            .map((p) => p.permission?.key)
+            .filter((k): k is string => Boolean(k));
+        if (ungrantablePermissionKeys(rbacActor, claves).length) {
+            return { error: "No puedes dar un rol con permisos que tú no tienes." };
+        }
+
+        const ya = await prisma.member.findFirst({
+            where: { organizationId: datos.organizationId, userId: datos.userId },
+            select: { id: true },
+        });
+        if (ya) {
+            // Ya está dentro: se le añade el rol y listo, en vez de fallar.
+            await prisma.memberRole.upsert({
+                where: { memberId_roleId: { memberId: ya.id, roleId: datos.roleId } },
+                create: { memberId: ya.id, roleId: datos.roleId },
+                update: {},
+            });
+            revalidatePath("/dashboard");
+            return { yaEstaba: true };
+        }
+
+        const miembro = await prisma.member.create({
+            data: {
+                organizationId: datos.organizationId,
+                userId: datos.userId,
+                role: "member",
+                memberRoles: { create: { roleId: datos.roleId } },
+            },
+            select: { id: true },
+        });
+
+        audit({
+            action: "member.add",
+            resource: miembro.id,
+            userId: actor.id,
+            meta: { sucursal: datos.organizationId, persona: datos.userId },
+        });
+        revalidatePath("/dashboard");
+        return {};
+    } catch (e) {
+        return { error: (e as Error).message };
+    }
+}
+
+/**
  * Devolverle a un rol los permisos que trae de fábrica.
  *
  * Hace falta porque el catálogo CRECE. Cuando se añade "exportar informes", los
@@ -345,6 +414,83 @@ export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Pr
         });
         revalidatePath("/dashboard");
         return {};
+    } catch (e) {
+        return { error: (e as Error).message };
+    }
+}
+
+/**
+ * Crear una sucursal.
+ *
+ * Faltaba: el panel dejaba editar y borrar sucursales, pero no crearlas, así que
+ * la única forma de abrir una era tocar la base a mano. Con ocho sucursales y las
+ * que vengan, eso no es una excepción rara.
+ *
+ * Quien la crea entra dentro como ADMINISTRADOR. Una sucursal sin nadie no se
+ * puede ni mirar desde el panel —las pantallas piden permisos EN la sucursal— y
+ * quedaría inservible hasta que un Super Admin se metiera a arreglarla.
+ *
+ * El slug sale del nombre, y si choca se le añade un número: "Camagüey" y
+ * "camaguey" son la misma URL, y fallar con "ese slug ya está en uso" ante algo
+ * que quien crea la sucursal ni ha escrito es hacerle adivinar.
+ */
+export async function crearSucursal(
+    datos: { nombre: string },
+): Promise<{ error?: string; orgId?: string }> {
+    try {
+        const actor = await requireAdmin();
+
+        const nombre = datos.nombre.trim();
+        if (!nombre) return { error: "La sucursal necesita un nombre." };
+
+        const base =
+            nombre
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "") || "sucursal";
+
+        const rolAdmin = await prisma.role.findFirst({
+            where: { name: "ADMINISTRADOR" },
+            select: { id: true },
+        });
+
+        for (let intento = 0; intento < 20; intento += 1) {
+            const slug = intento === 0 ? base : `${base}-${intento}`;
+            try {
+                const org = await prisma.$transaction(async (tx) => {
+                    const creada = await tx.organization.create({
+                        data: { name: nombre, slug },
+                        select: { id: true },
+                    });
+                    const miembro = await tx.member.create({
+                        data: { organizationId: creada.id, userId: actor.id, role: "admin" },
+                        select: { id: true },
+                    });
+                    if (rolAdmin) {
+                        await tx.memberRole.create({
+                            data: { memberId: miembro.id, roleId: rolAdmin.id },
+                        });
+                    }
+                    return creada;
+                });
+
+                audit({
+                    action: "organization.create",
+                    resource: org.id,
+                    userId: actor.id,
+                    meta: { nombre, slug },
+                });
+                revalidatePath("/dashboard");
+                return { orgId: org.id };
+            } catch (err) {
+                // Slug ocupado: se prueba con el siguiente número.
+                if ((err as { code?: string }).code === "P2002") continue;
+                throw err;
+            }
+        }
+        return { error: "No se pudo generar una dirección libre para esa sucursal." };
     } catch (e) {
         return { error: (e as Error).message };
     }

@@ -7,7 +7,14 @@ export default async function DashboardOrgsPage() {
   // Los roles se leen UNA vez, no por sucursal: el catálogo es el mismo para
   // todas. Cada sucursal muestra la misma lista, y lo que cambia es quién tiene
   // cuál.
-  const [roles, orgs] = await Promise.all([
+  // Las personas ya creadas, para poder AÑADIRLAS a una sucursal. Aquí no se
+  // crean cuentas: eso es de la pantalla de Personas. Aquí solo se dice quién
+  // trabaja dónde.
+  const [personas, roles, orgs] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true },
+    }),
     prisma.role.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true, color: true, icon: true, isSystem: true },
@@ -37,7 +44,7 @@ export default async function DashboardOrgsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('dashboard.organizationsPage.title')}</h1>
-      <OrgsManager initialOrgs={data} />
+      <OrgsManager initialOrgs={data} personas={personas} />
     </div>
   );
 }

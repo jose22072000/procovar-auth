@@ -7,7 +7,7 @@ import {
   Avatar, Button, Chip, Input, Select, SelectItem, Tooltip,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, addToast,
 } from "@heroui/react";
-import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, anadirPersona } from "@/app/(user)/dashboard/_actions";
+import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, agregarMiembro, crearSucursal } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 
 interface RoleRow { id: string; name: string; color: string | null; icon: string | null; isSystem: boolean }
@@ -26,7 +26,15 @@ function RoleChip({ role }: { role: RoleRow }) {
   );
 }
 
-export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
+interface Persona { id: string; name: string; email: string }
+
+export function OrgsManager({
+  initialOrgs,
+  personas = [],
+}: {
+  initialOrgs: OrgRow[];
+  personas?: Persona[];
+}) {
   const router = useRouter();
   const t = useTranslations();
   const [query, setQuery] = useState("");
@@ -40,7 +48,12 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
   const [memberRoleIds, setMemberRoleIds] = useState<string[]>([]);
   const alta = useDisclosure();
-  const [altaForm, setAltaForm] = useState({ nombre: "", usuario: "", email: "", password: "", roleId: "" });
+  const nuevaOrg = useDisclosure();
+  const [nombreNueva, setNombreNueva] = useState("");
+  // Aquí NO se crean cuentas: se elige a alguien que ya existe y se le dice en qué
+  // sucursal trabaja. Crear la persona es de la pantalla de Personas.
+  const [altaForm, setAltaForm] = useState({ userId: "", roleId: "" });
+  const [buscaPersona, setBuscaPersona] = useState("");
 
   const orgs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -66,27 +79,57 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
 
   function abrirAlta() {
     if (!selected) return;
-    // El rol más limitado por defecto. Quien da de alta a diez personas seguidas
-    // acaba dándole a Guardar sin mirar, y equivocarse hacia abajo se arregla
-    // con un clic; hacia arriba, no se nota.
+    // El rol más limitado por defecto. Quien añade a diez personas seguidas acaba
+    // dándole a Guardar sin mirar, y equivocarse hacia abajo se arregla con un
+    // clic; hacia arriba, no se nota.
     const gestor = selected.roles.find((r) => r.name === "GESTOR");
-    setAltaForm({ nombre: "", usuario: "", email: "", password: "", roleId: gestor?.id ?? selected.roles[0]?.id ?? "" });
+    setAltaForm({ userId: "", roleId: gestor?.id ?? selected.roles[0]?.id ?? "" });
+    setBuscaPersona("");
     alta.onOpen();
   }
 
+  // Los que todavía no están en esta sucursal: ofrecer a quien ya está dentro solo
+  // sirve para preguntarse si se hizo algo mal.
+  const candidatos = useMemo(() => {
+    if (!selected) return [];
+    const dentro = new Set(selected.members.map((m) => m.userId));
+    const q = buscaPersona.trim().toLowerCase();
+    return personas
+      .filter((p) => !dentro.has(p.id))
+      .filter((p) => !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q))
+      .slice(0, 50);
+  }, [selected, personas, buscaPersona]);
+
   async function guardarAlta() {
-    if (!selected) return;
+    if (!selected || !altaForm.userId || !altaForm.roleId) return;
     setBusy(true);
-    const res = await anadirPersona({ organizationId: selected.id, ...altaForm });
+    const res = await agregarMiembro({ organizationId: selected.id, ...altaForm });
     setBusy(false);
     if (res.error) { addToast({ title: res.error, color: "danger" }); return; }
     addToast({
-      title: res.yaExistia
-        ? t('dashboard.orgsManager.personLinked', { orgName: selected.name })
-        : t('dashboard.orgsManager.personCreated'),
+      title: res.yaEstaba
+        ? "Ya estaba en la sucursal: se le añadió el rol"
+        : `Añadida a ${selected.name}`,
       color: "success",
     });
     alta.onClose();
+    router.refresh();
+  }
+
+  async function crearNueva() {
+    const nombre = nombreNueva.trim();
+    if (!nombre) return;
+    setBusy(true);
+    const res = await crearSucursal({ nombre });
+    setBusy(false);
+    if (res.error) {
+      addToast({ title: res.error, color: "danger" });
+      return;
+    }
+    addToast({ title: `Sucursal "${nombre}" creada`, color: "success" });
+    if (res.orgId) setSelectedId(res.orgId);
+    setNombreNueva("");
+    nuevaOrg.onClose();
     router.refresh();
   }
 
@@ -94,6 +137,15 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
       {/* Org list */}
       <div className="space-y-3">
+        {/* Crear sucursal. Faltaba entero: se podían editar y borrar, pero abrir
+            una nueva exigía tocar la base a mano. */}
+        <Button
+          fullWidth color="primary"
+          startContent={<Icon icon="lucide:plus" className="size-4" aria-hidden />}
+          onPress={() => nuevaOrg.onOpen()}
+        >
+          Nueva sucursal
+        </Button>
         <Input
           variant="bordered" label={t('dashboard.orgsManager.searchOrgLabel')} labelPlacement="outside" placeholder={t('dashboard.orgsManager.searchOrgPlaceholder')}
           value={query} onValueChange={setQuery} isClearable onClear={() => setQuery("")}
@@ -222,17 +274,52 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
             <span className="text-sm font-normal text-slate-500">{selected?.name}</span>
           </ModalHeader>
           <ModalBody className="gap-3">
-            <Input autoFocus label={t('dashboard.orgsManager.personName')} variant="bordered"
-              value={altaForm.nombre} onValueChange={(v) => setAltaForm((f) => ({ ...f, nombre: v }))} />
-            <Input label={t('dashboard.orgsManager.personUser')} variant="bordered"
-              value={altaForm.usuario} onValueChange={(v) => setAltaForm((f) => ({ ...f, usuario: v }))}
-              description={t('dashboard.orgsManager.personUserHelp')} />
-            <Input label={t('dashboard.orgsManager.personEmail')} type="email" variant="bordered"
-              value={altaForm.email} onValueChange={(v) => setAltaForm((f) => ({ ...f, email: v }))}
-              description={t('dashboard.orgsManager.personEmailHelp')} />
-            <Input label={t('dashboard.orgsManager.personPassword')} variant="bordered"
-              value={altaForm.password} onValueChange={(v) => setAltaForm((f) => ({ ...f, password: v }))}
-              description={t('dashboard.orgsManager.personPasswordHelp')} />
+            {/* Se busca por nombre o por correo. El correo es único, así que es lo
+                que distingue a dos personas que se llaman igual — y en una empresa
+                pasa. */}
+            <Input
+              autoFocus variant="bordered" label="Buscar persona" labelPlacement="outside"
+              placeholder="Nombre o correo…"
+              value={buscaPersona} onValueChange={setBuscaPersona} isClearable
+              onClear={() => setBuscaPersona("")}
+              startContent={<Icon icon="lucide:search" className="size-4 text-slate-400" aria-hidden />}
+            />
+
+            <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-gray-200 p-1 dark:border-slate-700">
+              {candidatos.map((p) => {
+                const elegida = altaForm.userId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setAltaForm((f) => ({ ...f, userId: p.id }))}
+                    className={
+                      "flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors " +
+                      (elegida
+                        ? "border-pv-azul/40 bg-pv-azul/8 dark:border-white/25 dark:bg-white/10"
+                        : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-800")
+                    }
+                  >
+                    <Avatar name={p.name} size="sm" radius="sm" className="shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.name}</div>
+                      <div className="pv-codigo truncate text-xs text-slate-400">{p.email}</div>
+                    </div>
+                    {elegida && <Icon icon="lucide:check" className="size-4 shrink-0 text-pv-azul" aria-hidden />}
+                  </button>
+                );
+              })}
+              {candidatos.length === 0 && (
+                <div className="px-3 py-8 text-center text-sm text-slate-400">
+                  {personas.length === 0
+                    ? "Desde esta pantalla no se puede elegir a nadie. Se hace en Personas."
+                    : buscaPersona
+                      ? "Nadie coincide con esa búsqueda."
+                      : "Todas las personas ya están en esta sucursal."}
+                </div>
+              )}
+            </div>
+
             <Select label={t('dashboard.orgsManager.personRole')} variant="bordered"
               selectedKeys={altaForm.roleId ? [altaForm.roleId] : []}
               onSelectionChange={(k) => setAltaForm((f) => ({ ...f, roleId: String([...k][0] ?? "") }))}>
@@ -240,6 +327,11 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
                 <SelectItem key={r.id}>{r.name}</SelectItem>
               ))}
             </Select>
+
+            <p className="text-xs text-slate-400">
+              Aquí solo se dice quién trabaja en esta sucursal. Para abrir una cuenta
+              nueva, Personas → Nueva persona.
+            </p>
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" onPress={alta.onClose}
@@ -247,7 +339,7 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
               {t('dashboard.common.cancel')}
             </Button>
             <Button color="primary" isLoading={busy} onPress={guardarAlta}
-              isDisabled={!altaForm.nombre.trim() || (!altaForm.usuario.trim() && !altaForm.email.trim()) || !altaForm.roleId}
+              isDisabled={!altaForm.userId || !altaForm.roleId}
               startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
               {t('dashboard.orgsManager.addPerson')}
             </Button>
@@ -256,6 +348,30 @@ export function OrgsManager({ initialOrgs }: { initialOrgs: OrgRow[] }) {
       </Modal>
 
       {/* Edit org */}
+      <Modal isOpen={nuevaOrg.isOpen} onOpenChange={nuevaOrg.onOpenChange}>
+        <ModalContent>
+          <ModalHeader>Nueva sucursal</ModalHeader>
+          <ModalBody>
+            <Input
+              autoFocus variant="bordered" label="Nombre" labelPlacement="outside"
+              placeholder="Camagüey"
+              value={nombreNueva} onValueChange={setNombreNueva}
+              onKeyDown={(e) => { if (e.key === "Enter") void crearNueva(); }}
+            />
+            <p className="text-xs text-slate-400">
+              La dirección se saca del nombre. Quien la crea entra dentro como
+              ADMINISTRADOR: una sucursal sin nadie no se puede ni abrir.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="bordered" onPress={nuevaOrg.onClose} isDisabled={busy}>Cancelar</Button>
+            <Button color="primary" onPress={crearNueva} isLoading={busy} isDisabled={!nombreNueva.trim()}>
+              Crear
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       <Modal isOpen={editOrg.isOpen} onOpenChange={editOrg.onOpenChange}>
         <ModalContent>
           <ModalHeader>{t('dashboard.orgsManager.editOrgTitle')}</ModalHeader>

@@ -14,7 +14,22 @@ export const dynamic = "force-dynamic";
 export default async function DashboardUsersPage() {
   const t = await getTranslations();
 
-  const rows = await prisma.user.findMany({
+  // Las sucursales y los roles se traen para poder DAR DE ALTA desde aquí.
+  //
+  // El alta ya existía, pero solo dentro de una sucursal, y nadie la busca ahí:
+  // esta aplicación no tiene registro público —las cuentas las abre un
+  // administrador— así que "crear una persona" es lo primero que se viene a hacer
+  // a esta pantalla.
+  const [sucursales, roles, rows] = await Promise.all([
+    prisma.organization.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.role.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {
       id: true, name: true, email: true, username: true, emailVerified: true,
@@ -27,7 +42,7 @@ export default async function DashboardUsersPage() {
         },
       },
     },
-  });
+  })]);
 
   const users = rows.map((u) => ({
     id: u.id,
@@ -57,7 +72,7 @@ export default async function DashboardUsersPage() {
           {t("dashboard.usersPage.subtitle", { n: users.length })}
         </p>
       </div>
-      <UsersManager initialUsers={users} />
+      <UsersManager initialUsers={users} sucursales={sucursales} roles={roles} />
     </div>
   );
 }

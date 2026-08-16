@@ -4,13 +4,13 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import {
-  Avatar, Button, Chip, Input, Spinner, Switch, Tooltip,
+  Avatar, Button, Chip, Input, Select, SelectItem, Spinner, Switch, Tooltip,
   Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, addToast,
 } from "@heroui/react";
 import {
   toggleUserAdmin, toggleEmailVerified, adminDeleteUser, updateUserProfile,
-  listUserSessions, revokeUserSession, revokeAllUserSessions,
+  listUserSessions, revokeUserSession, revokeAllUserSessions, anadirPersona,
 } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
@@ -24,11 +24,26 @@ interface UserRow {
 }
 interface SessionRow { id: string; ipAddress: string | null; userAgent: string | null; clientId: string | null; createdAt: string; expiresAt: string; revokedAt: string | null }
 
-export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
+interface Opcion { id: string; name: string }
+
+export function UsersManager({
+  initialUsers,
+  sucursales = [],
+  roles = [],
+}: {
+  initialUsers: UserRow[];
+  sucursales?: Opcion[];
+  roles?: Opcion[];
+}) {
   const router = useRouter();
   const t = useTranslations();
   const [query, setQuery] = useState("");
   const editModal = useDisclosure();
+  const altaModal = useDisclosure();
+  const [alta, setAlta] = useState({
+    nombre: "", usuario: "", email: "", password: "",
+    organizationId: "", roleId: "",
+  });
   const detailModal = useDisclosure();
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [detail, setDetail] = useState<UserRow | null>(null);
@@ -73,6 +88,45 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
     if (ok) editModal.onClose();
   }
 
+  function abrirAlta() {
+    // Sucursal y rol por defecto los más conservadores que haya: la primera
+    // sucursal y el rol más limitado. Equivocarse hacia abajo se arregla con un
+    // clic; hacia arriba no se nota hasta que alguien ve lo que no debía.
+    const gestor = roles.find((r) => r.name === "GESTOR") ?? roles[roles.length - 1];
+    setAlta({
+      nombre: "", usuario: "", email: "", password: "",
+      organizationId: sucursales[0]?.id ?? "",
+      roleId: gestor?.id ?? "",
+    });
+    altaModal.onOpen();
+  }
+
+  async function crearPersona() {
+    if (!alta.nombre.trim() || !alta.password || !alta.organizationId || !alta.roleId) return;
+    setBusy(true);
+    const res = await anadirPersona({
+      organizationId: alta.organizationId,
+      nombre: alta.nombre.trim(),
+      usuario: alta.usuario.trim() || undefined,
+      email: alta.email.trim() || undefined,
+      password: alta.password,
+      roleId: alta.roleId,
+    });
+    setBusy(false);
+    if (res.error) {
+      addToast({ title: res.error, color: "danger" });
+      return;
+    }
+    addToast({
+      title: res.yaExistia
+        ? "Esa persona ya tenía cuenta: se le añadió la sucursal"
+        : "Persona creada",
+      color: "success",
+    });
+    altaModal.onClose();
+    router.refresh();
+  }
+
   async function openDetail(u: UserRow) {
     setDetail(u); setSessions([]); setLoadingSessions(true); detailModal.onOpen();
     const res = await listUserSessions(u.id);
@@ -102,6 +156,16 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
           startContent={<Icon icon="lucide:search" className="size-4 text-slate-400" aria-hidden />}
         />
         <div className="flex items-center gap-2 pb-1 text-xs text-slate-400">
+          {/* Crear la cuenta va AQUÍ, no dentro de una sucursal: aquí no hay
+              registro público, las abre un administrador, y es lo primero que se
+              viene a hacer a esta pantalla. */}
+          <Button
+            color="primary" size="sm" isDisabled={sucursales.length === 0}
+            startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}
+            onPress={abrirAlta}
+          >
+            Nueva persona
+          </Button>
           <Chip size="sm" variant="flat" startContent={<Icon icon="lucide:users" className="ml-1 size-3.5" aria-hidden />}>
             {t('dashboard.usersManager.usersCount', { count: initialUsers.length })}
           </Chip>
@@ -198,6 +262,67 @@ export function UsersManager({ initialUsers }: { initialUsers: UserRow[] }) {
       </div>
 
       {/* Edit profile */}
+      <Modal isOpen={altaModal.isOpen} onOpenChange={altaModal.onOpenChange} size="lg">
+        <ModalContent>
+          <ModalHeader>Nueva persona</ModalHeader>
+          <ModalBody className="gap-3">
+            <Input
+              autoFocus variant="bordered" label="Nombre" labelPlacement="outside"
+              placeholder="Nombre y apellidos"
+              value={alta.nombre} onValueChange={(v) => setAlta({ ...alta, nombre: v })}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input
+                variant="bordered" label="Usuario" labelPlacement="outside" placeholder="opcional"
+                value={alta.usuario} onValueChange={(v) => setAlta({ ...alta, usuario: v })}
+              />
+              <Input
+                variant="bordered" label="Correo" labelPlacement="outside" placeholder="opcional"
+                value={alta.email} onValueChange={(v) => setAlta({ ...alta, email: v })}
+              />
+            </div>
+            <Input
+              variant="bordered" type="text" label="Contraseña" labelPlacement="outside"
+              placeholder="La que se le va a dar"
+              value={alta.password} onValueChange={(v) => setAlta({ ...alta, password: v })}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select
+                variant="bordered" label="Sucursal" labelPlacement="outside"
+                selectedKeys={alta.organizationId ? [alta.organizationId] : []}
+                onChange={(e) => setAlta({ ...alta, organizationId: e.target.value })}
+              >
+                {sucursales.map((o) => (
+                  <SelectItem key={o.id}>{o.name}</SelectItem>
+                ))}
+              </Select>
+              <Select
+                variant="bordered" label="Rol" labelPlacement="outside"
+                selectedKeys={alta.roleId ? [alta.roleId] : []}
+                onChange={(e) => setAlta({ ...alta, roleId: e.target.value })}
+              >
+                {roles.map((r) => (
+                  <SelectItem key={r.id}>{r.name}</SelectItem>
+                ))}
+              </Select>
+            </div>
+            <p className="text-xs text-slate-400">
+              Una cuenta pertenece a una sucursal desde el primer momento: sin ella no
+              hay nada que pueda ver. Después se le pueden añadir más desde Sucursales.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="bordered" onPress={altaModal.onClose} isDisabled={busy}>Cancelar</Button>
+            <Button
+              color="primary" onPress={crearPersona} isLoading={busy}
+              isDisabled={!alta.nombre.trim() || !alta.password || !alta.organizationId || !alta.roleId}
+            >
+              Crear
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       <Modal isOpen={editModal.isOpen} onOpenChange={editModal.onOpenChange}>
         <ModalContent>
           <ModalHeader>
