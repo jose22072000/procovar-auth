@@ -11,6 +11,7 @@ import {
 import {
   toggleUserAdmin, toggleEmailVerified, adminDeleteUser, updateUserProfile,
   listUserSessions, revokeUserSession, revokeAllUserSessions, anadirPersona,
+  cambiarContrasena,
 } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
@@ -46,6 +47,9 @@ export function UsersManager({
   });
   const detailModal = useDisclosure();
   const [editing, setEditing] = useState<UserRow | null>(null);
+  // Contraseña nueva, vacía mientras no se toque: se cambia solo si se escribe algo,
+  // para que guardar el teléfono no arrastre un cambio de contraseña sin querer.
+  const [nuevaClave, setNuevaClave] = useState("");
   const [detail, setDetail] = useState<UserRow | null>(null);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
@@ -78,6 +82,7 @@ export function UsersManager({
   function openEdit(u: UserRow) {
     setEditing(u);
     setForm({ name: u.name, phone: u.phone ?? "" });
+    setNuevaClave("");
     editModal.onOpen();
   }
   async function saveEdit() {
@@ -85,7 +90,23 @@ export function UsersManager({
     const ok = await run(() => updateUserProfile(editing.id, {
       name: form.name, phone: form.phone || null,
     }), t('dashboard.usersManager.profileUpdated'));
-    if (ok) editModal.onClose();
+    if (!ok) return;
+
+    if (nuevaClave) {
+      const res = await cambiarContrasena(editing.id, nuevaClave);
+      if (res.error) {
+        addToast({ title: res.error, color: "danger" });
+        return;
+      }
+      addToast({
+        title: res.sesionesCerradas
+          ? `Contraseña cambiada. Se cerraron ${res.sesionesCerradas} sesiones suyas.`
+          : "Contraseña cambiada.",
+        color: "success",
+      });
+    }
+    setNuevaClave("");
+    editModal.onClose();
   }
 
   function abrirAlta() {
@@ -101,11 +122,18 @@ export function UsersManager({
     altaModal.onOpen();
   }
 
+  // Un SUPER ADMIN no pertenece a una sucursal: manda en todas. Se le da la cuenta y
+  // después, si hace falta, se le añaden sucursales desde Sucursales.
+  const altaEsSuperAdmin =
+    (roles.find((r) => r.id === alta.roleId)?.name ?? "")
+      .toUpperCase().replace(/[\s_-]/g, "") === "SUPERADMIN";
+
   async function crearPersona() {
-    if (!alta.nombre.trim() || !alta.password || !alta.organizationId || !alta.roleId) return;
+    if (!alta.nombre.trim() || !alta.password || !alta.roleId) return;
+    if (!altaEsSuperAdmin && !alta.organizationId) return;
     setBusy(true);
     const res = await anadirPersona({
-      organizationId: alta.organizationId,
+      organizationId: altaEsSuperAdmin ? "" : alta.organizationId,
       nombre: alta.nombre.trim(),
       usuario: alta.usuario.trim() || undefined,
       email: alta.email.trim() || undefined,
@@ -160,7 +188,7 @@ export function UsersManager({
               registro público, las abre un administrador, y es lo primero que se
               viene a hacer a esta pantalla. */}
           <Button
-            color="primary" size="sm" isDisabled={sucursales.length === 0}
+            color="primary" size="sm"
             startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}
             onPress={abrirAlta}
           >
@@ -287,15 +315,7 @@ export function UsersManager({
               value={alta.password} onValueChange={(v) => setAlta({ ...alta, password: v })}
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Select
-                variant="bordered" label="Sucursal" labelPlacement="outside"
-                selectedKeys={alta.organizationId ? [alta.organizationId] : []}
-                onChange={(e) => setAlta({ ...alta, organizationId: e.target.value })}
-              >
-                {sucursales.map((o) => (
-                  <SelectItem key={o.id}>{o.name}</SelectItem>
-                ))}
-              </Select>
+              {/* El rol primero: es lo que decide si hace falta sucursal. */}
               <Select
                 variant="bordered" label="Rol" labelPlacement="outside"
                 selectedKeys={alta.roleId ? [alta.roleId] : []}
@@ -305,17 +325,32 @@ export function UsersManager({
                   <SelectItem key={r.id}>{r.name}</SelectItem>
                 ))}
               </Select>
+              {/* Al Super Admin no se le pide: no pertenece a una sucursal, manda en
+                  todas. Pedírsela era inventarse una pertenencia que no significa
+                  nada, y obligaba a elegir una al azar para poder seguir. */}
+              {!altaEsSuperAdmin && (
+                <Select
+                  variant="bordered" label="Sucursal" labelPlacement="outside"
+                  selectedKeys={alta.organizationId ? [alta.organizationId] : []}
+                  onChange={(e) => setAlta({ ...alta, organizationId: e.target.value })}
+                >
+                  {sucursales.map((o) => (
+                    <SelectItem key={o.id}>{o.name}</SelectItem>
+                  ))}
+                </Select>
+              )}
             </div>
             <p className="text-xs text-slate-400">
-              Una cuenta pertenece a una sucursal desde el primer momento: sin ella no
-              hay nada que pueda ver. Después se le pueden añadir más desde Sucursales.
+              {altaEsSuperAdmin
+                ? "Un Super Admin no pertenece a una sucursal: las ve todas. Si además tiene que trabajar en una concreta, se le añade después desde Sucursales."
+                : "Una cuenta pertenece a una sucursal desde el primer momento: sin ella no hay nada que pueda ver. Después se le pueden añadir más desde Sucursales."}
             </p>
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" onPress={altaModal.onClose} isDisabled={busy}>Cancelar</Button>
             <Button
               color="primary" onPress={crearPersona} isLoading={busy}
-              isDisabled={!alta.nombre.trim() || !alta.password || !alta.organizationId || !alta.roleId}
+              isDisabled={!alta.nombre.trim() || !alta.password || !alta.roleId || (!altaEsSuperAdmin && !alta.organizationId)}
             >
               Crear
             </Button>
@@ -337,6 +372,21 @@ export function UsersManager({
           <ModalBody className="gap-3">
             <Input label={t('dashboard.usersManager.nameLabel')} variant="bordered" value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} />
             <Input label={t('dashboard.usersManager.phoneLabel')} variant="bordered" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} startContent={<Icon icon="lucide:phone" className="size-4 text-slate-400" aria-hidden />} />
+            {/* Aquí las cuentas las abre un administrador, y muchas llevan un correo
+                interno que no existe: "que pida el enlace de recuperación" no lleva a
+                ninguna parte. Sin esto, a quien olvida su contraseña hay que borrarlo
+                y volver a crearlo. */}
+            <Input
+              label="Contraseña nueva"
+              variant="bordered"
+              type="text"
+              autoComplete="off"
+              value={nuevaClave}
+              onValueChange={setNuevaClave}
+              placeholder="Dejar vacío para no cambiarla"
+              description="Al cambiarla se cierran las sesiones que tenga abiertas."
+              startContent={<Icon icon="lucide:key-round" className="size-4 text-slate-400" aria-hidden />}
+            />
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" startContent={<Icon icon="lucide:x-circle" className="size-4" aria-hidden />} onPress={editModal.onClose}>{t('dashboard.common.cancel')}</Button>

@@ -3,11 +3,14 @@ import { SYSTEM_ROLE_NAMES, ROL_MINIMO, PRECEDENCE, systemRolePermissionKeys, RO
 import { PERMISSION_CATALOG } from '../permissions.catalog'
 
 describe('los roles de Procovar', () => {
-  it('son los cinco, escritos como los escribe PEDIDO', () => {
+  it('son los seis, escritos como los escribe PEDIDO', () => {
     // Si alguien los renombra aquí, PEDIDO deja de reconocer el rol que recibe
     // y todo el mundo pasa a ser "desconocido". Por eso están clavados.
+    //
+    // GERENTE entró después, entre el Administrador y el Supervisor: está por
+    // encima del supervisor y ve toda su sucursal, pero no administra.
     expect([...SYSTEM_ROLE_NAMES]).toEqual([
-      'SUPER ADMIN', 'ADMINISTRADOR', 'SUPERVISOR', 'GESTOR', 'OPERADOR',
+      'SUPER ADMIN', 'ADMINISTRADOR', 'GERENTE', 'SUPERVISOR', 'GESTOR', 'OPERADOR',
     ])
   })
 

@@ -9,8 +9,21 @@ export interface AltaPersona {
   /** Opcional si hay usuario: mucha gente de PEDIDO no tiene correo. */
   email?: string;
   password: string;
+  /** Vacío para un SUPER ADMIN: no pertenece a ninguna, las ve todas. */
   organizationId: string;
   roleId: string;
+}
+
+/**
+ * El SUPER ADMIN no es un rol dentro de una sucursal, es estar por encima de todas.
+ *
+ * Por eso a una cuenta así no se le pide sucursal al crearla: se le da el mando y
+ * después, si hace falta, se le añaden sucursales desde Sucursales. Pedírsela era
+ * inventarse una pertenencia que no significa nada —y obligaba a elegir una al azar
+ * para poder seguir.
+ */
+export function esSuperAdmin(nombreDelRol: string): boolean {
+  return nombreDelRol.toUpperCase().replace(/[\s_-]/g, '') === 'SUPERADMIN';
 }
 
 /**
@@ -73,14 +86,19 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
     if (ocupado) return { error: `El usuario "${usuario}" ya está cogido.` };
   }
 
-  const sucursal = await prisma.organization.findUnique({
-    where: { id: datos.organizationId },
-    select: { id: true, name: true },
-  });
-  if (!sucursal) return { error: 'Esa sucursal no existe.' };
-
   const rol = await prisma.role.findUnique({ where: { id: datos.roleId }, select: { id: true, name: true } });
   if (!rol) return { error: 'Ese rol no existe.' };
+
+  const mandaEnTodo = esSuperAdmin(rol.name);
+
+  const sucursal = datos.organizationId
+    ? await prisma.organization.findUnique({
+        where: { id: datos.organizationId },
+        select: { id: true, name: true },
+      })
+    : null;
+  if (datos.organizationId && !sucursal) return { error: 'Esa sucursal no existe.' };
+  if (!sucursal && !mandaEnTodo) return { error: 'Hace falta la sucursal.' };
 
   const existente = await prisma.user.findUnique({ where: { email }, select: { id: true } });
 
@@ -102,6 +120,10 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
           // La da de alta quien administra, en persona. Mandar a verificar un
           // correo que quizá no existe solo serviría para dejarla a medias.
           emailVerified: true,
+          // Es lo que hace que un SUPER ADMIN pueda de verdad: el permiso no le
+          // viene de pertenecer a una sucursal, le viene de esto. Sin marcarlo, la
+          // cuenta llevaría el nombre del rol y no podría con nada.
+          isSystemAdmin: mandaEnTodo,
         },
         select: { id: true },
       });
@@ -120,6 +142,14 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
     });
     userId = creado.id;
   }
+
+  // A quien ya tenía cuenta y ahora se le da el mando, hay que dárselo de verdad.
+  if (mandaEnTodo) {
+    await prisma.user.update({ where: { id: userId }, data: { isSystemAdmin: true } });
+  }
+
+  // Un SUPER ADMIN sin sucursal termina aquí: la cuenta existe y manda en todas.
+  if (!sucursal) return { userId, yaExistia };
 
   const yaMiembro = await prisma.member.findUnique({
     where: { userId_organizationId: { userId, organizationId: sucursal.id } },

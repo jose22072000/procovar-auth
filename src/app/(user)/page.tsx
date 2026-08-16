@@ -11,11 +11,14 @@ import { resolveProfileRole } from '@/lib/role-resolver';
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ op?: string; callback?: string; prompt?: string }>;
+  searchParams: Promise<{ op?: string; callback?: string; prompt?: string; sso?: string }>;
 }) {
   const params = await searchParams;
   const op = params.op;
   const callback = params.callback;
+  // ¿Este render pertenece a un login que viene de otra app? Lo marca /api/flow al
+  // dejar la galleta de flujo.
+  const vengoDeUnaApp = params.sso === '1';
 
   const userResponse = await getCurrentUser();
   const user = userResponse.data;
@@ -80,6 +83,18 @@ export default async function SignInPage({
     if (flowState?.redirectOrigin && flowState?.origin) {
       redirect('/api/auth/callback');
     }
+  }
+
+  // Quien escribe auth.procovar.cloud a mano entra EN auth, no en la última app
+  // desde la que pasó por aquí.
+  //
+  // La galleta de flujo dura media hora, así que bastaba con empezar a entrar en
+  // Rutas, dejarlo a medias y abrir Cuentas en otra pestaña: al entrar, el login
+  // encontraba ese rastro y te mandaba a Rutas. Las dos cosas llegan a `/`, y sin la
+  // marca de /api/flow no había forma de distinguirlas.
+  if (!user && !vengoDeUnaApp) {
+    const sobras = await getFlowState();
+    if (sobras?.origin?.startsWith('http')) redirect('/api/flow/olvidar');
   }
 
   // Silent probe (prompt=none) with no IdP session: do NOT show a login form.

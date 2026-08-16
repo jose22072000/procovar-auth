@@ -77,5 +77,8 @@ export async function GET(request: NextRequest) {
             maxAge: 60 * 30,
         });
     }
-    return NextResponse.redirect(new URL('/', BASE_URL));
+    // El `?sso=1` es lo que distingue "vengo de una app" de "escribí la dirección".
+    // Las dos cosas acaban en `/`, y sin marca la pantalla de entrada no puede saber
+    // si la galleta de flujo que hay es de este login o sobró de otro anterior.
+    return NextResponse.redirect(new URL('/?sso=1', BASE_URL));
 }

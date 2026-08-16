@@ -10,6 +10,7 @@ import { resolveRbac } from "@/rbac/resolve-permissions";
 import { can } from "@/rbac/can";
 import { ungrantablePermissionKeys } from "@/rbac/grantable";
 import { systemRolePermissionKeys } from "@/rbac/system-roles";
+import { hashPassword } from "better-auth/crypto";
 
 async function requireAdmin() {
     const { data: user } = await getCurrentUser();
@@ -29,7 +30,14 @@ async function exigirEnSucursal(organizationId: string, permiso: string) {
     const { data: user } = await getCurrentUser();
     if (!user) throw new Error("No autorizado");
     const rbac = await resolveRbac(user.id, organizationId);
-    if (!can(rbac, permiso)) throw new Error("No puedes hacer esto en esta sucursal.");
+    if (!can(rbac, permiso)) {
+        // Sin sucursal no hay membresía que dé permisos: esto solo lo puede hacer
+        // quien manda en todas. Decirlo así, y no "en esta sucursal", que sin
+        // sucursal no se entiende de qué habla.
+        throw new Error(organizationId
+            ? "No puedes hacer esto en esta sucursal."
+            : "Esto solo lo puede hacer un Super Admin.");
+    }
     return user;
 }
 
@@ -39,6 +47,7 @@ async function exigirEnSucursal(organizationId: string, permiso: string) {
  * Se crea con contraseña, no por invitación: ver el porqué en `altaPersona`.
  */
 export async function anadirPersona(datos: {
+    /** Vacío para un SUPER ADMIN: no pertenece a ninguna, las ve todas. */
     organizationId: string;
     nombre: string;
     usuario?: string;
@@ -278,6 +287,60 @@ export async function updateUserProfile(
         await prisma.user.update({ where: { id: userId }, data: patch });
         revalidatePath("/dashboard");
         return {};
+    } catch (e) {
+        return { error: (e as Error).message };
+    }
+}
+
+/**
+ * Ponerle otra contraseña a alguien, desde el panel.
+ *
+ * Un administrador tiene que poder hacerlo: aquí las cuentas las abre él, muchas
+ * con un correo interno que no existe de verdad, así que "que pida el enlace de
+ * recuperación" no es una salida — ese correo no llega a ninguna parte. Sin esto,
+ * a quien olvida su contraseña hay que borrarlo y volver a crearlo.
+ *
+ * Se hashea con `hashPassword` de better-auth y se escribe en `account`, que es
+ * donde vive: en `user` no hay contraseña. Y se cierran sus sesiones abiertas,
+ * porque cambiarle la contraseña a alguien y dejarle la sesión viva no cierra nada.
+ */
+export async function cambiarContrasena(
+    userId: string,
+    password: string,
+): Promise<{ error?: string; sesionesCerradas?: number }> {
+    try {
+        const actor = await requireAdmin();
+        if (password.length < 8) return { error: "La contraseña necesita 8 caracteres o más." };
+
+        const cuenta = await prisma.account.findFirst({
+            where: { userId, providerId: "credential" },
+            select: { id: true },
+        });
+        const hash = await hashPassword(password);
+
+        // Puede no existir: una cuenta creada solo con Google no tiene fila de
+        // credenciales. Ponerle contraseña es darle una segunda forma de entrar.
+        if (cuenta) {
+            await prisma.account.update({ where: { id: cuenta.id }, data: { password: hash } });
+        } else {
+            await prisma.account.create({
+                data: { userId, accountId: userId, providerId: "credential", password: hash },
+            });
+        }
+
+        const { count } = await prisma.session.updateMany({
+            where: { userId, revokedAt: null },
+            data: { revokedAt: new Date() },
+        });
+
+        audit({
+            action: "member.password.reset",
+            resource: userId,
+            userId: actor.id,
+            meta: { sesionesCerradas: count },
+        });
+        revalidatePath("/dashboard");
+        return { sesionesCerradas: count };
     } catch (e) {
         return { error: (e as Error).message };
     }
