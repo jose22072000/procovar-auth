@@ -96,16 +96,37 @@ export async function anadirPersona(datos: {
 export async function agregarMiembro(datos: {
     organizationId: string;
     userId: string;
-    roleId: string;
-}): Promise<{ error?: string; yaEstaba?: boolean }> {
+    /** Opcional: sin él se hereda el que la persona ya tiene. */
+    roleId?: string;
+}): Promise<{ error?: string; yaEstaba?: boolean; rol?: string }> {
     try {
         const actor = await exigirEnSucursal(datos.organizationId, "member.invite");
+
+        // El rol NO se vuelve a preguntar: se le dio al abrir la cuenta.
+        //
+        // Preguntarlo otra vez para moverla de sucursal es pedir dos veces lo mismo,
+        // y con un desplegable delante alguien acaba dejando el primero de la lista
+        // —que es SUPER ADMIN— sin querer. Se hereda el que ya tiene; si algún día
+        // hace falta que sea distinto por sucursal, se cambia desde la propia
+        // sucursal, que es donde se ve a quién afecta.
+        let roleId = datos.roleId;
+        if (!roleId) {
+            const previo = await prisma.memberRole.findFirst({
+                where: { member: { userId: datos.userId } },
+                orderBy: { member: { createdAt: "desc" } },
+                select: { roleId: true },
+            });
+            if (!previo) {
+                return { error: "Esa persona no tiene rol todavía. Dáselo al crearla en Personas." };
+            }
+            roleId = previo.roleId;
+        }
 
         // Mismo cuidado que al dar de alta: nadie reparte un rol con permisos que
         // él no tiene, o se asciende metiendo a un cómplice.
         const rol = await prisma.role.findUnique({
-            where: { id: datos.roleId },
-            select: { permissions: { select: { permission: { select: { key: true } } } } },
+            where: { id: roleId },
+            select: { name: true, permissions: { select: { permission: { select: { key: true } } } } },
         });
         if (!rol) return { error: "Ese rol no existe." };
         const rbacActor = await resolveRbac(actor.id, datos.organizationId);
@@ -123,12 +144,12 @@ export async function agregarMiembro(datos: {
         if (ya) {
             // Ya está dentro: se le añade el rol y listo, en vez de fallar.
             await prisma.memberRole.upsert({
-                where: { memberId_roleId: { memberId: ya.id, roleId: datos.roleId } },
-                create: { memberId: ya.id, roleId: datos.roleId },
+                where: { memberId_roleId: { memberId: ya.id, roleId } },
+                create: { memberId: ya.id, roleId },
                 update: {},
             });
             revalidatePath("/dashboard");
-            return { yaEstaba: true };
+            return { yaEstaba: true, rol: rol.name };
         }
 
         const miembro = await prisma.member.create({
@@ -136,7 +157,7 @@ export async function agregarMiembro(datos: {
                 organizationId: datos.organizationId,
                 userId: datos.userId,
                 role: "member",
-                memberRoles: { create: { roleId: datos.roleId } },
+                memberRoles: { create: { roleId } },
             },
             select: { id: true },
         });
@@ -148,7 +169,7 @@ export async function agregarMiembro(datos: {
             meta: { sucursal: datos.organizationId, persona: datos.userId },
         });
         revalidatePath("/dashboard");
-        return {};
+        return { rol: rol.name };
     } catch (e) {
         return { error: (e as Error).message };
     }

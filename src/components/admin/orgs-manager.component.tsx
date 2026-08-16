@@ -52,7 +52,7 @@ export function OrgsManager({
   const [nombreNueva, setNombreNueva] = useState("");
   // Aquí NO se crean cuentas: se elige a alguien que ya existe y se le dice en qué
   // sucursal trabaja. Crear la persona es de la pantalla de Personas.
-  const [altaForm, setAltaForm] = useState({ userId: "", roleId: "" });
+  const [altaForm, setAltaForm] = useState<{ userId: string }>({ userId: "" });
   const [buscaPersona, setBuscaPersona] = useState("");
 
   const orgs = useMemo(() => {
@@ -82,8 +82,7 @@ export function OrgsManager({
     // El rol más limitado por defecto. Quien añade a diez personas seguidas acaba
     // dándole a Guardar sin mirar, y equivocarse hacia abajo se arregla con un
     // clic; hacia arriba, no se nota.
-    const gestor = selected.roles.find((r) => r.name === "GESTOR");
-    setAltaForm({ userId: "", roleId: gestor?.id ?? selected.roles[0]?.id ?? "" });
+    setAltaForm({ userId: "" });
     setBuscaPersona("");
     alta.onOpen();
   }
@@ -101,15 +100,15 @@ export function OrgsManager({
   }, [selected, personas, buscaPersona]);
 
   async function guardarAlta() {
-    if (!selected || !altaForm.userId || !altaForm.roleId) return;
+    if (!selected || !altaForm.userId) return;
     setBusy(true);
-    const res = await agregarMiembro({ organizationId: selected.id, ...altaForm });
+    const res = await agregarMiembro({ organizationId: selected.id, userId: altaForm.userId });
     setBusy(false);
     if (res.error) { addToast({ title: res.error, color: "danger" }); return; }
     addToast({
       title: res.yaEstaba
-        ? "Ya estaba en la sucursal: se le añadió el rol"
-        : `Añadida a ${selected.name}`,
+        ? "Ya estaba en la sucursal"
+        : `Añadida a ${selected.name}${res.rol ? ` como ${res.rol}` : ""}`,
       color: "success",
     });
     alta.onClose();
@@ -320,17 +319,10 @@ export function OrgsManager({
               )}
             </div>
 
-            <Select label={t('dashboard.orgsManager.personRole')} variant="bordered"
-              selectedKeys={altaForm.roleId ? [altaForm.roleId] : []}
-              onSelectionChange={(k) => setAltaForm((f) => ({ ...f, roleId: String([...k][0] ?? "") }))}>
-              {(selected?.roles ?? []).map((r) => (
-                <SelectItem key={r.id}>{r.name}</SelectItem>
-              ))}
-            </Select>
-
             <p className="text-xs text-slate-400">
-              Aquí solo se dice quién trabaja en esta sucursal. Para abrir una cuenta
-              nueva, Personas → Nueva persona.
+              Se queda con el rol que ya tiene: se le dio al abrir su cuenta. Aquí solo
+              se dice en qué sucursal trabaja. Para abrir una cuenta nueva,
+              Personas → Nueva persona.
             </p>
           </ModalBody>
           <ModalFooter>
@@ -339,7 +331,7 @@ export function OrgsManager({
               {t('dashboard.common.cancel')}
             </Button>
             <Button color="primary" isLoading={busy} onPress={guardarAlta}
-              isDisabled={!altaForm.userId || !altaForm.roleId}
+              isDisabled={!altaForm.userId}
               startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
               {t('dashboard.orgsManager.addPerson')}
             </Button>
