@@ -47,8 +47,8 @@ async function exigirEnSucursal(organizationId: string, permiso: string) {
  * Se crea con contraseña, no por invitación: ver el porqué en `altaPersona`.
  */
 export async function anadirPersona(datos: {
-    /** Vacío para un SUPER ADMIN: no pertenece a ninguna, las ve todas. */
-    organizationId: string;
+    /** Vacío al abrir una cuenta: la sucursal se da después, en Sucursales. */
+    organizationId?: string;
     nombre: string;
     usuario?: string;
     email?: string;
@@ -56,7 +56,7 @@ export async function anadirPersona(datos: {
     roleId: string;
 }): Promise<{ error?: string; yaExistia?: boolean }> {
     try {
-        const actor = await exigirEnSucursal(datos.organizationId, "member.invite");
+        const actor = await exigirEnSucursal(datos.organizationId ?? "", "member.invite");
 
         // Nadie reparte un rol que no podría usar él mismo: si no, un
         // Administrador se asciende creando una segunda cuenta y entrando con
@@ -66,7 +66,7 @@ export async function anadirPersona(datos: {
             select: { permissions: { select: { permission: { select: { key: true } } } } },
         });
         if (!rol) return { error: "Ese rol no existe." };
-        const rbacActor = await resolveRbac(actor.id, datos.organizationId);
+        const rbacActor = await resolveRbac(actor.id, datos.organizationId ?? "");
         const claves = rol.permissions
             .map((p) => p.permission?.key)
             .filter((k): k is string => Boolean(k));
@@ -82,7 +82,7 @@ export async function anadirPersona(datos: {
             resource: res.memberId,
             userId: actor.id,
             meta: {
-                sucursal: datos.organizationId,
+                sucursal: datos.organizationId || null,
                 personaCreada: res.userId,
                 cuentaNueva: !res.yaExistia,
             },

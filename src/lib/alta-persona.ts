@@ -9,8 +9,12 @@ export interface AltaPersona {
   /** Opcional si hay usuario: mucha gente de PEDIDO no tiene correo. */
   email?: string;
   password: string;
-  /** Vacío para un SUPER ADMIN: no pertenece a ninguna, las ve todas. */
-  organizationId: string;
+  /**
+   * Casi siempre vacío: abrir la cuenta y decir dónde trabaja son dos cosas, y cada
+   * una tiene su pantalla. Se acepta con valor para el camino de Sucursales, donde
+   * se añade a alguien a una sucursal concreta.
+   */
+  organizationId?: string;
   roleId: string;
 }
 
@@ -46,7 +50,13 @@ export interface ResultadoAlta {
 }
 
 /**
- * Dar de alta a una persona en una sucursal, con su contraseña y su rol.
+ * Abrir la cuenta de una persona, con su contraseña y su rol.
+ *
+ * La sucursal NO se pide aquí. Abrir la cuenta y decir dónde trabaja son dos cosas
+ * distintas y cada una tiene su pantalla: la cuenta se abre en Personas, y en
+ * Sucursales se dice en cuáles trabaja —que pueden ser varias, o ninguna todavía—.
+ * Pedirla al crear obligaba a elegir una al azar para poder seguir, y dejaba a gente
+ * colgando de una sucursal en la que nunca puso un pie.
  *
  * # Por qué se crea la cuenta aquí y no por invitación
  *
@@ -98,7 +108,6 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
       })
     : null;
   if (datos.organizationId && !sucursal) return { error: 'Esa sucursal no existe.' };
-  if (!sucursal && !mandaEnTodo) return { error: 'Hace falta la sucursal.' };
 
   const existente = await prisma.user.findUnique({ where: { email }, select: { id: true } });
 
@@ -148,7 +157,8 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
     await prisma.user.update({ where: { id: userId }, data: { isSystemAdmin: true } });
   }
 
-  // Un SUPER ADMIN sin sucursal termina aquí: la cuenta existe y manda en todas.
+  // Sin sucursal, aquí se acaba: la cuenta existe, tiene su rol y puede entrar. En
+  // cuáles trabaja se dice en Sucursales, y pueden ser varias o ninguna todavía.
   if (!sucursal) return { userId, yaExistia };
 
   const yaMiembro = await prisma.member.findUnique({

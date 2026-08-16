@@ -72,7 +72,7 @@ export default async function DashboardUsersPage() {
           {t("dashboard.usersPage.subtitle", { n: users.length })}
         </p>
       </div>
-      <UsersManager initialUsers={users} sucursales={sucursales} roles={roles} />
+      <UsersManager initialUsers={users} roles={roles} />
     </div>
   );
 }

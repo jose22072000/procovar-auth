@@ -29,11 +29,9 @@ interface Opcion { id: string; name: string }
 
 export function UsersManager({
   initialUsers,
-  sucursales = [],
   roles = [],
 }: {
   initialUsers: UserRow[];
-  sucursales?: Opcion[];
   roles?: Opcion[];
 }) {
   const router = useRouter();
@@ -42,8 +40,7 @@ export function UsersManager({
   const editModal = useDisclosure();
   const altaModal = useDisclosure();
   const [alta, setAlta] = useState({
-    nombre: "", usuario: "", email: "", password: "",
-    organizationId: "", roleId: "",
+    nombre: "", usuario: "", email: "", password: "", roleId: "",
   });
   const detailModal = useDisclosure();
   const [editing, setEditing] = useState<UserRow | null>(null);
@@ -114,26 +111,15 @@ export function UsersManager({
     // sucursal y el rol más limitado. Equivocarse hacia abajo se arregla con un
     // clic; hacia arriba no se nota hasta que alguien ve lo que no debía.
     const gestor = roles.find((r) => r.name === "GESTOR") ?? roles[roles.length - 1];
-    setAlta({
-      nombre: "", usuario: "", email: "", password: "",
-      organizationId: sucursales[0]?.id ?? "",
-      roleId: gestor?.id ?? "",
-    });
+    setAlta({ nombre: "", usuario: "", email: "", password: "", roleId: gestor?.id ?? "" });
     altaModal.onOpen();
   }
 
-  // Un SUPER ADMIN no pertenece a una sucursal: manda en todas. Se le da la cuenta y
-  // después, si hace falta, se le añaden sucursales desde Sucursales.
-  const altaEsSuperAdmin =
-    (roles.find((r) => r.id === alta.roleId)?.name ?? "")
-      .toUpperCase().replace(/[\s_-]/g, "") === "SUPERADMIN";
-
   async function crearPersona() {
     if (!alta.nombre.trim() || !alta.password || !alta.roleId) return;
-    if (!altaEsSuperAdmin && !alta.organizationId) return;
     setBusy(true);
     const res = await anadirPersona({
-      organizationId: altaEsSuperAdmin ? "" : alta.organizationId,
+      organizationId: "",
       nombre: alta.nombre.trim(),
       usuario: alta.usuario.trim() || undefined,
       email: alta.email.trim() || undefined,
@@ -146,9 +132,7 @@ export function UsersManager({
       return;
     }
     addToast({
-      title: res.yaExistia
-        ? "Esa persona ya tenía cuenta: se le añadió la sucursal"
-        : "Persona creada",
+      title: res.yaExistia ? "Esa persona ya tenía cuenta" : "Persona creada",
       color: "success",
     });
     altaModal.onClose();
@@ -314,43 +298,30 @@ export function UsersManager({
               placeholder="La que se le va a dar"
               value={alta.password} onValueChange={(v) => setAlta({ ...alta, password: v })}
             />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {/* El rol primero: es lo que decide si hace falta sucursal. */}
-              <Select
-                variant="bordered" label="Rol" labelPlacement="outside"
-                selectedKeys={alta.roleId ? [alta.roleId] : []}
-                onChange={(e) => setAlta({ ...alta, roleId: e.target.value })}
-              >
-                {roles.map((r) => (
-                  <SelectItem key={r.id}>{r.name}</SelectItem>
-                ))}
-              </Select>
-              {/* Al Super Admin no se le pide: no pertenece a una sucursal, manda en
-                  todas. Pedírsela era inventarse una pertenencia que no significa
-                  nada, y obligaba a elegir una al azar para poder seguir. */}
-              {!altaEsSuperAdmin && (
-                <Select
-                  variant="bordered" label="Sucursal" labelPlacement="outside"
-                  selectedKeys={alta.organizationId ? [alta.organizationId] : []}
-                  onChange={(e) => setAlta({ ...alta, organizationId: e.target.value })}
-                >
-                  {sucursales.map((o) => (
-                    <SelectItem key={o.id}>{o.name}</SelectItem>
-                  ))}
-                </Select>
-              )}
-            </div>
+            {/* Aquí NO se pregunta la sucursal.
+                Abrir la cuenta y decir dónde trabaja son dos cosas, y cada una tiene
+                su pantalla: la cuenta se abre aquí con su rol, y en Sucursales se
+                dice en cuáles trabaja —que pueden ser varias, o ninguna todavía—.
+                Preguntarla aquí obligaba a elegir una al azar para poder seguir. */}
+            <Select
+              variant="bordered" label="Rol" labelPlacement="outside"
+              selectedKeys={alta.roleId ? [alta.roleId] : []}
+              onChange={(e) => setAlta({ ...alta, roleId: e.target.value })}
+            >
+              {roles.map((r) => (
+                <SelectItem key={r.id}>{r.name}</SelectItem>
+              ))}
+            </Select>
             <p className="text-xs text-slate-400">
-              {altaEsSuperAdmin
-                ? "Un Super Admin no pertenece a una sucursal: las ve todas. Si además tiene que trabajar en una concreta, se le añade después desde Sucursales."
-                : "Una cuenta pertenece a una sucursal desde el primer momento: sin ella no hay nada que pueda ver. Después se le pueden añadir más desde Sucursales."}
+              La cuenta se abre con su rol y ya puede entrar. En qué sucursal trabaja
+              se dice en Sucursales → Añadir persona, y pueden ser varias.
             </p>
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" onPress={altaModal.onClose} isDisabled={busy}>Cancelar</Button>
             <Button
               color="primary" onPress={crearPersona} isLoading={busy}
-              isDisabled={!alta.nombre.trim() || !alta.password || !alta.roleId || (!altaEsSuperAdmin && !alta.organizationId)}
+              isDisabled={!alta.nombre.trim() || !alta.password || !alta.roleId}
             >
               Crear
             </Button>
