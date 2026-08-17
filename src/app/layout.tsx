@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -39,6 +39,18 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
   display: "swap",
 });
+
+/**
+ * Sin esto, un teléfono dibuja la página como si midiera 980 píxeles y luego la
+ * encoge: sale todo diminuto y las reglas de móvil no llegan a aplicarse nunca. Aquí
+ * entra gente desde el móvil, no solo desde la computadora de la oficina.
+ *
+ * `maximumScale` NO se limita: impedir el zoom deja fuera a quien no ve de cerca.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Procovar — Cuentas",
