@@ -29,6 +29,7 @@ const NOMBRE_SERVICIO: Record<string, string> = {
     analitics: "Analitics",
     delivery: "Delivery",
     ccsa: "Tablero Parranda",
+    rutas: "Rutas",
     auth: "Accesos",
 };
 
@@ -37,6 +38,7 @@ const ICONO_SERVICIO: Record<string, string> = {
     analitics: "lucide:bar-chart-3",
     delivery: "lucide:truck",
     ccsa: "lucide:layout-dashboard",
+    rutas: "lucide:map-pinned",
     auth: "lucide:key-round",
 };
 
@@ -90,6 +92,20 @@ export function RolesManager({
         setSeleccion(new Set(roles.find((r) => r.id === id)?.permissionKeys ?? []));
     }
 
+    // Qué aplicaciones están abiertas. Cerradas de partida: son seis aplicaciones y
+    // ochenta y tres permisos, y todo desplegado a la vez es un scroll donde no se
+    // distingue dónde acaba una y empieza la otra —que es justo lo que hay que
+    // distinguir para no quitarle en PEDIDO lo que se quería quitar en Analitics.
+    const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+
+    function abrirCerrar(service: string) {
+        setAbiertas((prev) => {
+            const s = new Set(prev);
+            if (s.has(service)) s.delete(service); else s.add(service);
+            return s;
+        });
+    }
+
     function alternar(key: string) {
         setSeleccion((prev) => {
             const s = new Set(prev);
@@ -120,6 +136,8 @@ export function RolesManager({
         }
         return [...mapa.entries()];
     }, [permisos, busca]);
+
+    const buscando = busca.trim().length > 0;
 
     function marcarServicio(service: string, marcar: boolean) {
         const claves = permisos.filter((p) => p.service === service).map((p) => p.key);
@@ -293,18 +311,30 @@ export function RolesManager({
                                 return (
                                     <div key={service} className="rounded-lg border border-slate-200 dark:border-slate-700">
                                         <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/50">
-                                            <Icon
-                                                icon={ICONO_SERVICIO[service] ?? "lucide:box"}
-                                                className="size-4 text-slate-500"
-                                                aria-hidden
-                                            />
-                                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                                                {NOMBRE_SERVICIO[service] ?? service}
-                                            </h3>
+                                            <button
+                                                type="button"
+                                                className="flex flex-1 items-center gap-2 text-left"
+                                                onClick={() => abrirCerrar(service)}
+                                                aria-expanded={buscando || abiertas.has(service)}
+                                            >
+                                                <Icon
+                                                    icon={(buscando || abiertas.has(service)) ? "lucide:chevron-down" : "lucide:chevron-right"}
+                                                    className="size-4 text-slate-400"
+                                                    aria-hidden
+                                                />
+                                                <Icon
+                                                    icon={ICONO_SERVICIO[service] ?? "lucide:box"}
+                                                    className="size-4 text-slate-500"
+                                                    aria-hidden
+                                                />
+                                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                                    {NOMBRE_SERVICIO[service] ?? service}
+                                                </h3>
+                                            </button>
                                             <Chip size="sm" variant="flat" className="ml-2">
                                                 {marcados}/{claves.length}
                                             </Chip>
-                                            <div className="ml-auto flex gap-1">
+                                            <div className="flex gap-1">
                                                 <Button
                                                     size="sm"
                                                     variant="light"
@@ -323,7 +353,7 @@ export function RolesManager({
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        <div className={`divide-y divide-slate-100 dark:divide-slate-800 ${(buscando || abiertas.has(service)) ? "" : "hidden"}`}>
                                             {[...grupos.entries()].map(([grupo, lista]) => (
                                                 <div key={grupo} className="px-3 py-2.5">
                                                     <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">

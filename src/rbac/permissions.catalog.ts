@@ -97,6 +97,38 @@ export const PERMISSION_CATALOG: PermissionEntry[] = [
   e('ccsa.territorio', 'Parranda', 'ccsa', 'Elegir el territorio que se mira', 'Choose which territory to view'),
   e('ccsa.admin',      'Parranda', 'ccsa', 'Configurar el tablero', 'Configure the dashboard'),
 
+  // ══ Rutas ════════════════════════════════════════════════════════════════
+  //
+  // Rutas no estaba en esta lista: sus dos permisos colgaban de Delivery, que es
+  // otra aplicación y otras rutas —las del reparto—. Quien venía a quitarle una
+  // pantalla a alguien en Rutas no encontraba dónde.
+  e('rutas.entrar',      'Entrar', 'rutas', 'Entrar en Rutas', 'Access Rutas'),
+  e('rutas.calendario',  'Vistas', 'rutas', 'Ver el calendario de cumplimiento', 'View the compliance calendar'),
+  e('rutas.visor',       'Vistas', 'rutas', 'Ver el recorrido de un día en el mapa', "View a day's track on the map"),
+  e('rutas.reporte',     'Vistas', 'rutas', 'Ver e imprimir el reporte semanal', 'View and print the weekly report'),
+  e('rutas.bandeja',     'Vistas', 'rutas', 'Ver la bandeja de ficheros sin colocar', 'View the unassigned files inbox'),
+  e('rutas.administracion', 'Vistas', 'rutas', 'Ver Administración (carpetas y barridos)', 'View Administration'),
+  e('rutas.carpeta',     'Administración', 'rutas', 'Dar de alta y quitar carpetas de Drive', 'Add and remove Drive folders'),
+  e('rutas.alias',       'Administración', 'rutas', 'Casar dispositivos con vendedores', 'Match devices to sellers'),
+  e('rutas.barrido',     'Administración', 'rutas', 'Lanzar un barrido de Drive', 'Run a Drive scan'),
+
+  // ══ Entrar en cada aplicación ════════════════════════════════════════════
+  //
+  // Una llave por aplicación, aparte de lo que se pueda hacer dentro. Es lo que
+  // permite decir "esta persona no entra en Analitics" de una sola vez, en vez de
+  // ir apagando sus permisos uno a uno y descubrir el que se quedó encendido.
+  e('pedido.entrar',    'Entrar', 'pedido', 'Entrar en PEDIDO', 'Access PEDIDO'),
+  e('analitics.entrar', 'Entrar', 'analitics', 'Entrar en Analitics', 'Access Analitics'),
+  e('delivery.entrar',  'Entrar', 'delivery', 'Entrar en Delivery', 'Access Delivery'),
+  e('ccsa.entrar',      'Entrar', 'ccsa', 'Entrar en el Tablero Parranda', 'Access the Parranda dashboard'),
+
+  // ══ Las pantallas de Accesos ═════════════════════════════════════════════
+  e('auth.sucursales',   'Vistas', 'auth', 'Ver Sucursales', 'View Sucursales'),
+  e('auth.personas',     'Vistas', 'auth', 'Ver Personas', 'View People'),
+  e('auth.roles',        'Vistas', 'auth', 'Ver Roles y permisos', 'View Roles and permissions'),
+  e('auth.auditoria',    'Vistas', 'auth', 'Ver Auditoría', 'View the audit log'),
+  e('auth.aplicaciones', 'Vistas', 'auth', 'Ver Aplicaciones', 'View Applications'),
+
   // ══ Accesos (esta misma aplicación) ══════════════════════════════════════
   e('member.read',       'Personas', 'auth', 'Ver las personas de la sucursal', 'View members'),
   e('member.invite',     'Personas', 'auth', 'Dar de alta personas', 'Add people'),

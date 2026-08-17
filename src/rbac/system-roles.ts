@@ -39,6 +39,11 @@ const allKeys = () => PERMISSION_CATALOG.filter((p) => !p.isDeprecated).map((p) 
 
 /** Lo mínimo para trabajar: leer lo suyo. */
 const GESTOR_KEYS = [
+  // Entrar donde ya trabajaba. La llave de entrada es nueva y sin ella un rol que
+  // podía leer pedidos se quedaría en la puerta el día que alguna aplicación
+  // empiece a mirarla.
+  'pedido.entrar',
+  'delivery.entrar',
   'pedido.read',
   'pedido.copy',
   'panel.read',
@@ -74,6 +79,14 @@ const OPERADOR_KEYS = [
  */
 const SUPERVISOR_KEYS = [
   ...OPERADOR_KEYS,
+  'analitics.entrar',
+  'ccsa.entrar',
+  // Rutas: mira el cumplimiento de SUS vendedores y saca el reporte. La bandeja y
+  // Administración son de quien lleva las carpetas, no suyas.
+  'rutas.entrar',
+  'rutas.calendario',
+  'rutas.visor',
+  'rutas.reporte',
   'pedido.import',
   'reporte.read',
   'reporte.export',

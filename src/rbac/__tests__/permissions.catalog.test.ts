@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { PERMISSION_CATALOG } from '../permissions.catalog'
 
-const SERVICIOS = ['pedido', 'analitics', 'delivery', 'ccsa', 'auth']
+const SERVICIOS = ['pedido', 'analitics', 'delivery', 'ccsa', 'auth', 'rutas']
 
 describe('el catálogo de permisos', () => {
   it('no repite claves', () => {
