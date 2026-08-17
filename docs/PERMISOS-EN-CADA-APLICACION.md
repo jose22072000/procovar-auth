@@ -53,6 +53,28 @@ buscando `SUPERVISOR` no lo encuentra nunca, se queda sin rol y por tanto sin en
 Eso es exactamente lo que le pasó a una supervisora en Rutas: 403 y una pantalla en
 blanco, sin nombre, sin menú y sin poder cerrar sesión.
 
+### Cuidado: hay DOS verify-session
+
+| Ruta | Quién la usa |
+|---|---|
+| `POST /api/auth/verify-session` | **Esta.** La llaman las aplicaciones (Rutas, y las que vengan) |
+| `POST /api/verify-session` | Nadie. Solo aparece en un `curl` de un plan viejo en `docs/superpowers/` |
+
+Hacen casi lo mismo y por eso se confunden: arreglar el rol en la segunda y creer que
+estaba hecho costó un despliegue entero con la supervisora sin poder entrar y el
+mensaje "recibido: " vacío.
+
+**La duplicada está para borrar.** No se quitó en el momento porque hacerlo mientras se
+arreglaba otra cosa es cambiar dos cosas a la vez; se borra cuando nadie tenga prisa,
+comprobando antes que sigue sin llamarla nadie:
+
+```
+grep -rn "api/verify-session" --include=*.ts --include=*.go .
+```
+
+Mientras exista, **las dos tienen que devolver lo mismo**. Si se toca una y no la otra,
+vuelve el mismo fallo.
+
 ## Qué tiene que hacer la aplicación
 
 ### 1. Declarar sus llaves en el catálogo de Accesos
