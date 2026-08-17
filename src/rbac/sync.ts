@@ -15,6 +15,8 @@ export async function syncRbac(): Promise<{
   permissions: number
   orgs: number
   membersBackfilled: number
+  /** Concesiones creadas: aplicaciones que un rol no conocía todavía. */
+  repartidas: number
 }> {
   // 1. Permission catalog.
   for (const p of PERMISSION_CATALOG) {
@@ -83,6 +85,56 @@ export async function syncRbac(): Promise<{
     }
   }
 
+  // 2b. Una aplicación que el rol no conoce todavía: sus llaves, de una vez.
+  //
+  // El paso 2 deja en paz a un rol que ya existe, y con razón: si en cada arranque se
+  // le devolvieran sus llaves de origen, un permiso quitado a mano reaparecería solo
+  // y nadie ataría los dos hechos.
+  //
+  // Pero eso vale para una aplicación que el rol YA tiene repartida. Cuando entra una
+  // nueva —Rutas, y las que vengan— ese rol no tiene ni una sola llave suya: nadie ha
+  // decidido nada sobre ella todavía, no hay nada que pisar. No repartirlas significa
+  // que estrenar una aplicación deja a todo el mundo fuera hasta que alguien se
+  // acuerde de ir rol por rol marcando casillas, y mientras tanto una supervisora con
+  // su rol bien puesto no puede entrar. Pasó.
+  //
+  // La regla es por APLICACIÓN y solo cuando el rol no tiene ninguna: en cuanto tenga
+  // una, esto no vuelve a tocarla nunca. Quien quiera dejar un rol sin acceso a una
+  // aplicación no le quita todas las llaves —le deja la que decida y quita el resto,
+  // o quita la de entrar, que es la que manda.
+  const servicios = [...new Set(PERMISSION_CATALOG.map((p) => p.service))]
+  let repartidas = 0
+
+  for (const name of SYSTEM_ROLE_NAMES) {
+    const rol = await prisma.role.findUnique({
+      where: { name },
+      select: { id: true, permissions: { select: { permission: { select: { key: true } } } } },
+    })
+    if (!rol) continue
+
+    const tiene = new Set(
+      rol.permissions.map((rp) => rp.permission?.key).filter((k): k is string => Boolean(k)),
+    )
+    const leTocan = new Set(systemRolePermissionKeys(name))
+
+    for (const service of servicios) {
+      const delServicio = PERMISSION_CATALOG.filter((p) => p.service === service).map((p) => p.key)
+      if (delServicio.some((k) => tiene.has(k))) continue // ya la conoce: no se toca
+
+      const ids = delServicio
+        .filter((k) => leTocan.has(k))
+        .map((k) => permByKey.get(k))
+        .filter((id): id is string => Boolean(id))
+      if (!ids.length) continue
+
+      const { count } = await prisma.rolePermission.createMany({
+        data: ids.map((permissionId) => ({ roleId: rol.id, permissionId })),
+        skipDuplicates: true,
+      })
+      repartidas += count
+    }
+  }
+
   // 3. A member with no role at all can do nothing and cannot be fixed from the
   // screen (the screen lists roles, and they hold none). Give them the one their
   // `member.role` string says.
@@ -101,5 +153,10 @@ export async function syncRbac(): Promise<{
   }
 
   const orgs = await prisma.organization.count()
-  return { permissions: PERMISSION_CATALOG.length, orgs, membersBackfilled }
+  return {
+    permissions: PERMISSION_CATALOG.length,
+    orgs,
+    membersBackfilled,
+    repartidas,
+  }
 }
