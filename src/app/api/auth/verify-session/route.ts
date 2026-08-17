@@ -67,7 +67,42 @@ export const POST = withServiceAuth(async (req: NextRequest) => {
             session.session.activeOrganizationId ??
             (memberRows.length === 1 ? memberRows[0].organization.id : null);
         const rbac = await resolveRbac(session.user.id, rbacOrgId);
-        return NextResponse.json({ valid: true, ...session, memberships, rbac });
+
+        // El NOMBRE del rol y los permisos, que es lo que consume cada aplicación.
+        //
+        // `memberships[].roles` no sirve para eso: ahí va la columna `role` de
+        // better-auth, que guarda "owner"/"member" —su vocabulario, no el catálogo de
+        // Procovar—. Quien la leyera buscando "SUPERVISOR" no lo encontraba nunca, se
+        // quedaba sin rol y por tanto sin entrar. Le pasó a una supervisora en Rutas:
+        // 403, sin nombre, sin menú y sin poder cerrar sesión.
+        //
+        // El rol de verdad es el de la PERSONA: el mismo en todas sus sucursales.
+        const persona = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                defaultRole: { select: { name: true } },
+                members: {
+                    select: { memberRoles: { select: { role: { select: { name: true } } } } },
+                },
+            },
+        });
+        const roles = [
+            ...(persona?.defaultRole?.name ? [persona.defaultRole.name] : []),
+            ...(persona?.members ?? []).flatMap((m) => m.memberRoles.map((mr) => mr.role.name)),
+        ];
+
+        return NextResponse.json({
+            valid: true,
+            ...session,
+            memberships,
+            role: persona?.defaultRole?.name ?? null,
+            rbac: {
+                ...rbac,
+                roles: [...new Set(roles)],
+                // El mismo listado con el nombre por el que preguntan.
+                permissions: rbac.global,
+            },
+        });
     } catch (e) {
         logger.error('[verify-session] error', { error: (e as Error).message });
         return NextResponse.json({ error: 'internal_error' }, { status: 500 });
