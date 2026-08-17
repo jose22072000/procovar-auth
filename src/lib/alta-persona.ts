@@ -133,6 +133,10 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
           // viene de pertenecer a una sucursal, le viene de esto. Sin marcarlo, la
           // cuenta llevaría el nombre del rol y no podría con nada.
           isSystemAdmin: mandaEnTodo,
+          // El rol, en la persona. La cuenta se abre sin sucursal, así que si el rol
+          // solo viviera en la membresía no estaría en ninguna parte, y al meterla en
+          // su primera sucursal habría que volver a preguntarlo.
+          defaultRoleId: rol.id,
         },
         select: { id: true },
       });
@@ -155,6 +159,14 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
   // A quien ya tenía cuenta y ahora se le da el mando, hay que dárselo de verdad.
   if (mandaEnTodo) {
     await prisma.user.update({ where: { id: userId }, data: { isSystemAdmin: true } });
+  }
+
+  // Y si venía sin rol escrito —cuenta de antes de que esto existiera—, se le pone.
+  if (yaExistia) {
+    await prisma.user.updateMany({
+      where: { id: userId, defaultRoleId: null },
+      data: { defaultRoleId: rol.id },
+    });
   }
 
   // Sin sucursal, aquí se acaba: la cuenta existe, tiene su rol y puede entrar. En

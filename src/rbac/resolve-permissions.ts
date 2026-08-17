@@ -7,10 +7,29 @@ const empty = (org: string | null, wildcard = false): ResolvedRbac => ({
 
 export async function resolveRbac(userId: string, orgId: string | null): Promise<ResolvedRbac> {
   const user = await prisma.user.findUnique({
-    where: { id: userId }, select: { id: true, isSystemAdmin: true },
+    where: { id: userId },
+    select: {
+      id: true,
+      isSystemAdmin: true,
+      defaultRole: { include: { permissions: { include: { permission: true } } } },
+    },
   })
   if (user?.isSystemAdmin) return empty(orgId, true)
   if (!orgId) return empty(null)
+
+  // El rol es de la PERSONA, no de la sucursal.
+  //
+  // Alguien es Supervisora, y lo es en Granma y en Bayamo y en la que la pongan
+  // mañana. Cuando el rol vivía solo dentro de la membresía había que repetirlo en
+  // cada sucursal y podían acabar siendo distintos sin que nadie lo notara —y quien
+  // no estaba en ninguna no tenía rol en ninguna parte—. El de la persona es la base;
+  // lo de la membresía se suma por si a alguien le hace falta algo extra en una
+  // sucursal concreta.
+  const suyos = new Set<string>()
+  for (const rp of user?.defaultRole?.permissions ?? []) {
+    const key = rp.permission?.key
+    if (key) suyos.add(key)
+  }
 
   const member = await prisma.member.findUnique({
     where: { userId_organizationId: { userId, organizationId: orgId } },
@@ -20,12 +39,14 @@ export async function resolveRbac(userId: string, orgId: string | null): Promise
       },
     },
   })
-  if (!member) return empty(orgId)
+  // Sin membresía, lo que la persona lleva encima. Pertenecer a la sucursal es otra
+  // pregunta, y la contesta quien llame a esto mirando `org`.
+  if (!member) return { org: orgId, wildcard: false, global: [...suyos] }
 
   // A member can hold several roles, and the result is the UNION of what they
   // grant. Roles only add — there is no "deny" permission — so no rule can ever
   // depend on which of a person's roles happened to be read first.
-  const granted = new Set<string>()
+  const granted = new Set<string>(suyos)
 
   for (const mr of member.memberRoles) {
     // `rp.permission` can be null: role_permission has NO foreign key on

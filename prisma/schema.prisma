@@ -31,6 +31,18 @@ model User {
   image         String?
   isSystemAdmin Boolean        @default(false)
   phone         String?
+  /// El rol que se le dio al abrir la cuenta.
+  ///
+  /// Vive en la persona y no solo en sus membresías porque la cuenta se abre SIN
+  /// sucursal: si el rol solo existiera dentro de una membresía, quien no está en
+  /// ninguna no tendría rol, y al meterlo en su primera sucursal habría que
+  /// volver a preguntárselo —que es exactamente lo que no se quiere—.
+  ///
+  /// Es el que se hereda al entrar en una sucursal. Si algún día alguien tiene que
+  /// llevar un rol distinto en una sucursal concreta, eso se cambia en la sucursal,
+  /// que es donde se ve a quién afecta.
+  defaultRoleId String?
+  defaultRole   Role?          @relation(fields: [defaultRoleId], references: [id], onDelete: SetNull)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   sessions      Session[]
@@ -273,6 +285,7 @@ model Role {
   updatedAt   DateTime         @updatedAt
   permissions RolePermission[]
   memberRoles MemberRole[]
+  usuarios    User[]
 
   @@map("role")
 }

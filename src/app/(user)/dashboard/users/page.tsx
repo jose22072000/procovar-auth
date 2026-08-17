@@ -14,17 +14,14 @@ export const dynamic = "force-dynamic";
 export default async function DashboardUsersPage() {
   const t = await getTranslations();
 
-  // Las sucursales y los roles se traen para poder DAR DE ALTA desde aquí.
+  // Los roles se traen para poder DAR DE ALTA desde aquí, y para poder cambiárselo
+  // a alguien desde su ficha.
   //
   // El alta ya existía, pero solo dentro de una sucursal, y nadie la busca ahí:
   // esta aplicación no tiene registro público —las cuentas las abre un
   // administrador— así que "crear una persona" es lo primero que se viene a hacer
-  // a esta pantalla.
-  const [sucursales, roles, rows] = await Promise.all([
-    prisma.organization.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
+  // a esta pantalla. La sucursal no se pide: eso se dice en Sucursales.
+  const [roles, rows] = await Promise.all([
     prisma.role.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -34,6 +31,7 @@ export default async function DashboardUsersPage() {
     select: {
       id: true, name: true, email: true, username: true, emailVerified: true,
       image: true, isSystemAdmin: true, phone: true, createdAt: true,
+      defaultRoleId: true,
       _count: { select: { members: true, sessions: true } },
       members: {
         select: {
@@ -53,6 +51,7 @@ export default async function DashboardUsersPage() {
     image: u.image,
     isSystemAdmin: u.isSystemAdmin,
     phone: u.phone,
+    defaultRoleId: u.defaultRoleId,
     createdAt: u.createdAt.toISOString(),
     orgCount: u._count.members,
     sessionCount: u._count.sessions,

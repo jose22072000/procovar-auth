@@ -11,7 +11,7 @@ import {
 import {
   toggleUserAdmin, toggleEmailVerified, adminDeleteUser, updateUserProfile,
   listUserSessions, revokeUserSession, revokeAllUserSessions, anadirPersona,
-  cambiarContrasena,
+  cambiarContrasena, cambiarRol,
 } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
@@ -22,6 +22,8 @@ interface UserRow {
   isSystemAdmin: boolean; phone: string | null; username: string | null;
   createdAt: string; orgCount: number; sessionCount: number;
   orgs: UserOrg[];
+  /** El rol de la persona: el mismo en todas sus sucursales. */
+  defaultRoleId?: string | null;
 }
 interface SessionRow { id: string; ipAddress: string | null; userAgent: string | null; clientId: string | null; createdAt: string; expiresAt: string; revokedAt: string | null }
 
@@ -47,6 +49,7 @@ export function UsersManager({
   // Contraseña nueva, vacía mientras no se toque: se cambia solo si se escribe algo,
   // para que guardar el teléfono no arrastre un cambio de contraseña sin querer.
   const [nuevaClave, setNuevaClave] = useState("");
+  const [rolElegido, setRolElegido] = useState("");
   const [detail, setDetail] = useState<UserRow | null>(null);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
@@ -80,6 +83,7 @@ export function UsersManager({
     setEditing(u);
     setForm({ name: u.name, phone: u.phone ?? "" });
     setNuevaClave("");
+    setRolElegido(u.defaultRoleId ?? "");
     editModal.onOpen();
   }
   async function saveEdit() {
@@ -88,6 +92,15 @@ export function UsersManager({
       name: form.name, phone: form.phone || null,
     }), t('dashboard.usersManager.profileUpdated'));
     if (!ok) return;
+
+    if (rolElegido && rolElegido !== (editing.defaultRoleId ?? "")) {
+      const res = await cambiarRol(editing.id, rolElegido);
+      if (res.error) {
+        addToast({ title: res.error, color: "danger" });
+        return;
+      }
+      addToast({ title: `Ahora es ${res.rol}.`, color: "success" });
+    }
 
     if (nuevaClave) {
       const res = await cambiarContrasena(editing.id, nuevaClave);
@@ -343,6 +356,18 @@ export function UsersManager({
           <ModalBody className="gap-3">
             <Input label={t('dashboard.usersManager.nameLabel')} variant="bordered" value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} />
             <Input label={t('dashboard.usersManager.phoneLabel')} variant="bordered" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} startContent={<Icon icon="lucide:phone" className="size-4 text-slate-400" aria-hidden />} />
+            {/* El rol es de la persona, el mismo en todas sus sucursales: se cambia
+                aquí y vale en todas, en vez de sucursal por sucursal —donde podían
+                acabar siendo distintos sin que nadie lo notara. */}
+            <Select
+              label="Rol" variant="bordered"
+              selectedKeys={rolElegido ? [rolElegido] : []}
+              onChange={(e) => setRolElegido(e.target.value)}
+            >
+              {roles.map((r) => (
+                <SelectItem key={r.id}>{r.name}</SelectItem>
+              ))}
+            </Select>
             {/* Aquí las cuentas las abre un administrador, y muchas llevan un correo
                 interno que no existe: "que pida el enlace de recuperación" no lleva a
                 ninguna parte. Sin esto, a quien olvida su contraseña hay que borrarlo

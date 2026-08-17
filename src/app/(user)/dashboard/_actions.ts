@@ -11,6 +11,7 @@ import { can } from "@/rbac/can";
 import { ungrantablePermissionKeys } from "@/rbac/grantable";
 import { systemRolePermissionKeys } from "@/rbac/system-roles";
 import { hashPassword } from "better-auth/crypto";
+import { esSuperAdmin } from "@/lib/alta-persona";
 
 async function requireAdmin() {
     const { data: user } = await getCurrentUser();
@@ -119,6 +120,17 @@ export async function agregarMiembro(datos: {
         // hace falta que sea distinto por sucursal, se cambia desde la propia
         // sucursal, que es donde se ve a quién afecta.
         let roleId = datos.roleId;
+        if (!roleId) {
+            // Primero el rol que se le dio al abrir la cuenta: es el que tiene, y la
+            // cuenta se abre sin sucursal, así que es el único sitio donde consta
+            // mientras no esté en ninguna. La membresía anterior queda de reserva
+            // para las cuentas de antes de que esto se guardara.
+            const persona = await prisma.user.findUnique({
+                where: { id: datos.userId },
+                select: { defaultRoleId: true },
+            });
+            roleId = persona?.defaultRoleId ?? undefined;
+        }
         if (!roleId) {
             const previo = await prisma.memberRole.findFirst({
                 where: { member: { userId: datos.userId } },
@@ -341,6 +353,46 @@ export async function cambiarContrasena(
         });
         revalidatePath("/dashboard");
         return { sesionesCerradas: count };
+    } catch (e) {
+        return { error: (e as Error).message };
+    }
+}
+
+/**
+ * Cambiarle el rol a alguien.
+ *
+ * El rol es de la PERSONA: alguien es Supervisora, y lo es en Granma, en Bayamo y en
+ * la que la pongan mañana. Por eso se cambia aquí, en su ficha, y no sucursal por
+ * sucursal —donde además podían acabar siendo distintos sin que nadie lo notara.
+ */
+export async function cambiarRol(
+    userId: string,
+    roleId: string,
+): Promise<{ error?: string; rol?: string }> {
+    try {
+        const actor = await requireAdmin();
+
+        const rol = await prisma.role.findUnique({
+            where: { id: roleId },
+            select: { id: true, name: true },
+        });
+        if (!rol) return { error: "Ese rol no existe." };
+
+        const mandaEnTodo = esSuperAdmin(rol.name);
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                defaultRoleId: rol.id,
+                // El mando va con el rol en los dos sentidos: dárselo lo asciende y
+                // quitárselo lo baja. Si solo subiera, un Super Admin degradado
+                // seguiría pudiendo con todo y el cambio no serviría de nada.
+                isSystemAdmin: mandaEnTodo,
+            },
+        });
+
+        audit({ action: "member.role.change", resource: userId, userId: actor.id, meta: { rol: rol.name } });
+        revalidatePath("/dashboard");
+        return { rol: rol.name };
     } catch (e) {
         return { error: (e as Error).message };
     }
