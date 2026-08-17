@@ -130,12 +130,50 @@ export async function GET() {
             roles: (role ?? '').split(',').map((r) => r.trim()).filter(Boolean),
         }));
 
-        const rbac = await resolveRbac(session.user.id, session.session.activeOrganizationId ?? null);
+        // La sucursal con la que se resuelve: la activa si la hay y, si no, la única
+        // que tenga. Quien no ha elegido sucursal —que es todo el mundo hasta que
+        // entra por primera vez— resolvía contra `null` y se quedaba sin permisos
+        // aunque perteneciera a una. Con varias no se elige por él: eso lo decide la
+        // persona al entrar.
+        const orgActiva = session.session.activeOrganizationId
+            ?? (memberships.length === 1 ? memberships[0].organization.id : null);
+
+        const rbac = await resolveRbac(session.user.id, orgActiva);
+
+        // Los NOMBRES de los roles, y los permisos con el nombre que buscan las
+        // aplicaciones que consumen esto.
+        //
+        // `memberships[].roles` no vale para saber el rol: ahí va la columna `role`
+        // de better-auth, que guarda "owner"/"member" —su propio vocabulario, no el
+        // catálogo de Procovar—. Quien leyera eso buscando "SUPERVISOR" no lo
+        // encontraba nunca y se quedaba sin rol, o sea sin entrar.
+        //
+        // El rol de verdad es el de la persona: el mismo en todas sus sucursales. Se
+        // manda aparte y también dentro de `rbac`, junto a `permissions`, que es como
+        // se llama `global` para quien lo recibe.
+        const persona = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+                defaultRole: { select: { name: true } },
+                members: {
+                    select: { memberRoles: { select: { role: { select: { name: true } } } } },
+                },
+            },
+        });
+        const roles = [
+            ...(persona?.defaultRole?.name ? [persona.defaultRole.name] : []),
+            ...(persona?.members ?? []).flatMap((m) => m.memberRoles.map((mr) => mr.role.name)),
+        ];
 
         return NextResponse.json({
             ...session,
             memberships, // Empty array if user has no memberships
-            rbac,
+            role: persona?.defaultRole?.name ?? null,
+            rbac: {
+                ...rbac,
+                roles: [...new Set(roles)],
+                permissions: rbac.global,
+            },
         });
     } catch (error) {
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
