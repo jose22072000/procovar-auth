@@ -546,3 +546,14 @@ button:active:not(:disabled),
     color: var(--pv-cuno) !important;
 }
 
+
+/* ── Que nada se salga de su tarjeta ─────────────────────────────────────────
+   Lo que rompe una tarjeta en el móvil es texto sin espacios por donde partir:
+   correos, identificadores, claves de permiso. Y las filas en flex, que se
+   niegan a encoger por debajo de su contenido si no se les dice. */
+
+img, svg, video, canvas { max-width: 100%; height: auto; }
+
+/* El cuerpo nunca se arrastra de lado: si algo es más ancho, que se desplace ESO
+   dentro de su caja y no la página entera. */
+html, body { overflow-x: hidden; }

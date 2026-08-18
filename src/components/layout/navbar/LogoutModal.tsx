@@ -11,13 +11,14 @@ import {
 import { useLogoutModalContext } from "./LogoutModalProvider";
 import { Icons } from "@/components/icons/iconify";
 import { useTranslations } from "next-intl";
+import { Panel } from "@/components/ui/panel";
 
 export function LogoutModal() {
     const t = useTranslations();
     const { isOpen, setIsOpen, isLoggingOut, handleLogout } = useLogoutModalContext();
 
     return (
-        <Modal isOpen={isOpen} backdrop="blur" size="sm" onOpenChange={setIsOpen}>
+        <Panel isOpen={isOpen} backdrop="blur" size="sm" onOpenChange={setIsOpen}>
             <ModalContent>
                 {(onClose) => (
                     <>
@@ -55,6 +56,6 @@ export function LogoutModal() {
                     </>
                 )}
             </ModalContent>
-        </Modal>
+        </Panel>
     );
 }

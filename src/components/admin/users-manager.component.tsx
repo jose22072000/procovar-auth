@@ -15,6 +15,7 @@ import {
 } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
+import { Panel } from "@/components/ui/panel";
 
 interface UserOrg { name: string; slug: string; roles: string[] }
 interface UserRow {
@@ -200,8 +201,12 @@ export function UsersManager({
         </div>
       </div>
 
-      <div className="rounded-sm border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
-        <Table aria-label={t('dashboard.usersManager.tableAriaLabel')} removeWrapper classNames={{ th: "bg-transparent" }}>
+      {/* `overflow-x-auto` no es un adorno: la tabla lleva `removeWrapper`, que le
+          quita el contenedor con desplazamiento que trae de serie. Sin esto, en un
+          teléfono las cinco columnas se salen de la tarjeta y arrastran la página
+          entera de lado. */}
+      <div className="overflow-x-auto rounded-sm border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+        <Table aria-label={t('dashboard.usersManager.tableAriaLabel')} removeWrapper classNames={{ th: "bg-transparent", table: "min-w-[42rem]" }}>
           <TableHeader>
             <TableColumn>{t('dashboard.usersManager.colUser')}</TableColumn>
             <TableColumn>{t('dashboard.usersManager.colEmail')}</TableColumn>
@@ -287,7 +292,7 @@ export function UsersManager({
       </div>
 
       {/* Edit profile */}
-      <Modal isOpen={altaModal.isOpen} onOpenChange={altaModal.onOpenChange} size="lg">
+      <Panel isOpen={altaModal.isOpen} onOpenChange={altaModal.onOpenChange} size="lg">
         <ModalContent>
           <ModalHeader>Nueva persona</ModalHeader>
           <ModalBody className="gap-3">
@@ -340,9 +345,9 @@ export function UsersManager({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
 
-      <Modal isOpen={editModal.isOpen} onOpenChange={editModal.onOpenChange}>
+      <Panel isOpen={editModal.isOpen} onOpenChange={editModal.onOpenChange}>
         <ModalContent>
           <ModalHeader>
             <div className="flex items-center gap-3">
@@ -389,10 +394,10 @@ export function UsersManager({
             <Button variant="bordered" color="primary" isLoading={busy} startContent={<Icon icon="lucide:save" className="size-4" aria-hidden />} onPress={saveEdit}>{t('dashboard.common.save')}</Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
 
       {/* Ficha: sucursales y sesiones */}
-      <Modal isOpen={detailModal.isOpen} onOpenChange={detailModal.onOpenChange} size="2xl" scrollBehavior="inside">
+      <Panel isOpen={detailModal.isOpen} onOpenChange={detailModal.onOpenChange} size="2xl" scrollBehavior="inside">
         <ModalContent>
           <ModalHeader>
             <div className="flex items-center gap-3">
@@ -502,7 +507,7 @@ export function UsersManager({
             <Button variant="bordered" startContent={<Icon icon="lucide:x-circle" className="size-4" aria-hidden />} onPress={detailModal.onClose}>{t('dashboard.common.close')}</Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
     </div>
   );
 }

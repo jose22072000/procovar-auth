@@ -8,6 +8,7 @@ import {
 } from "@heroui/react";
 import { Icons } from "@/components/icons/iconify";
 import { useTranslations } from "next-intl";
+import { Panel } from "@/components/ui/panel";
 
 export type ClientApp = {
     id: string;
@@ -142,7 +143,7 @@ function ClientModal({
     const btnClass = "font-semibold border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8 dark:text-white dark:border-white/35 dark:hover:bg-white/10";
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
+        <Panel isOpen={isOpen} onClose={onClose} size="2xl" scrollBehavior="inside">
             <ModalContent>
                 <ModalHeader className="flex items-center gap-2">
                     <Icons.settings className="size-5 text-pv-azul dark:text-sky-400" />
@@ -186,7 +187,7 @@ function ClientModal({
                     </Button>
                 </ModalFooter>
             </ModalContent>
-        </Modal>
+        </Panel>
     );
 }
 
@@ -194,7 +195,7 @@ function SigningKeyModal({ signingKey, onClose }: { signingKey: string; onClose:
     const t = useTranslations();
     const btnClass = "font-semibold border-pv-azul/85 text-pv-azul bg-transparent hover:bg-pv-azul/8 dark:text-white dark:border-white/35";
     return (
-        <Modal isOpen onClose={onClose} size="lg">
+        <Panel isOpen onClose={onClose} size="lg">
             <ModalContent>
                 <ModalHeader className="flex items-center gap-2 text-amber-600">
                     <Icons.keyMinimalistic className="size-5" />
@@ -215,7 +216,7 @@ function SigningKeyModal({ signingKey, onClose }: { signingKey: string; onClose:
                     </Button>
                 </ModalFooter>
             </ModalContent>
-        </Modal>
+        </Panel>
     );
 }
 

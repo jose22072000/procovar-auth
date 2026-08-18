@@ -9,6 +9,7 @@ import {
 } from "@heroui/react";
 import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, agregarMiembro, crearSucursal } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
+import { Panel } from "@/components/ui/panel";
 
 interface RoleRow { id: string; name: string; color: string | null; icon: string | null; isSystem: boolean }
 interface MemberRow { memberId: string; userId: string; name: string; email: string; legacyRole: string; roleIds: string[] }
@@ -266,7 +267,7 @@ export function OrgsManager({
       )}
 
       {/* Alta de una persona en esta sucursal */}
-      <Modal isOpen={alta.isOpen} onOpenChange={alta.onOpenChange} size="lg">
+      <Panel isOpen={alta.isOpen} onOpenChange={alta.onOpenChange} size="lg">
         <ModalContent>
           <ModalHeader className="flex-col items-start gap-0.5">
             <span>{t('dashboard.orgsManager.addPerson')}</span>
@@ -337,10 +338,10 @@ export function OrgsManager({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
 
       {/* Edit org */}
-      <Modal isOpen={nuevaOrg.isOpen} onOpenChange={nuevaOrg.onOpenChange}>
+      <Panel isOpen={nuevaOrg.isOpen} onOpenChange={nuevaOrg.onOpenChange}>
         <ModalContent>
           <ModalHeader>Nueva sucursal</ModalHeader>
           <ModalBody>
@@ -362,9 +363,9 @@ export function OrgsManager({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
 
-      <Modal isOpen={editOrg.isOpen} onOpenChange={editOrg.onOpenChange}>
+      <Panel isOpen={editOrg.isOpen} onOpenChange={editOrg.onOpenChange}>
         <ModalContent>
           <ModalHeader>{t('dashboard.orgsManager.editOrgTitle')}</ModalHeader>
           <ModalBody className="gap-3">
@@ -380,10 +381,10 @@ export function OrgsManager({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
 
       {/* Delete org (typed slug confirm) */}
-      <Modal isOpen={delOrg.isOpen} onOpenChange={delOrg.onOpenChange}>
+      <Panel isOpen={delOrg.isOpen} onOpenChange={delOrg.onOpenChange}>
         <ModalContent>
           <ModalHeader className="text-danger">{t('dashboard.orgsManager.deleteOrgTitle')}</ModalHeader>
           <ModalBody className="gap-3">
@@ -398,10 +399,10 @@ export function OrgsManager({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
 
       {/* Member roles */}
-      <Modal isOpen={roleModal.isOpen} onOpenChange={roleModal.onOpenChange}>
+      <Panel isOpen={roleModal.isOpen} onOpenChange={roleModal.onOpenChange}>
         <ModalContent>
           <ModalHeader>
             <div>
@@ -425,7 +426,7 @@ export function OrgsManager({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </Panel>
     </div>
   );
 }
