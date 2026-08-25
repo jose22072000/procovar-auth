@@ -55,6 +55,8 @@ export async function anadirPersona(datos: {
     email?: string;
     password: string;
     roleId: string;
+    /** Su código de vendedor, si vende. Vendedor y usuario son la misma persona. */
+    codigoVendedor?: string;
 }): Promise<{ error?: string; yaExistia?: boolean }> {
     try {
         const actor = await exigirEnSucursal(datos.organizationId ?? "", "member.invite");

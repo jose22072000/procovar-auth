@@ -15,6 +15,15 @@ export interface AltaPersona {
    * se añade a alguien a una sucursal concreta.
    */
   organizationId?: string;
+  /**
+   * El código con el que vende, si vende: `andy.almanza`.
+   *
+   * Va aquí y no en una pantalla aparte porque vendedor y usuario son la MISMA
+   * persona —comprobado sobre los 82 activos de PEDIDO, uno a uno—. Pedirlo al abrir
+   * la cuenta es lo que evita el paso de "ahora empareja este vendedor con este
+   * usuario", que es donde se cuelan los errores.
+   */
+  codigoVendedor?: string;
   roleId: string;
 }
 
@@ -82,6 +91,7 @@ export interface ResultadoAlta {
 export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
   const nombre = datos.nombre.trim();
   const usuario = datos.usuario?.trim().toLowerCase() || null;
+  const codigoVendedor = datos.codigoVendedor?.trim().toLowerCase() || null;
   const email = datos.email?.trim().toLowerCase() || (usuario ? correoInterno(usuario) : '');
 
   if (!nombre) return { error: 'Hace falta el nombre.' };
@@ -94,6 +104,17 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
   if (usuario) {
     const ocupado = await prisma.user.findUnique({ where: { username: usuario }, select: { id: true } });
     if (ocupado) return { error: `El usuario "${usuario}" ya está cogido.` };
+  }
+
+  // Dos personas con el mismo código de vendedor harían que sus pedidos y sus
+  // comisiones se mezclaran sin que nada fallara: cuadraría el total y estaría mal
+  // repartido, que es la peor forma de estar mal.
+  if (codigoVendedor) {
+    const ocupado = await prisma.user.findUnique({
+      where: { codigoVendedor },
+      select: { name: true },
+    });
+    if (ocupado) return { error: `El código "${codigoVendedor}" ya es de ${ocupado.name}.` };
   }
 
   const rol = await prisma.role.findUnique({ where: { id: datos.roleId }, select: { id: true, name: true } });
@@ -137,6 +158,7 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
           // solo viviera en la membresía no estaría en ninguna parte, y al meterla en
           // su primera sucursal habría que volver a preguntarlo.
           defaultRoleId: rol.id,
+          codigoVendedor,
         },
         select: { id: true },
       });

@@ -43,7 +43,7 @@ export function UsersManager({
   const editModal = useDisclosure();
   const altaModal = useDisclosure();
   const [alta, setAlta] = useState({
-    nombre: "", usuario: "", email: "", password: "", roleId: "",
+    nombre: "", usuario: "", email: "", password: "", roleId: "", codigoVendedor: "",
   });
   const detailModal = useDisclosure();
   const [editing, setEditing] = useState<UserRow | null>(null);
@@ -125,7 +125,7 @@ export function UsersManager({
     // sucursal y el rol más limitado. Equivocarse hacia abajo se arregla con un
     // clic; hacia arriba no se nota hasta que alguien ve lo que no debía.
     const gestor = roles.find((r) => r.name === "GESTOR") ?? roles[roles.length - 1];
-    setAlta({ nombre: "", usuario: "", email: "", password: "", roleId: gestor?.id ?? "" });
+    setAlta({ nombre: "", usuario: "", email: "", password: "", roleId: gestor?.id ?? "", codigoVendedor: "" });
     altaModal.onOpen();
   }
 
@@ -139,6 +139,7 @@ export function UsersManager({
       email: alta.email.trim() || undefined,
       password: alta.password,
       roleId: alta.roleId,
+      codigoVendedor: alta.codigoVendedor.trim() || undefined,
     });
     setBusy(false);
     if (res.error) {
@@ -330,6 +331,18 @@ export function UsersManager({
                 <SelectItem key={r.id}>{r.name}</SelectItem>
               ))}
             </Select>
+            {/* El código de vendedor, aquí y no en otra pantalla.
+                Vendedor y usuario son la MISMA persona: en PEDIDO son dos fichas que
+                hay que emparejar después, y ahí es donde se cuelan los errores —había
+                un vendedor colgado de la cuenta de otro—. Poniéndolo al abrir la
+                cuenta, no queda nada que emparejar. */}
+            <Input
+              variant="bordered" label="Código de vendedor" labelPlacement="outside"
+              placeholder="andy.almanza"
+              description="Sólo si vende. Es el código con el que aparece en los pedidos."
+              value={alta.codigoVendedor}
+              onValueChange={(v) => setAlta({ ...alta, codigoVendedor: v.toLowerCase() })}
+            />
             <p className="text-xs text-slate-400">
               La cuenta se abre con su rol y ya puede entrar. En qué sucursal trabaja
               se dice en Sucursales → Añadir persona, y pueden ser varias.
