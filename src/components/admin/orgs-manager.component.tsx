@@ -10,6 +10,7 @@ import {
 import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, agregarMiembro, crearSucursal } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 import { Panel } from "@/components/ui/panel";
+import { correoVisible } from "@/lib/correo-visible";
 
 interface RoleRow { id: string; name: string; color: string | null; icon: string | null; isSystem: boolean }
 interface MemberRow { memberId: string; userId: string; name: string; email: string; legacyRole: string; roleIds: string[] }
@@ -263,7 +264,7 @@ export function OrgsManager({
                   <Avatar name={m.name} size="sm" className="shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium text-slate-900 dark:text-slate-100">{m.name}</div>
-                    <div className="truncate text-xs text-slate-400">{m.email}</div>
+                    <div className="truncate text-xs text-slate-400">{correoVisible(m.email) ?? "sin correo"}</div>
                   </div>
                   <div className="flex flex-wrap items-center gap-1">
                     {m.roleIds.length ? m.roleIds.map((id) => <RoleChip key={id} role={role(selected, id)} />)
@@ -333,7 +334,7 @@ export function OrgsManager({
                     <Avatar name={p.name} size="sm" radius="sm" className="shrink-0" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{p.name}</div>
-                      <div className="pv-codigo truncate text-xs text-slate-400">{p.email}</div>
+                      <div className="pv-codigo truncate text-xs text-slate-400">{correoVisible(p.email) ?? "sin correo"}</div>
                     </div>
                     {elegida && <Icon icon="lucide:check" className="size-4 shrink-0 text-pv-azul" aria-hidden />}
                   </button>

@@ -16,6 +16,7 @@ import {
 import { useTranslations } from "next-intl";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
 import { Panel } from "@/components/ui/panel";
+import { correoVisible } from "@/lib/correo-visible";
 
 interface UserOrg { name: string; slug: string; roles: string[] }
 interface UserRow {
@@ -239,9 +240,7 @@ export function UsersManager({
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <span className="text-slate-600 dark:text-slate-300">
-                      {u.email.endsWith("@procovar.local")
-                        ? t('dashboard.usersManager.sinCorreo')
-                        : u.email}
+                      {correoVisible(u.email) ?? t('dashboard.usersManager.sinCorreo')}
                     </span>
                     <Chip
                       size="sm" variant="flat" color={u.emailVerified ? "success" : "warning"}
@@ -367,7 +366,7 @@ export function UsersManager({
               <Avatar size="sm" name={editing?.name} src={editing?.image ?? undefined} imgProps={{ referrerPolicy: "no-referrer" }} />
               <div>
                 <p>{t('dashboard.usersManager.editProfileTitle')}</p>
-                {editing && <p className="text-xs font-normal text-slate-400">{editing.email}</p>}
+                {editing && correoVisible(editing.email) && <p className="text-xs font-normal text-slate-400">{correoVisible(editing.email)}</p>}
               </div>
             </div>
           </ModalHeader>
@@ -417,7 +416,7 @@ export function UsersManager({
               <Avatar size="sm" name={detail?.name} src={detail?.image ?? undefined} imgProps={{ referrerPolicy: "no-referrer" }} />
               <div>
                 <p>{detail ? detail.name : t('dashboard.usersManager.detailTitle')}</p>
-                {detail && <p className="text-xs font-normal text-slate-400">{detail.email}</p>}
+                {detail && correoVisible(detail.email) && <p className="text-xs font-normal text-slate-400">{correoVisible(detail.email)}</p>}
               </div>
             </div>
           </ModalHeader>

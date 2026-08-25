@@ -5,6 +5,7 @@ import { Button, Select, SelectItem, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { describirAccion, accionesConocidas } from "@/lib/acciones-auditoria";
 import { aplicacionDeSesion, desdeDonde } from "@/lib/desde-donde";
+import { correoVisible } from "@/lib/correo-visible";
 
 export interface Apunte {
     id: string;
@@ -116,7 +117,7 @@ export function AuditoriaTabla({
                     onSelectionChange={(k) => filtrar("persona", String([...k][0] ?? ""))}
                 >
                     {personas.map((p) => (
-                        <SelectItem key={p.id}>{p.name || p.email}</SelectItem>
+                        <SelectItem key={p.id}>{p.name || correoVisible(p.email) || p.id}</SelectItem>
                     ))}
                 </Select>
 
@@ -168,7 +169,7 @@ export function AuditoriaTabla({
                                             {a.quien ? (
                                                 <div className="leading-tight">
                                                     <div>{a.quien.nombre ?? "—"}</div>
-                                                    <div className="text-xs text-pv-tinta-suave">{a.quien.email}</div>
+                                                    {correoVisible(a.quien.email) && <div className="text-xs text-pv-tinta-suave">{correoVisible(a.quien.email)}</div>}
                                                 </div>
                                             ) : (
                                                 <span className="text-pv-tinta-suave">El sistema</span>
