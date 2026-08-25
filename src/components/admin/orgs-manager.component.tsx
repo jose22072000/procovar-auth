@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import {
-  Avatar, Button, Chip, Input, Select, SelectItem, Tooltip,
+  Avatar, Button, Chip, Input, Select, SelectItem, Switch, Tooltip,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, addToast,
 } from "@heroui/react";
 import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, agregarMiembro, crearSucursal } from "@/app/(user)/dashboard/_actions";
@@ -13,7 +13,15 @@ import { Panel } from "@/components/ui/panel";
 
 interface RoleRow { id: string; name: string; color: string | null; icon: string | null; isSystem: boolean }
 interface MemberRow { memberId: string; userId: string; name: string; email: string; legacyRole: string; roleIds: string[] }
-interface OrgRow { id: string; name: string; slug: string; logo: string | null; memberCount: number; roles: RoleRow[]; members: MemberRow[] }
+interface OrgRow {
+  id: string; name: string; slug: string; logo: string | null;
+  memberCount: number; roles: RoleRow[]; members: MemberRow[];
+  codigo?: string | null; activa?: boolean; timezone?: string | null;
+  telefono?: string | null; direccion?: string | null;
+  latitud?: number | null; longitud?: number | null;
+  almacenNombre?: string | null; almacenDireccion?: string | null;
+  almacenLatitud?: number | null; almacenLongitud?: number | null;
+}
 
 function RoleChip({ role }: { role: RoleRow }) {
   return (
@@ -44,7 +52,12 @@ export function OrgsManager({
   const editOrg = useDisclosure();
   const delOrg = useDisclosure();
   const roleModal = useDisclosure();
-  const [orgForm, setOrgForm] = useState({ name: "", slug: "", logo: "" });
+  const [orgForm, setOrgForm] = useState({
+    name: "", slug: "", logo: "",
+    codigo: "", activa: true, timezone: "America/Havana", telefono: "", direccion: "",
+    latitud: "", longitud: "",
+    almacenNombre: "", almacenDireccion: "", almacenLatitud: "", almacenLongitud: "",
+  });
   const [delConfirm, setDelConfirm] = useState("");
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
   const [memberRoleIds, setMemberRoleIds] = useState<string[]>([]);
@@ -74,7 +87,24 @@ export function OrgsManager({
   }
 
   function role(o: OrgRow, id: string): RoleRow { return o.roles.find((r) => r.id === id) ?? { id, name: id, color: null, icon: null, isSystem: false }; }
-  function openEditOrg() { if (!selected) return; setOrgForm({ name: selected.name, slug: selected.slug, logo: selected.logo ?? "" }); editOrg.onOpen(); }
+  // Los números se guardan como TEXTO mientras se editan. Si se guardaran como número,
+  // borrar el contenido daría NaN y el campo se quedaría bloqueado sin poder escribir
+  // otra cosa. Se convierten al enviar, no al teclear.
+  const txt = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+
+  function openEditOrg() {
+    if (!selected) return;
+    setOrgForm({
+      name: selected.name, slug: selected.slug, logo: selected.logo ?? "",
+      codigo: txt(selected.codigo), activa: selected.activa ?? true,
+      timezone: selected.timezone || "America/Havana",
+      telefono: txt(selected.telefono), direccion: txt(selected.direccion),
+      latitud: txt(selected.latitud), longitud: txt(selected.longitud),
+      almacenNombre: txt(selected.almacenNombre), almacenDireccion: txt(selected.almacenDireccion),
+      almacenLatitud: txt(selected.almacenLatitud), almacenLongitud: txt(selected.almacenLongitud),
+    });
+    editOrg.onOpen();
+  }
   function openDelOrg() { setDelConfirm(""); delOrg.onOpen(); }
   function openRoles(m: MemberRow) { setEditingMember(m); setMemberRoleIds(m.roleIds); roleModal.onOpen(); }
 
@@ -372,11 +402,84 @@ export function OrgsManager({
             <Input label={t('dashboard.orgsManager.nameLabel')} variant="bordered" value={orgForm.name} onValueChange={(v) => setOrgForm((f) => ({ ...f, name: v }))} />
             <Input label={t('dashboard.orgsManager.slugLabel')} variant="bordered" value={orgForm.slug} onValueChange={(v) => setOrgForm((f) => ({ ...f, slug: v }))} startContent={<span className="text-slate-400">@</span>} />
             <Input label={t('dashboard.orgsManager.logoLabel')} variant="bordered" value={orgForm.logo} onValueChange={(v) => setOrgForm((f) => ({ ...f, logo: v }))} />
+
+            {/* El código es lo que cruza esta sucursal con PEDIDO, Rutas, delivery y el
+                consolidado de Parranda. Va arriba y no escondido: equivocarlo hace que
+                los pedidos de una sucursal se cuenten en otra. */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                label="Código" description="CAM, STG, HAB… el mismo en todos los sistemas"
+                variant="bordered" value={orgForm.codigo}
+                onValueChange={(v) => setOrgForm((f) => ({ ...f, codigo: v.toUpperCase() }))}
+              />
+              <Input
+                label="Zona horaria" description="De ella dependen las jornadas y los informes"
+                variant="bordered" value={orgForm.timezone}
+                onValueChange={(v) => setOrgForm((f) => ({ ...f, timezone: v }))}
+              />
+            </div>
+
+            <Input label="Teléfono" variant="bordered" value={orgForm.telefono}
+              onValueChange={(v) => setOrgForm((f) => ({ ...f, telefono: v }))} />
+            <Input label="Dirección" variant="bordered" value={orgForm.direccion}
+              onValueChange={(v) => setOrgForm((f) => ({ ...f, direccion: v }))} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input label="Latitud" variant="bordered" value={orgForm.latitud}
+                onValueChange={(v) => setOrgForm((f) => ({ ...f, latitud: v }))} />
+              <Input label="Longitud" variant="bordered" value={orgForm.longitud}
+                onValueChange={(v) => setOrgForm((f) => ({ ...f, longitud: v }))} />
+            </div>
+
+            {/* EL ALMACÉN, aparte y avisado. No es un dato más de contacto: el
+                domicilio se cobra por la distancia DESDE AQUÍ, así que un punto mal
+                puesto se cobra mal en cada entrega. */}
+            <div className="rounded-lg border border-warning-200 bg-warning-50/40 p-3 dark:border-warning-800 dark:bg-warning-900/10">
+              <p className="mb-1 text-sm font-semibold">Almacén</p>
+              <p className="mb-3 text-xs text-slate-500">
+                De aquí sale la mercancía. El domicilio se cobra por la distancia desde
+                este punto, no desde la oficina.
+              </p>
+              <div className="grid gap-3">
+                <Input label="Nombre del almacén" variant="bordered" value={orgForm.almacenNombre}
+                  onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenNombre: v }))} />
+                <Input label="Dirección del almacén" variant="bordered" value={orgForm.almacenDireccion}
+                  onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenDireccion: v }))} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input label="Latitud" variant="bordered" value={orgForm.almacenLatitud}
+                    onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenLatitud: v }))} />
+                  <Input label="Longitud" variant="bordered" value={orgForm.almacenLongitud}
+                    onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenLongitud: v }))} />
+                </div>
+              </div>
+            </div>
+
+            <Switch isSelected={orgForm.activa} onValueChange={(v) => setOrgForm((f) => ({ ...f, activa: v }))}>
+              Sucursal activa
+            </Switch>
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" startContent={<Icon icon="lucide:x-circle" className="size-4" aria-hidden />} onPress={editOrg.onClose}>{t('dashboard.common.cancel')}</Button>
             <Button variant="bordered" color="primary" isLoading={busy} startContent={<Icon icon="lucide:save" className="size-4" aria-hidden />}
-              onPress={async () => { if (selected && await run(() => updateOrganizationAdmin(selected.id, { name: orgForm.name, slug: orgForm.slug, logo: orgForm.logo || null }), t('dashboard.orgsManager.orgUpdated'))) editOrg.onClose(); }}>
+              onPress={async () => {
+                // Vacío es NULO, no cero. `Number("")` da 0, y un 0 en una coordenada
+                // es un punto real en el golfo de Guinea: el domicilio se calcularía
+                // contra él en vez de fallar.
+                const num = (v: string) => (v.trim() === "" ? null : Number(v));
+                const ok = selected && await run(() => updateOrganizationAdmin(selected.id, {
+                  name: orgForm.name, slug: orgForm.slug, logo: orgForm.logo || null,
+                  codigo: orgForm.codigo.trim() || null,
+                  activa: orgForm.activa,
+                  timezone: orgForm.timezone.trim() || "America/Havana",
+                  telefono: orgForm.telefono.trim() || null,
+                  direccion: orgForm.direccion.trim() || null,
+                  latitud: num(orgForm.latitud), longitud: num(orgForm.longitud),
+                  almacenNombre: orgForm.almacenNombre.trim() || null,
+                  almacenDireccion: orgForm.almacenDireccion.trim() || null,
+                  almacenLatitud: num(orgForm.almacenLatitud),
+                  almacenLongitud: num(orgForm.almacenLongitud),
+                }), t('dashboard.orgsManager.orgUpdated'));
+                if (ok) editOrg.onClose();
+              }}>
               {t('dashboard.common.save')}
             </Button>
           </ModalFooter>

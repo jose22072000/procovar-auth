@@ -234,6 +234,34 @@ export async function PATCH(request: Request, { params }: Params) {
 
         const body = await request.json();
         const { name, slug, logo, metadata } = body;
+        // Los datos de la sucursal como HECHO: dónde está, cómo la llaman los demás
+        // sistemas, y dónde está su almacén.
+        const {
+            codigo, activa, timezone, telefono, direccion, latitud, longitud,
+            almacenNombre, almacenDireccion, almacenLatitud, almacenLongitud,
+        } = body;
+
+        // Un número que llega vacío desde un formulario es "" y `Number("")` es 0 —
+        // que en una coordenada es un punto en el golfo de Guinea, no "sin dato".
+        const num = (v: unknown) =>
+            v === '' || v === null || v === undefined ? null : Number(v);
+        const txt = (v: unknown) =>
+            typeof v === 'string' ? (v.trim() || null) : v === null ? null : undefined;
+
+        // El código identifica la sucursal en TODOS los sistemas: dos iguales harían
+        // que un pedido de Camagüey se contara en Santiago.
+        if (codigo) {
+            const repetido = await prisma.organization.findFirst({
+                where: { codigo: String(codigo).toUpperCase(), NOT: { id: orgId } },
+                select: { name: true },
+            });
+            if (repetido) {
+                return NextResponse.json(
+                    { error: `El código ${codigo} ya lo usa ${repetido.name}` },
+                    { status: 409 },
+                );
+            }
+        }
 
         // Check if new slug is taken by another org
         if (slug) {
@@ -259,6 +287,17 @@ export async function PATCH(request: Request, { params }: Params) {
                 ...(slug && { slug }),
                 ...(logo !== undefined && { logo }),
                 ...(metadata !== undefined && { metadata: metadata ? JSON.stringify(metadata) : null }),
+                ...(codigo !== undefined && { codigo: codigo ? String(codigo).toUpperCase() : null }),
+                ...(activa !== undefined && { activa: Boolean(activa) }),
+                ...(timezone !== undefined && txt(timezone) !== undefined && { timezone: txt(timezone) || 'America/Havana' }),
+                ...(telefono !== undefined && { telefono: txt(telefono) ?? null }),
+                ...(direccion !== undefined && { direccion: txt(direccion) ?? null }),
+                ...(latitud !== undefined && { latitud: num(latitud) }),
+                ...(longitud !== undefined && { longitud: num(longitud) }),
+                ...(almacenNombre !== undefined && { almacenNombre: txt(almacenNombre) ?? null }),
+                ...(almacenDireccion !== undefined && { almacenDireccion: txt(almacenDireccion) ?? null }),
+                ...(almacenLatitud !== undefined && { almacenLatitud: num(almacenLatitud) }),
+                ...(almacenLongitud !== undefined && { almacenLongitud: num(almacenLongitud) }),
             },
         });
 

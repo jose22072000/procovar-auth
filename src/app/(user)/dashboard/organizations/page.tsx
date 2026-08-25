@@ -23,6 +23,11 @@ export default async function DashboardOrgsPage() {
       orderBy: { name: "asc" },
       select: {
         id: true, name: true, slug: true, logo: true,
+        // Los datos de la sucursal como hecho. Sin traerlos aquí, el formulario de
+        // edición abriría en blanco y el primer guardado borraría lo que había.
+        codigo: true, activa: true, timezone: true, telefono: true, direccion: true,
+        latitud: true, longitud: true,
+        almacenNombre: true, almacenDireccion: true, almacenLatitud: true, almacenLongitud: true,
         members: {
           select: {
             id: true, userId: true, role: true,
@@ -35,6 +40,10 @@ export default async function DashboardOrgsPage() {
   ]);
   const data = orgs.map((o) => ({
     id: o.id, name: o.name, slug: o.slug, logo: o.logo, memberCount: o.members.length,
+    codigo: o.codigo, activa: o.activa, timezone: o.timezone, telefono: o.telefono,
+    direccion: o.direccion, latitud: o.latitud, longitud: o.longitud,
+    almacenNombre: o.almacenNombre, almacenDireccion: o.almacenDireccion,
+    almacenLatitud: o.almacenLatitud, almacenLongitud: o.almacenLongitud,
     roles,
     members: o.members.map((m) => ({
       memberId: m.id, userId: m.userId, name: m.user.name, email: m.user.email,

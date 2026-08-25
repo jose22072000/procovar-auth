@@ -634,18 +634,54 @@ export async function crearSucursal(
 
 export async function updateOrganizationAdmin(
     orgId: string,
-    data: { name?: string; slug?: string; logo?: string | null },
+    data: {
+        name?: string; slug?: string; logo?: string | null;
+        codigo?: string | null; activa?: boolean; timezone?: string;
+        telefono?: string | null; direccion?: string | null;
+        latitud?: number | null; longitud?: number | null;
+        almacenNombre?: string | null; almacenDireccion?: string | null;
+        almacenLatitud?: number | null; almacenLongitud?: number | null;
+    },
 ): Promise<{ error?: string }> {
     try {
         await requireAdmin();
         if (data.name !== undefined && data.name.trim() === "") return { error: "El nombre no puede estar vacío" };
         if (data.slug !== undefined && data.slug.trim() === "") return { error: "El slug no puede estar vacío" };
+
+        // Las coordenadas o van las dos o no va ninguna: una sola no ubica nada, y
+        // guardada a medias hace que un cálculo de domicilio salga con un punto
+        // inventado en vez de fallar y avisar.
+        const par = (a?: number | null, b?: number | null, que = "las coordenadas") =>
+            (a == null) !== (b == null) ? `Faltan ${que}: hacen falta latitud y longitud` : null;
+        const e1 = par(data.latitud, data.longitud, "las coordenadas de la sucursal");
+        if (e1) return { error: e1 };
+        const e2 = par(data.almacenLatitud, data.almacenLongitud, "las coordenadas del almacén");
+        if (e2) return { error: e2 };
+
+        // Cuba entera cae en este rectángulo. No es validar por validar: un dígito de
+        // más en una latitud pone el almacén en otro continente y el domicilio se
+        // cobra por miles de kilómetros.
+        const fuera = (lat?: number | null, lng?: number | null) =>
+            lat != null && lng != null && (lat < 19 || lat > 24 || lng < -85 || lng > -73);
+        if (fuera(data.latitud, data.longitud)) return { error: "Esas coordenadas no caen en Cuba" };
+        if (fuera(data.almacenLatitud, data.almacenLongitud)) return { error: "Las coordenadas del almacén no caen en Cuba" };
+
         const patch: Record<string, unknown> = {};
-        for (const k of ["name", "slug", "logo"] as const) if (k in data) patch[k] = data[k];
+        for (const k of [
+            "name", "slug", "logo", "codigo", "activa", "timezone", "telefono",
+            "direccion", "latitud", "longitud",
+            "almacenNombre", "almacenDireccion", "almacenLatitud", "almacenLongitud",
+        ] as const) if (k in data) patch[k] = data[k];
+        if (typeof patch.codigo === "string") patch.codigo = patch.codigo.trim().toUpperCase() || null;
         try {
             await prisma.organization.update({ where: { id: orgId }, data: patch });
         } catch (err) {
-            if ((err as { code?: string }).code === "P2002") return { error: "Ese slug ya está en uso" };
+            if ((err as { code?: string }).code === "P2002") {
+                // El único otro único es el código, y decir "slug" cuando el choque es
+                // de código manda a corregir el campo equivocado.
+                const campo = String((err as { meta?: { target?: string[] } }).meta?.target ?? "");
+                return { error: campo.includes("codigo") ? "Ese código ya lo usa otra sucursal" : "Ese slug ya está en uso" };
+            }
             throw err;
         }
         revalidatePath("/dashboard");
