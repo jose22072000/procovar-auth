@@ -117,8 +117,23 @@ export async function altaPersona(datos: AltaPersona): Promise<ResultadoAlta> {
     if (ocupado) return { error: `El código "${codigoVendedor}" ya es de ${ocupado.name}.` };
   }
 
-  const rol = await prisma.role.findUnique({ where: { id: datos.roleId }, select: { id: true, name: true } });
+  const rol = await prisma.role.findUnique({
+    where: { id: datos.roleId },
+    select: {
+      id: true, name: true,
+      permissions: { select: { permission: { select: { key: true } } } },
+    },
+  });
   if (!rol) return { error: 'Ese rol no existe.' };
+
+  // Que la pantalla esconda el campo es comodidad; esto es lo que lo impide de verdad.
+  // Sin esta comprobación, una llamada a mano —o la pantalla con un rol cambiado a
+  // medias— podría colgarle un código de vendedor a un operador, y ese código dejaría
+  // de estar disponible para quien sí vende, sin que nadie entendiera por qué.
+  const vende = rol.permissions.some((p) => p.permission?.key === 'vendedor.codigo');
+  if (codigoVendedor && !vende) {
+    return { error: `El rol ${rol.name} no vende, así que no lleva código de vendedor.` };
+  }
 
   const mandaEnTodo = esSuperAdmin(rol.name);
 

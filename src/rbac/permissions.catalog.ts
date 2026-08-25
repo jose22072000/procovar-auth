@@ -136,6 +136,13 @@ export const PERMISSION_CATALOG: PermissionEntry[] = [
   e('member.assignRole', 'Personas', 'auth', 'Asignar roles a las personas', 'Assign roles'),
   e('member.password',   'Personas', 'auth', 'Cambiarle la contraseña a alguien', "Change someone's password"),
   e('member.session',    'Personas', 'auth', 'Cerrarle la sesión a alguien', "Close someone's session"),
+  // No es un permiso de "puede hacer": marca QUÉ ROLES VENDEN.
+  //
+  // El código de vendedor sólo lo llevan quienes venden —gestor y supervisor—; un
+  // operador o un administrador no tienen. En vez de escribir esa lista dentro del
+  // formulario, se cuelga del rol: el día que aparezca otro rol que venda, se le da
+  // este permiso desde Roles y el campo sale solo, sin tocar código.
+  e('vendedor.codigo',   'Personas', 'auth', 'Lleva código de vendedor', 'Has a seller code'),
 
   e('role.read',   'Roles y permisos', 'auth', 'Ver los roles', 'View roles'),
   e('role.create', 'Roles y permisos', 'auth', 'Crear roles', 'Create roles'),

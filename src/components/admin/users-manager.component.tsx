@@ -29,7 +29,7 @@ interface UserRow {
 }
 interface SessionRow { id: string; ipAddress: string | null; userAgent: string | null; clientId: string | null; createdAt: string; expiresAt: string; revokedAt: string | null }
 
-interface Opcion { id: string; name: string }
+interface Opcion { id: string; name: string; vende?: boolean }
 
 export function UsersManager({
   initialUsers,
@@ -324,12 +324,28 @@ export function UsersManager({
             <Select
               variant="bordered" label="Rol" labelPlacement="outside"
               selectedKeys={alta.roleId ? [alta.roleId] : []}
-              onChange={(e) => setAlta({ ...alta, roleId: e.target.value })}
+              onChange={(e) => {
+                const rol = roles.find((r) => r.id === e.target.value);
+                // Al pasar a un rol que no vende se limpia el código: si no, se
+                // guardaría uno escrito antes de cambiar de idea, en alguien que no
+                // vende.
+                setAlta({
+                  ...alta,
+                  roleId: e.target.value,
+                  codigoVendedor: rol?.vende ? alta.codigoVendedor : "",
+                });
+              }}
             >
               {roles.map((r) => (
                 <SelectItem key={r.id}>{r.name}</SelectItem>
               ))}
             </Select>
+            {/* Sólo a quien vende. Un operador o un administrador no llevan código,
+                y enseñarles el campo es invitar a rellenarlo con cualquier cosa.
+                Quién vende lo dice el permiso `vendedor.codigo` del rol, no una lista
+                de nombres escrita aquí. */}
+            {roles.find((r) => r.id === alta.roleId)?.vende && (
+            <>
             {/* El código de vendedor, aquí y no en otra pantalla.
                 Vendedor y usuario son la MISMA persona: en PEDIDO son dos fichas que
                 hay que emparejar después, y ahí es donde se cuelan los errores —había
@@ -342,6 +358,8 @@ export function UsersManager({
               value={alta.codigoVendedor}
               onValueChange={(v) => setAlta({ ...alta, codigoVendedor: v.toLowerCase() })}
             />
+            </>
+            )}
             <p className="text-xs text-slate-400">
               La cuenta se abre con su rol y ya puede entrar. En qué sucursal trabaja
               se dice en Sucursales → Añadir persona, y pueden ser varias.

@@ -54,6 +54,19 @@ const GESTOR_KEYS = [
 ]
 
 /**
+ * Quién LLEVA código de vendedor.
+ *
+ * Aparte y no dentro de GESTOR_KEYS porque OPERADOR hereda esas claves enteras
+ * (`...GESTOR_KEYS`) y un operador no vende: le habría salido el campo en su
+ * formulario sin tener nunca un código que poner.
+ *
+ * Los que venden son el gestor y el supervisor — que en esta operación son la misma
+ * figura con distinto alcance. Y el administrador o el super admin no: mandan, no
+ * venden.
+ */
+const VENDE = 'vendedor.codigo'
+
+/**
  * El Operador factura: lee los pedidos de su sucursal, los completa y copia los
  * datos al sistema de facturación. Y nada más.
  *
@@ -157,14 +170,17 @@ const GERENTE_EXCLUIDOS = new Set<string>([
   'usuariopedido.manage',
 ])
 
+/** Ni el Administrador ni el Gerente venden: mandan. */
+const NO_VENDEN = new Set([VENDE])
+
 export function systemRolePermissionKeys(role: string): string[] {
   switch (role) {
     case 'SUPER ADMIN': return allKeys()
-    case 'ADMINISTRADOR': return allKeys().filter((k) => !ADMIN_EXCLUIDOS.has(k))
-    case 'GERENTE': return allKeys().filter((k) => !GERENTE_EXCLUIDOS.has(k))
-    case 'SUPERVISOR': return [...new Set(SUPERVISOR_KEYS)]
+    case 'ADMINISTRADOR': return allKeys().filter((k) => !ADMIN_EXCLUIDOS.has(k) && !NO_VENDEN.has(k))
+    case 'GERENTE': return allKeys().filter((k) => !GERENTE_EXCLUIDOS.has(k) && !NO_VENDEN.has(k))
+    case 'SUPERVISOR': return [...new Set([...SUPERVISOR_KEYS, VENDE])]
     case 'OPERADOR': return [...new Set(OPERADOR_KEYS)]
-    case 'GESTOR': return [...GESTOR_KEYS]
+    case 'GESTOR': return [...GESTOR_KEYS, VENDE]
     default: return []
   }
 }

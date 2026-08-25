@@ -24,7 +24,14 @@ export default async function DashboardUsersPage() {
   const [roles, rows] = await Promise.all([
     prisma.role.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: {
+        id: true, name: true,
+        // Si el rol lleva `vendedor.codigo`, quien lo tenga VENDE — y sólo entonces
+        // se le pide el código en el alta. Se decide con el permiso y no con una
+        // lista de nombres escrita en el formulario: el día que aparezca otro rol que
+        // venda, se le da el permiso desde Roles y el campo sale solo.
+        permissions: { select: { permission: { select: { key: true } } } },
+      },
     }),
     prisma.user.findMany({
     orderBy: { createdAt: "desc" },
@@ -71,7 +78,14 @@ export default async function DashboardUsersPage() {
           {t("dashboard.usersPage.subtitle", { n: users.length })}
         </p>
       </div>
-      <UsersManager initialUsers={users} roles={roles} />
+      <UsersManager
+        initialUsers={users}
+        roles={roles.map((r) => ({
+          id: r.id,
+          name: r.name,
+          vende: r.permissions.some((p) => p.permission?.key === "vendedor.codigo"),
+        }))}
+      />
     </div>
   );
 }
