@@ -555,5 +555,14 @@ button:active:not(:disabled),
 img, svg, video, canvas { max-width: 100%; height: auto; }
 
 /* El cuerpo nunca se arrastra de lado: si algo es más ancho, que se desplace ESO
-   dentro de su caja y no la página entera. */
-html, body { overflow-x: hidden; }
+   dentro de su caja y no la página entera.
+   
+   `clip` y NO `hidden`, y la diferencia no es cosmética: `overflow-x: hidden`
+   convierte al elemento en CONTENEDOR DE SCROLL, y eso rompe `position: sticky`
+   en todos sus descendientes. La barra lateral tenía `sticky top-0` puesto y
+   seguía bajando con la página por culpa de esta línea — se busca el fallo en la
+   barra, que es donde se ve, y está aquí, a cuatrocientas líneas de distancia.
+   
+   `clip` recorta igual pero no crea contexto de scroll, así que `sticky` sigue
+   funcionando. */
+html, body { overflow-x: clip; }
