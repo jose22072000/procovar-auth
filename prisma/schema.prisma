@@ -43,6 +43,34 @@ model User {
   /// que es donde se ve a quién afecta.
   defaultRoleId String?
   defaultRole   Role?          @relation(fields: [defaultRoleId], references: [id], onDelete: SetNull)
+  /// El código con el que esta persona vende: `andy.almanza`.
+  ///
+  /// Vive en la PERSONA y no en una tabla aparte porque en la operación real vendedor
+  /// y usuario son el mismo: se comprobó sobre los 82 vendedores activos de PEDIDO y
+  /// la relación es uno a uno, sin una sola excepción. Tenerlos separados obligaba a
+  /// emparejarlos —y a esperar al primer pedido de alguien para saber quién era—.
+  ///
+  /// Nulo en quien no vende: un administrador o un operador no tienen código.
+  codigoVendedor String?       @unique
+
+  /// Si sigue en la organización.
+  ///
+  /// Quien se va NO se borra: sus pedidos siguen colgando de él —2.210 sólo de una de
+  /// las bajas— y borrarlo los dejaría sin dueño. Se marca y desaparece de las listas.
+  activo        Boolean        @default(true)
+
+  /// Quién lo supervisa, cuando lo tiene.
+  ///
+  /// Es la ÚNICA jerarquía real de la operación: un supervisor sobre varios
+  /// vendedores. No existe "gestor de vendedor" — ese campo en PEDIDO está mal
+  /// nombrado y lo que guarda es la cuenta del propio vendedor.
+  ///
+  /// Hoy esta relación vive en la configuración de Analytics, escrita a mano. Aquí
+  /// queda donde se puede consultar y donde ya está la persona.
+  supervisorId  String?
+  supervisor    User?          @relation("Supervision", fields: [supervisorId], references: [id], onDelete: SetNull)
+  supervisados  User[]         @relation("Supervision")
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   sessions      Session[]
@@ -50,6 +78,8 @@ model User {
   members       Member[]
   invitations   Invitation[]
 
+  @@index([codigoVendedor])
+  @@index([supervisorId])
   @@map("user")
 }
 
