@@ -136,11 +136,44 @@ model Organization {
   slug        String       @unique
   logo        String?
   metadata    String?
+
+  /// El código con el que TODOS los sistemas se refieren a esta sucursal: CAM, STG,
+  /// HAB… Es la clave que ya cruza PEDIDO (`Sucursal.codigo`), delivery
+  /// (`Branch.externalId`), Rutas (`sucursal.codigo`) y el consolidado de Parranda.
+  /// Existía en los cuatro por separado y en ninguno como fuente.
+  codigo      String?      @unique
+
+  /// Si la sucursal opera. Cerrarla no la borra: sus pedidos, rutas e histórico
+  /// siguen colgando de ella.
+  activa      Boolean      @default(true)
+
+  /// Todas están en Cuba hoy, pero los cálculos de jornada y de "qué día es este
+  /// fichero GPS" dependen de esto, y darlo por hecho es lo que hace que un informe
+  /// salga corrido una hora sin que nadie sepa por qué.
+  timezone    String       @default("America/Havana")
+
+  telefono    String?
+  direccion   String?
+  latitud     Float?
+  longitud    Float?
+
+  /// El ALMACÉN: de dónde sale la mercancía.
+  ///
+  /// No es lo mismo que la sucursal y por eso son campos aparte: el domicilio se
+  /// cobra por la distancia desde el almacén, no desde la oficina. Hoy esto vive
+  /// sólo en delivery (`SavedOrigin`) y si esa aplicación se apaga, se pierde el
+  /// dato con el que se cobra.
+  almacenNombre    String?
+  almacenDireccion String?
+  almacenLatitud   Float?
+  almacenLongitud  Float?
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   members     Member[]
   invitations Invitation[]
 
+  @@index([codigo])
   @@map("organization")
 }
 
