@@ -52,7 +52,7 @@ async function main() {
     }>(`
         SELECT u.username,
                u.password,
-               r.name   AS rol,
+               r.rol    AS rol,
                s.codigo AS sucursal,
                v.code   AS codigo_vendedor,
                COALESCE(v.activo, true) AS activo
@@ -101,7 +101,9 @@ async function main() {
                 data: {
                     codigoVendedor: p.codigo_vendedor || null,
                     activo: p.activo,
-                    defaultRoleId: existente.defaultRoleId ?? roleId,
+                    // Solo se le pone rol a quien NO tenga: si ya tiene uno, puede
+                    // habersele ajustado a mano aqui y esto no viene a deshacerlo.
+                    ...(existente.defaultRoleId ? {} : { defaultRole: { connect: { id: roleId } } }),
                 },
             })
             completadas++
@@ -121,7 +123,8 @@ async function main() {
                     // verificar un correo para poder seguir entrando.
                     emailVerified: true,
                     isSystemAdmin: esGlobal,
-                    defaultRoleId: roleId,
+                    // Prisma 7 pide la relacion, no el campo escalar.
+                    defaultRole: { connect: { id: roleId } },
                     codigoVendedor: p.codigo_vendedor || null,
                     activo: p.activo,
                 },
