@@ -138,7 +138,12 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
     return (
         <div className="flex min-h-svh bg-pv-papel">
             {/* Fija en el escritorio */}
-            <aside className="sticky top-0 hidden h-svh lg:block">{barra}</aside>
+            {/* `self-start` es lo que hace que `sticky` funcione de verdad.
+                  Sin él, al ser hijo de un flex con `align-items: stretch`, la barra
+                  se estira hasta la altura de TODO el contenido: su caja abarca el
+                  scroll entero, así que no hay nada contra lo que pegarse y baja con
+                  la página. Con `self-start` mide una pantalla y se queda fija. */}
+            <aside className="sticky top-0 self-start hidden h-svh lg:block">{barra}</aside>
 
             {/* Cajón en el móvil */}
             {abierta && (
