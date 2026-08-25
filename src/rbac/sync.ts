@@ -19,6 +19,15 @@ export async function syncRbac(): Promise<{
   repartidas: number
 }> {
   // 1. Permission catalog.
+  //
+  // Antes de sembrar se apunta lo que YA existía. Lo que no esté en esta lista y
+  // aparezca después es un permiso que nace en esta pasada, y eso da una garantía que
+  // el paso 2c necesita: nadie ha podido quitárselo a un rol a propósito, porque hasta
+  // hace un segundo no existía.
+  const yaExistian = new Set(
+    (await prisma.permission.findMany({ select: { key: true } })).map((p) => p.key),
+  )
+
   for (const p of PERMISSION_CATALOG) {
     await prisma.permission.upsert({
       where: { key: p.key },
@@ -134,6 +143,53 @@ export async function syncRbac(): Promise<{
       repartidas += count
     }
   }
+
+  // 2c. Los permisos que NACEN en esta pasada van a los roles que los llevan de
+  // fábrica.
+  //
+  // Sin esto, cada permiso nuevo del catálogo se quedaba fuera de los roles que ya
+  // existían: la regla del paso 2b sólo siembra una aplicación entera a un rol que no
+  // tiene NINGUNA de esa aplicación, así que en cuanto un rol tiene una llave de
+  // `auth`, ninguna llave de `auth` nueva vuelve a llegarle nunca.
+  //
+  // Pasó con `vendedor.codigo`: GESTOR lo recibió —era su primera llave de ese
+  // servicio— y SUPERVISOR no, así que el campo del código de vendedor no le habría
+  // salido jamás a un supervisor. Se descubrió comprobándolo a mano; si no, habría
+  // quedado ahí, callado.
+  //
+  // Es seguro porque se limita a lo RECIÉN CREADO. `reponer-roles.ts` arregla esto
+  // mismo de golpe, pero repone los cinco roles de fábrica y pisa cualquier permiso
+  // ajustado a mano en la pantalla; aquí eso no puede pasar: un permiso que no existía
+  // hace un segundo no ha podido quitárselo nadie.
+  const reciennacidos = PERMISSION_CATALOG
+    .filter((p) => !yaExistian.has(p.key) && !p.isDeprecated)
+    .map((p) => p.key)
+
+  let nuevasRepartidas = 0
+  if (reciennacidos.length) {
+    for (const name of SYSTEM_ROLE_NAMES) {
+      const rol = await prisma.role.findUnique({ where: { name }, select: { id: true } })
+      if (!rol) continue
+
+      const leTocan = new Set(systemRolePermissionKeys(name))
+      const ids = reciennacidos
+        .filter((k) => leTocan.has(k))
+        .map((k) => permByKey.get(k))
+        .filter((id): id is string => Boolean(id))
+      if (!ids.length) continue
+
+      const { count } = await prisma.rolePermission.createMany({
+        data: ids.map((permissionId) => ({ roleId: rol.id, permissionId })),
+        skipDuplicates: true,
+      })
+      nuevasRepartidas += count
+    }
+    console.log(
+      `[rbac] permisos nuevos en el catálogo: ${reciennacidos.join(', ')} ` +
+      `— repartidos a sus roles de fábrica (${nuevasRepartidas} concesiones)`,
+    )
+  }
+  repartidas += nuevasRepartidas
 
   // 3. A member with no role at all can do nothing and cannot be fixed from the
   // screen (the screen lists roles, and they hold none). Give them the one their
