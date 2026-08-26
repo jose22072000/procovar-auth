@@ -55,3 +55,6 @@ prisma/create-test-user.ts
 
 # Brainstorming visual companion
 .superpowers/
+
+# Copias de seguridad locales: nunca van a git
+*.bak
