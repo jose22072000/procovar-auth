@@ -3,14 +3,17 @@ import { SYSTEM_ROLE_NAMES, ROL_MINIMO, PRECEDENCE, systemRolePermissionKeys, RO
 import { PERMISSION_CATALOG } from '../permissions.catalog'
 
 describe('los roles de Procovar', () => {
-  it('son los seis, escritos como los escribe PEDIDO', () => {
+  it('son los siete, escritos como los escribe PEDIDO', () => {
     // Si alguien los renombra aquí, PEDIDO deja de reconocer el rol que recibe
     // y todo el mundo pasa a ser "desconocido". Por eso están clavados.
     //
     // GERENTE entró después, entre el Administrador y el Supervisor: está por
     // encima del supervisor y ve toda su sucursal, pero no administra.
+    //
+    // DESARROLLADOR entró el último y por ENCIMA del Super Admin: es el único que
+    // lleva las claves de Avisos (ver SOLO_DESARROLLADOR en system-roles.ts).
     expect([...SYSTEM_ROLE_NAMES]).toEqual([
-      'SUPER ADMIN', 'ADMINISTRADOR', 'GERENTE', 'SUPERVISOR', 'GESTOR', 'OPERADOR',
+      'DESARROLLADOR', 'SUPER ADMIN', 'ADMINISTRADOR', 'GERENTE', 'SUPERVISOR', 'GESTOR', 'OPERADOR',
     ])
   })
 
@@ -20,9 +23,29 @@ describe('los roles de Procovar', () => {
     }
   })
 
-  it('el Super Admin llega a todo el catálogo', () => {
+  it('el Desarrollador llega a todo el catálogo, sin excepciones', () => {
     const todos = PERMISSION_CATALOG.map((p) => p.key).sort()
-    expect(systemRolePermissionKeys('SUPER ADMIN').sort()).toEqual(todos)
+    expect(systemRolePermissionKeys('DESARROLLADOR').sort()).toEqual(todos)
+  })
+
+  it('el Super Admin llega a todo MENOS Avisos', () => {
+    // La única excepción a "el Super Admin lo ve todo", y es deliberada:
+    // configurar plantillas y canales de aviso es trastienda técnica.
+    const avisos = PERMISSION_CATALOG.filter((p) => p.service === 'avisos').map((p) => p.key)
+    const esperado = PERMISSION_CATALOG.map((p) => p.key).filter((k) => !avisos.includes(k)).sort()
+    expect(avisos.length).toBeGreaterThan(0)
+    expect(systemRolePermissionKeys('SUPER ADMIN').sort()).toEqual(esperado)
+  })
+
+  it('nadie más que el Desarrollador toca Avisos', () => {
+    const avisos = PERMISSION_CATALOG.filter((p) => p.service === 'avisos').map((p) => p.key)
+    for (const nombre of SYSTEM_ROLE_NAMES) {
+      if (nombre === 'DESARROLLADOR') continue
+      const suyas = new Set(systemRolePermissionKeys(nombre))
+      for (const k of avisos) {
+        expect(suyas.has(k), `${nombre} no debería tener ${k}`).toBe(false)
+      }
+    }
   })
 
   it('el Administrador manda en su sucursal, pero no en toda Procovar', () => {
@@ -69,9 +92,16 @@ describe('los roles de Procovar', () => {
   it('cada rol da al menos lo que da el de debajo', () => {
     // Un Supervisor que no pudiera hacer algo que sí puede un Operador sería un
     // sinsentido que además nadie notaría hasta que alguien se queja.
-    const orden = ['GESTOR', 'OPERADOR', 'SUPERVISOR', 'ADMINISTRADOR', 'SUPER ADMIN']
+    //
+    // `vendedor.codigo` queda FUERA de esta comprobación a propósito: no es un
+    // permiso de "puede hacer", marca QUIÉN VENDE. El Gestor vende y el Operador
+    // no, así que la cadena se rompe ahí sin que nada esté mal. Sin esta
+    // exclusión el test fallaba —y llevaba fallando— por un motivo que no era
+    // un fallo.
+    const NO_ES_PODER = new Set(['vendedor.codigo'])
+    const orden = ['GESTOR', 'OPERADOR', 'SUPERVISOR', 'ADMINISTRADOR', 'SUPER ADMIN', 'DESARROLLADOR']
     for (let i = 1; i < orden.length; i++) {
-      const menor = systemRolePermissionKeys(orden[i - 1])
+      const menor = systemRolePermissionKeys(orden[i - 1]).filter((k) => !NO_ES_PODER.has(k))
       const mayor = new Set(systemRolePermissionKeys(orden[i]))
       for (const k of menor) {
         expect(mayor.has(k), `${orden[i]} debería incluir ${k} (lo tiene ${orden[i - 1]})`).toBe(true)
@@ -94,6 +124,6 @@ describe('los roles de Procovar', () => {
 
   it('el rol por defecto es el más limitado', () => {
     expect(ROL_MINIMO).toBe('GESTOR')
-    expect(PRECEDENCE[0]).toBe('SUPER ADMIN')
+    expect(PRECEDENCE[0]).toBe('DESARROLLADOR')
   })
 })

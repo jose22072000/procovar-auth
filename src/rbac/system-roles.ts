@@ -14,7 +14,7 @@ import { PERMISSION_CATALOG } from './permissions.catalog'
  * deployment must never overwrite what somebody changed on screen (see
  * `syncRbac`, which only ADDS what is missing from a role it just created).
  */
-export const SYSTEM_ROLE_NAMES = ['SUPER ADMIN', 'ADMINISTRADOR', 'GERENTE', 'SUPERVISOR', 'GESTOR', 'OPERADOR'] as const
+export const SYSTEM_ROLE_NAMES = ['DESARROLLADOR', 'SUPER ADMIN', 'ADMINISTRADOR', 'GERENTE', 'SUPERVISOR', 'GESTOR', 'OPERADOR'] as const
 export type SystemRoleName = (typeof SYSTEM_ROLE_NAMES)[number]
 
 /** The role a new member gets when nobody said otherwise: the most limited one. */
@@ -27,6 +27,7 @@ export const ROL_MINIMO: SystemRoleName = 'GESTOR'
 export const PRECEDENCE: readonly string[] = SYSTEM_ROLE_NAMES
 
 export const ROLE_DESCRIPTIONS: Record<SystemRoleName, string> = {
+  DESARROLLADOR: 'Quien mantiene la plataforma. Todo lo del Super Admin más la trastienda técnica: el módulo de Avisos (tipos, plantillas y canales de notificación). No es un rol de negocio: se reparte a mano y a muy poca gente.',
   'SUPER ADMIN': 'Global. Ve y gestiona todas las sucursales.',
   ADMINISTRADOR: 'Gestiona las sucursales a las que pertenece, y solo esas.',
   GERENTE: 'Ve todo lo de su sucursal y lleva el día a día, pero no reparte accesos ni toca la configuración.',
@@ -173,11 +174,30 @@ const GERENTE_EXCLUIDOS = new Set<string>([
 /** Ni el Administrador ni el Gerente venden: mandan. */
 const NO_VENDEN = new Set([VENDE])
 
+/**
+ * Lo que SOLO ve el Desarrollador — ni el Super Admin.
+ *
+ * Es la única excepción a "el Super Admin lo ve todo", y es a propósito.
+ * Configurar los tipos, plantillas y canales de `procovar-notify` no es gestionar
+ * una sucursal: es trastienda técnica, y tocarla sin saber deja a la gente sin
+ * recibir avisos **sin que salte ningún error** — el envío sigue devolviendo 202
+ * y nadie se entera hasta que alguien pregunta por qué no le llegó nada.
+ *
+ * Si mañana hay que abrírselo al Super Admin, se le da desde la pantalla de
+ * Roles: `syncRbac` sólo AÑADE lo que falta a un rol que acaba de crear, así que
+ * no le va a quitar lo que se conceda a mano.
+ */
+const SOLO_DESARROLLADOR = new Set<string>(
+  PERMISSION_CATALOG.filter((p) => p.service === 'avisos').map((p) => p.key),
+)
+
 export function systemRolePermissionKeys(role: string): string[] {
   switch (role) {
-    case 'SUPER ADMIN': return allKeys()
-    case 'ADMINISTRADOR': return allKeys().filter((k) => !ADMIN_EXCLUIDOS.has(k) && !NO_VENDEN.has(k))
-    case 'GERENTE': return allKeys().filter((k) => !GERENTE_EXCLUIDOS.has(k) && !NO_VENDEN.has(k))
+    // Todo, sin excepciones. Es el único que lleva las claves de Avisos.
+    case 'DESARROLLADOR': return allKeys()
+    case 'SUPER ADMIN': return allKeys().filter((k) => !SOLO_DESARROLLADOR.has(k))
+    case 'ADMINISTRADOR': return allKeys().filter((k) => !ADMIN_EXCLUIDOS.has(k) && !NO_VENDEN.has(k) && !SOLO_DESARROLLADOR.has(k))
+    case 'GERENTE': return allKeys().filter((k) => !GERENTE_EXCLUIDOS.has(k) && !NO_VENDEN.has(k) && !SOLO_DESARROLLADOR.has(k))
     case 'SUPERVISOR': return [...new Set([...SUPERVISOR_KEYS, VENDE])]
     case 'OPERADOR': return [...new Set(OPERADOR_KEYS)]
     case 'GESTOR': return [...GESTOR_KEYS, VENDE]

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { PERMISSION_CATALOG } from '../permissions.catalog'
 
-const SERVICIOS = ['pedido', 'analitics', 'delivery', 'ccsa', 'auth', 'rutas']
+const SERVICIOS = ['pedido', 'analitics', 'delivery', 'ccsa', 'auth', 'rutas', 'avisos']
 
 describe('el catálogo de permisos', () => {
   it('no repite claves', () => {
@@ -17,7 +17,7 @@ describe('el catálogo de permisos', () => {
     }
   })
 
-  it('las cuatro aplicaciones tienen permisos', () => {
+  it('todas las aplicaciones tienen permisos', () => {
     for (const s of SERVICIOS) {
       expect(PERMISSION_CATALOG.some((p) => p.service === s), `falta ${s}`).toBe(true)
     }

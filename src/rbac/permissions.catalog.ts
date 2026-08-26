@@ -161,4 +161,19 @@ export const PERMISSION_CATALOG: PermissionEntry[] = [
 
   e('app.read',   'Aplicaciones', 'auth', 'Ver las aplicaciones registradas', 'View registered applications'),
   e('app.manage', 'Aplicaciones', 'auth', 'Registrar y configurar aplicaciones', 'Register and configure applications'),
+
+  // ══ Avisos (procovar-notify) ═════════════════════════════════════════════
+  //
+  // El servicio de notificaciones: avisos.procovar.cloud para la pantalla,
+  // avisos-api.procovar.cloud para la API.
+  //
+  // Estas claves NO se le dan a ningún rol de los seis, NI SIQUIERA al SUPER
+  // ADMIN. Son de DESARROLLADOR y solo de él. Es deliberado y es la única
+  // excepción a "el super admin lo ve todo": configurar plantillas y canales de
+  // aviso es trastienda técnica, no gestión de una sucursal, y quien la toca sin
+  // saber deja a la gente sin recibir nada sin que salte ningún error.
+  e('avisos.entrar',  'Avisos', 'avisos', 'Entrar en Avisos', 'Access Avisos'),
+  e('avisos.read',    'Avisos', 'avisos', 'Ver los avisos enviados y su estado', 'View sent notifications and their status'),
+  e('avisos.send',    'Avisos', 'avisos', 'Enviar y cancelar avisos', 'Send and cancel notifications'),
+  e('avisos.manage',  'Avisos', 'avisos', 'Configurar tipos, plantillas y canales', 'Configure types, templates and channels'),
 ]
