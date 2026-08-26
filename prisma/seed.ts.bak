@@ -34,19 +34,6 @@ const clients: Array<{
         scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
     },
     {
-        clientId: 'procovar-sync',
-        name: 'Procovar Sync',
-        description: 'Servicio de sincronizacion de la fuerza de ventas: ingesta de Axis/Ventra, sync de las tablets Android y salidas a los sistemas externos. Solo servicio, sin login interactivo.',
-        // Sin login interactivo: las tablets se autentican contra la API de sync,
-        // no redirigen aqui. Por eso no hay callbacks ni dominios.
-        allowedCallbackUrls: [],
-        allowedDomains: [],
-        // apikey:verify  -> valida la credencial de cada tablet (§2.4 del plan de la APK)
-        // session:verify -> valida cookies cuando el alta la hace un admin desde la web
-        // jwt:sign/verify-> emite y verifica JWT de servicio hacia la API en Go
-        scopes: ['session:verify', 'session:revoke', 'apikey:verify', 'jwt:sign', 'jwt:verify'],
-    },
-    {
         clientId: 'qb-booking',
         name: 'QB Booking',
         description: 'Public booking flow',
