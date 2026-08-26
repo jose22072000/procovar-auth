@@ -39,6 +39,32 @@ export const CLIENTES: ClienteRegistrado[] = [
         allowedDomains: ['rutas.procovar.cloud', 'localhost:3600', 'localhost:3601'],
         scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
     },
+    {
+        clientId: 'procovar-notify',
+        name: 'Procovar Notify (Avisos)',
+        description: 'Servicio de avisos: avisos.procovar.cloud (pantalla) y avisos-api.procovar.cloud (API). Valida aqui la cookie de sesion de quien entra a administrarlo.',
+        // Sin login propio: la SPA de Avisos manda a la gente a este hub y
+        // vuelve con la cookie; Avisos solo la VERIFICA.
+        allowedCallbackUrls: [
+            'https://avisos.procovar.cloud/api/auth/callback',
+            'http://localhost:5173/api/auth/callback',
+        ],
+        allowedDomains: ['avisos.procovar.cloud', 'avisos-api.procovar.cloud', 'localhost:5173'],
+        // Con `session:verify` basta: /api/auth/verify-session ya devuelve el
+        // RBAC resuelto, asi que Avisos lee de ahi las claves avisos.* y decide.
+        scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
+    },
+    {
+        clientId: 'procovar-sync',
+        name: 'Procovar Sync',
+        description: 'Servicio de sincronizacion de la fuerza de ventas: ingesta de Axis/Ventra, sync de las tablets Android y salidas a los sistemas externos.',
+        // Solo servicio: las tablets se autentican contra la API de sync, no
+        // redirigen aqui. Por eso no hay callbacks ni dominios.
+        allowedCallbackUrls: [],
+        allowedDomains: [],
+        // apikey:verify -> valida la credencial de cada tablet.
+        scopes: ['session:verify', 'session:revoke', 'apikey:verify', 'jwt:sign', 'jwt:verify'],
+    },
 ]
 
 export async function syncClients() {
