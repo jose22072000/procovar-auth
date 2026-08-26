@@ -34,6 +34,22 @@ const clients: Array<{
         scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
     },
     {
+        clientId: 'procovar-notify',
+        name: 'Procovar Notify (Avisos)',
+        description: 'Servicio de avisos: avisos.procovar.cloud (pantalla) y avisos-api.procovar.cloud (API). Valida contra este hub la cookie de sesion de quien entra a administrar.',
+        // Sin login interactivo propio: la SPA de Avisos manda a la gente a este
+        // hub y vuelve con la cookie; Avisos solo la VERIFICA aqui.
+        allowedCallbackUrls: [
+            'https://avisos.procovar.cloud/api/auth/callback',
+            'http://localhost:5173/api/auth/callback',
+        ],
+        allowedDomains: ['avisos.procovar.cloud', 'avisos-api.procovar.cloud', 'localhost:5173'],
+        // session:verify -> POST /api/auth/verify-session, que ya devuelve el RBAC
+        //                   resuelto, asi que con este alcance basta: Avisos lee de
+        //                   ahi las claves avisos.* y decide.
+        scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
+    },
+    {
         clientId: 'procovar-sync',
         name: 'Procovar Sync',
         description: 'Servicio de sincronizacion de la fuerza de ventas: ingesta de Axis/Ventra, sync de las tablets Android y salidas a los sistemas externos. Solo servicio, sin login interactivo.',
