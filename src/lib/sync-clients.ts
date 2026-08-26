@@ -45,9 +45,13 @@ export const CLIENTES: ClienteRegistrado[] = [
         description: 'Servicio de avisos: avisos.procovar.cloud (pantalla) y avisos-api.procovar.cloud (API). Valida aqui la cookie de sesion de quien entra a administrarlo.',
         // Sin login propio: la SPA de Avisos manda a la gente a este hub y
         // vuelve con la cookie; Avisos solo la VERIFICA.
+        // La vuelta la atiende la API (avisos-api), no la pantalla: es el
+        // backend quien canjea el codigo y graba la cookie. Poner aqui la URL
+        // de la pantalla hace que el hub RECHACE la peticion y el usuario acabe
+        // en /login?sso=no-disponible sin ninguna pista de por que.
         allowedCallbackUrls: [
-            'https://avisos.procovar.cloud/api/auth/callback',
-            'http://localhost:5173/api/auth/callback',
+            'https://avisos-api.procovar.cloud/admin/auth/sso/callback',
+            'http://localhost:8080/admin/auth/sso/callback',
         ],
         allowedDomains: ['avisos.procovar.cloud', 'avisos-api.procovar.cloud', 'localhost:5173'],
         // Con `session:verify` basta: /api/auth/verify-session ya devuelve el
