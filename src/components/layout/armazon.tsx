@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useLinkStatus } from "next/link";
 import { Icon } from "@iconify/react";
 import { useTranslations, useLocale } from "next-intl";
 import { setLocale } from "@/server/locale.server";
@@ -54,6 +55,32 @@ interface Apartado {
     soloGlobal?: boolean;
     /** Solo para quien lleva alguna sucursal. */
     soloSucursal?: boolean;
+}
+
+/**
+ * El icono del enlace, que se vuelve girador mientras esa ruta está cargando.
+ *
+ * En el App Router, al pulsar un enlace no pasa NADA visible hasta que el servidor
+ * termina de resolver la página. Con una conexión lenta eso son segundos en los que la
+ * pantalla no se mueve, y la gente vuelve a pulsar creyendo que no registró el clic.
+ *
+ * `useLinkStatus` sólo funciona dentro de un `<Link>`, y da el estado de ESE enlace en
+ * concreto — por eso el aviso sale justo en el apartado que se pulsó y no en un
+ * indicador general que no dice a dónde se va.
+ *
+ * Es la mitad rápida de la solución: se ve en el mismo instante del clic. La otra mitad
+ * son los loading.tsx, que pintan el esqueleto de la página que viene.
+ */
+function IconoDelEnlace({ icono }: { icono: string }) {
+    const { pending } = useLinkStatus();
+
+    return (
+        <Icon
+            icon={pending ? "lucide:loader-circle" : icono}
+            className={`size-4 shrink-0${pending ? " animate-spin" : ""}`}
+            aria-hidden
+        />
+    );
 }
 
 export function Armazon({ persona, children }: { persona: Persona; children: React.ReactNode }) {
@@ -108,7 +135,7 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
                         // apartados encendidos a la vez.
                         data-activo={ruta === a.href || ruta.startsWith(`${a.href}/`)}
                     >
-                        <Icon icon={a.icono} className="size-4 shrink-0" aria-hidden />
+                        <IconoDelEnlace icono={a.icono} />
                         <span className="truncate">{a.texto}</span>
                     </Link>
                 ))}
