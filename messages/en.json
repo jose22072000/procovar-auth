@@ -95,7 +95,8 @@
     "noRole": "You don't have a role yet. Ask an administrator for one.",
     "settingsHint": "Name, password and language",
     "notificationsHint": "What has reached you",
-    "logoutHint": "Sign out"
+    "logoutHint": "Sign out",
+    "notificationsTitle": "All my notifications"
   },
   "cards": {
     "viewAll": "View all",

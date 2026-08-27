@@ -95,7 +95,8 @@
     "noRole": "Todavía no tienes un rol asignado. Pídeselo a quien administra.",
     "settingsHint": "Nombre, contraseña e idioma",
     "notificationsHint": "Lo que te ha llegado",
-    "logoutHint": "Salir de la cuenta"
+    "logoutHint": "Salir de la cuenta",
+    "notificationsTitle": "Todos mis avisos"
   },
   "cards": {
     "viewAll": "Ver todo",

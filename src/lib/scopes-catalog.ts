@@ -1,5 +1,5 @@
 /**
- * Single source of truth for the qb-auth scope catalog.
+ * Single source of truth for the Auth scope catalog.
  *
  * Every scope used by the Identity Hub MUST be listed here, with metadata
  * describing what it does, which microservice typically needs it, and what
@@ -53,7 +53,7 @@ export const SCOPES: ScopeDefinition[] = [
             'Validate a `qb.session_token` cookie / sessionToken and receive the user, session and memberships.',
         risk: 'read',
         endpoints: ['POST /api/auth/verify-session'],
-        suggestedFor: ['qb-back', 'qb-panel', 'qb-booking', 'qb-notify'],
+        suggestedFor: ['pedido', 'auth', 'entrega', 'avisos'],
     },
     {
         id: 'session:revoke',
@@ -63,7 +63,7 @@ export const SCOPES: ScopeDefinition[] = [
             'Sign the user out of one or all of their sessions. Used by logout flows and admin tooling.',
         risk: 'write',
         endpoints: ['POST /api/auth/revoke-session'],
-        suggestedFor: ['qb-back', 'qb-panel'],
+        suggestedFor: ['pedido', 'auth'],
     },
 
     // ── Authentication flow ───────────────────────────────────────────────
@@ -75,7 +75,7 @@ export const SCOPES: ScopeDefinition[] = [
             'Create a single-use callback JWT that the user is redirected through to start the login flow on this client.',
         risk: 'write',
         endpoints: ['POST /api/auth/callback-token'],
-        suggestedFor: ['qb-booking', 'qb-panel'],
+        suggestedFor: ['entrega', 'auth'],
     },
     {
         id: 'callback:any',
@@ -85,7 +85,7 @@ export const SCOPES: ScopeDefinition[] = [
             'Allow overriding the `clientId` when minting a callback token. Reserved for tools that proxy login on behalf of multiple clients.',
         risk: 'admin',
         endpoints: ['POST /api/auth/callback-token (with clientId override)'],
-        suggestedFor: ['qb-admin'],
+        suggestedFor: ['auth'],
     },
     {
         id: 'auth:exchange',
@@ -95,7 +95,7 @@ export const SCOPES: ScopeDefinition[] = [
             'Trade the opaque `code` returned by /api/auth/callback for a usable session payload (sessionToken, user, memberships).',
         risk: 'read',
         endpoints: ['POST /api/auth/exchange'],
-        suggestedFor: ['qb-booking', 'qb-panel'],
+        suggestedFor: ['entrega', 'auth'],
     },
 
     // ── Inter-service JWT (RS256 + JWKS) ──────────────────────────────────
@@ -104,10 +104,10 @@ export const SCOPES: ScopeDefinition[] = [
         category: 'jwt',
         label: 'Sign service JWT',
         description:
-            'Mint an RS256 JWT signed by qb-auth. Receivers can verify it locally via /.well-known/jwks.json without calling the hub.',
+            'Mint an RS256 JWT signed by Auth. Receivers can verify it locally via /.well-known/jwks.json without calling the hub.',
         risk: 'write',
         endpoints: ['POST /api/auth/sign'],
-        suggestedFor: ['qb-back', 'qb-panel', 'qb-notify'],
+        suggestedFor: ['pedido', 'auth', 'avisos'],
     },
     {
         id: 'jwt:verify',
@@ -117,7 +117,7 @@ export const SCOPES: ScopeDefinition[] = [
             'Verify an RS256 JWT centrally via the hub. Prefer local JWKS verification with `createJwksVerifier()` for zero round-trip.',
         risk: 'read',
         endpoints: ['POST /api/auth/verify'],
-        suggestedFor: ['qb-back', 'qb-notify'],
+        suggestedFor: ['pedido', 'avisos'],
     },
 
     // ── API keys ──────────────────────────────────────────────────────────
@@ -129,51 +129,51 @@ export const SCOPES: ScopeDefinition[] = [
             'Validate an API key (format `qbk_<env>_<prefix>_<secret>`) presented by an external client and return its scopes.',
         risk: 'read',
         endpoints: ['POST /api/auth/api-keys/verify'],
-        suggestedFor: ['qb-back', 'qb-notify'],
+        suggestedFor: ['pedido', 'avisos'],
     },
 
-    // ── Notifications (qb-notify integration) ─────────────────────────────
+    // ── Notifications (Avisos integration) ─────────────────────────────
     {
         id: 'notify:send',
         category: 'notify',
         label: 'Send notification',
         description:
-            'Trigger transactional notifications (email / SMS / push) through qb-notify on behalf of this client.',
+            'Trigger transactional notifications (email / SMS / push) through Avisos on behalf of this client.',
         risk: 'write',
         endpoints: ['POST {NOTIFY_URL}/notifications/send'],
-        suggestedFor: ['qb-back', 'qb-panel', 'qb-booking'],
+        suggestedFor: ['pedido', 'auth', 'entrega'],
     },
     {
         id: 'notify:templates:read',
         category: 'notify',
         label: 'Read notification templates',
         description:
-            'List and inspect notification templates managed by qb-notify (read-only).',
+            'List and inspect notification templates managed by Avisos (read-only).',
         risk: 'read',
         endpoints: ['GET {NOTIFY_URL}/templates'],
-        suggestedFor: ['qb-panel'],
+        suggestedFor: ['auth'],
     },
     {
         id: 'notify:templates:manage',
         category: 'notify',
         label: 'Manage notification templates',
         description:
-            'Create, update or delete notification templates in qb-notify. Admin-only.',
+            'Create, update or delete notification templates in Avisos. Admin-only.',
         risk: 'admin',
         endpoints: ['POST/PUT/DELETE {NOTIFY_URL}/templates'],
-        suggestedFor: ['qb-panel', 'qb-admin'],
+        suggestedFor: ['auth'],
     },
 
     // ── Wildcard ──────────────────────────────────────────────────────────
     {
         id: '*',
         category: 'wildcard',
-        label: 'Full access on qb-auth (super-client)',
+        label: 'Full access on Auth (super-client)',
         description:
-            'Grants every current and future scope WHEN CALLING qb-auth endpoints. Does NOT bypass auth on other microservices (qb-back, qb-notify…) — they enforce their own. Use only for an internal admin client (e.g. `qb-admin`) and store its signing key in a secrets manager.',
+            'Grants every current and future scope WHEN CALLING Auth endpoints. Does NOT bypass auth on other microservices (PEDIDO, Avisos…) — they enforce their own. Úsalo sólo para un cliente interno de administración y guarda su clave de firma donde se guardan los secretos.',
         risk: 'admin',
-        endpoints: ['ALL endpoints exposed by qb-auth'],
-        suggestedFor: ['qb-admin'],
+        endpoints: ['ALL endpoints exposed by Auth'],
+        suggestedFor: ['auth'],
     },
 ];
 
@@ -201,10 +201,10 @@ export interface ScopePreset {
 export const PRESETS: ScopePreset[] = [
     {
         id: 'consumer-backend',
-        label: 'Consumer backend (qb-back style)',
+        label: 'Consumer backend (PEDIDO style)',
         description:
             'Backend microservice that needs to verify sessions, sign/verify JWTs and validate API keys. No callback minting.',
-        targetService: 'qb-back, qb-notify',
+        targetService: 'PEDIDO, Avisos',
         scopes: [
             'session:verify',
             'session:revoke',
@@ -215,10 +215,10 @@ export const PRESETS: ScopePreset[] = [
     },
     {
         id: 'frontend-bff',
-        label: 'Frontend BFF (qb-panel style)',
+        label: 'Panel interno (estilo Auth)',
         description:
             'Backend-for-frontend that drives a browser app: login flow, session checks, plus JWT signing for downstream services.',
-        targetService: 'qb-panel',
+        targetService: 'auth',
         scopes: [
             'callback:create',
             'auth:exchange',
@@ -231,26 +231,26 @@ export const PRESETS: ScopePreset[] = [
     },
     {
         id: 'public-booking',
-        label: 'Public booking flow (qb-booking style)',
+        label: 'Aplicación de campo (estilo Entrega)',
         description:
             'Public-facing app that only needs to start the login flow and verify the resulting session.',
-        targetService: 'qb-booking',
+        targetService: 'entrega',
         scopes: ['callback:create', 'auth:exchange', 'session:verify'],
     },
     {
         id: 'notification-publisher',
         label: 'Notification publisher',
         description:
-            'Service that emits notifications via qb-notify and verifies that the caller is logged in.',
-        targetService: 'qb-notify (consumer)',
+            'Service that emits notifications via Avisos and verifies that the caller is logged in.',
+        targetService: 'Avisos (consumer)',
         scopes: ['session:verify', 'notify:send', 'jwt:verify'],
     },
     {
         id: 'admin-super-client',
-        label: 'Admin super-client (qb-admin)',
+        label: 'Cliente de administración total',
         description:
             'Programmatic access to every endpoint. Use sparingly and store the key in a secrets manager.',
-        targetService: 'qb-admin',
+        targetService: 'auth',
         scopes: ['*'],
     },
 ];
@@ -261,7 +261,7 @@ export const PRESET_BY_ID: Record<string, ScopePreset> = Object.fromEntries(
 
 /* ── Role → recommended scopes ────────────────────────────────────────────
  * Maps your business-level roles to a baseline scope set. Today only the
- * `system-admin` role exists in qb-auth; this map is here so when you add
+ * `system-admin` role exists in Auth; this map is here so when you add
  * more roles (e.g. `partner`, `support`) the UI already knows what to suggest.
  */
 export const ROLE_RECOMMENDED_SCOPES: Record<string, string[]> = {
@@ -283,35 +283,74 @@ export interface MicroserviceInfo {
     role: string;
     baseUrl?: string;
 }
+/**
+ * Las aplicaciones de Procovar que entran por aquí.
+ *
+ * Esta lista se quedó con los servicios del producto de reservas del que salió este
+ * código —qb-back, qb-booking, qb-panel, todos en hostravel.com—, así que la pantalla de
+ * Aplicaciones documentaba un sistema que no existe. Quien fuera a dar de alta un
+ * servicio nuevo se guiaba por ejemplos de otra empresa.
+ */
 export const MICROSERVICES: MicroserviceInfo[] = [
     {
-        id: 'qb-auth',
-        name: 'QB Auth (Identity Hub)',
-        role: 'Owns users, sessions, signing keys, API keys, JWKS.',
-        baseUrl: 'https://qb-accounts.hostravel.com',
+        id: 'auth',
+        name: 'Auth (centro de accesos)',
+        role: 'Dueño de las personas, las sesiones, las claves de firma y las de API. Es este mismo.',
+        baseUrl: 'https://auth.procovar.cloud',
     },
     {
-        id: 'qb-back',
-        name: 'QB Back (Core API)',
-        role: 'Domain backend. Verifies sessions, issues service JWTs.',
-        baseUrl: 'https://qb-back.hostravel.com',
+        id: 'pedido',
+        name: 'PEDIDO',
+        role: 'Pedidos, clientes y vendedores de las ocho sucursales. Verifica sesiones y lee clientes para las demás.',
+        baseUrl: 'https://pedidos.procovar.cloud',
     },
     {
-        id: 'qb-notify',
-        name: 'QB Notify',
-        role: 'Sends transactional emails / SMS / push. Consumes qb-auth for caller validation.',
-        baseUrl: 'https://qb-notify.hostravel.com',
+        id: 'analitics',
+        name: 'Analitics',
+        role: 'Informes de ventas, gestores y productos. Sólo lee.',
+        baseUrl: 'https://analitics.procovar.cloud',
     },
     {
-        id: 'qb-panel',
-        name: 'QB Panel (Admin UI)',
-        role: 'Internal operations dashboard. BFF for admin tooling.',
-        baseUrl: 'https://qb-panel.hostravel.com',
+        id: 'rutas',
+        name: 'Rutas',
+        role: 'Recorridos de los vendedores sobre el mapa, a partir de los GPX.',
+        baseUrl: 'https://rutas.procovar.cloud',
     },
     {
-        id: 'qb-booking',
-        name: 'QB Booking',
-        role: 'Public booking funnel.',
-        baseUrl: 'https://qb-booking.hostravel.com',
+        id: 'delivery',
+        name: 'Delivery',
+        role: 'Reparto y planificación de rutas. Espejo de los pedidos de PEDIDO.',
+        baseUrl: 'https://delivery.procovar.cloud',
+    },
+    {
+        id: 'entrega',
+        name: 'Entrega (delivery-apk)',
+        role: 'La aplicación de los repartidores y su panel. Calcula el costo del domicilio y se lo manda a PEDIDO.',
+        baseUrl: 'https://entrega.procovar.cloud',
+    },
+    {
+        id: 'caja',
+        name: 'Caja',
+        role: 'Cobros y cierres de caja.',
+        baseUrl: 'https://caja.procovar.cloud',
+    },
+    {
+        id: 'traslado',
+        name: 'Traslado',
+        role: 'Movimientos de mercancía entre sucursales.',
+        baseUrl: 'https://traslado.procovar.cloud',
+    },
+    {
+        id: 'ccsa',
+        name: 'Tablero Parranda',
+        role: 'El tablero de Parranda / CCSA.',
+        baseUrl: 'https://ccsa.procovar.cloud',
+    },
+    {
+        id: 'avisos',
+        name: 'Avisos',
+        role: 'Manda los avisos por correo y dentro de la aplicación. Pregunta aquí quién llama.',
+        baseUrl: 'https://avisos-api.procovar.cloud',
     },
 ];
+

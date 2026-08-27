@@ -191,10 +191,15 @@ export function ProfileContent({ user, pertenencias, rol }: ProfileContentProps)
 
             {/* A dónde ir desde aquí. Enlaces, no adornos: cada uno lleva a algo que se
                 hace de verdad desde el perfil. */}
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                    { href: "/profile/me", icono: "lucide:settings", titulo: t("profile.settings"), pie: t("profile.settingsHint") },
-                    { href: "/profile/notifications", icono: "lucide:bell", titulo: t("rail.avisos"), pie: t("profile.notificationsHint") },
+                    // "Mi perfil" no se repite: ya tiene su botón arriba, en la ficha de
+                    // la persona. Dos caminos al mismo sitio en la misma pantalla no dan
+                    // opciones, hacen dudar de si llevan a lo mismo.
+                    //
+                    // Los avisos tampoco están aquí: se fueron a la campana de la barra,
+                    // que es donde se ven llegar sin tener que venir a buscarlos.
+                    { href: "/profile/notifications", icono: "lucide:inbox", titulo: t("profile.notificationsTitle"), pie: t("profile.notificationsHint") },
                     { href: "/logout", icono: "lucide:log-out", titulo: t("nav.logOut"), pie: t("profile.logoutHint") },
                 ].map((a) => (
                     <Link

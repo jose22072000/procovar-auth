@@ -8,6 +8,7 @@ import { useLinkStatus } from "next/link";
 import { Icon } from "@iconify/react";
 import { useTranslations, useLocale } from "next-intl";
 import { setLocale } from "@/server/locale.server";
+import { NotificationBell } from "@/components/layout/navbar/notification-bell";
 import type { Locale } from "@/i18n/config";
 
 export interface Persona {
@@ -204,6 +205,20 @@ export function Armazon({ persona, children }: { persona: Persona; children: Rea
                     )}
 
                     <div className="ml-auto flex items-center gap-1">
+                        {/*
+                            Los avisos, aquí y siempre a la vista.
+                            
+                            El componente existía desde hace tiempo y no estaba enchufado
+                            en ningún sitio: se escribió y se quedó sin colocar, así que
+                            las notificaciones no se veían en ninguna pantalla.
+                            
+                            Va en la barra y no en una ficha del perfil porque un aviso
+                            sirve para enterarse cuando llega, no cuando a uno se le
+                            ocurre ir a mirarlo. Escondido en el perfil, quien no entra
+                            ahí no se entera nunca.
+                        */}
+                        <NotificationBell />
+
                         {/* El idioma, sin desplegable: son dos. Un menú para elegir
                             entre dos cosas es un clic de más. */}
                         {(["es", "en"] as Locale[]).map((l) => (
