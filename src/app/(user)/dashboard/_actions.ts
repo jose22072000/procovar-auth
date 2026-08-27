@@ -641,8 +641,22 @@ export async function updateOrganizationAdmin(
         codigo?: string | null; activa?: boolean; timezone?: string;
         telefono?: string | null; direccion?: string | null;
         latitud?: number | null; longitud?: number | null;
-        almacenNombre?: string | null; almacenDireccion?: string | null;
-        almacenLatitud?: number | null; almacenLongitud?: number | null;
+        /**
+         * Los almacenes de la sucursal, la lista COMPLETA.
+         *
+         * Se manda entera y se reemplaza, no se van mandando altas y bajas sueltas: con
+         * cuatro o cinco almacenes editados a la vez en un formulario, llevar la cuenta
+         * de cuál se borró es donde se cuela el fallo. Aquí lo que llega es lo que queda.
+         */
+        almacenes?: {
+            id?: string;
+            nombre: string;
+            direccion?: string | null;
+            latitud?: number | null;
+            longitud?: number | null;
+            principal?: boolean;
+            activo?: boolean;
+        }[];
     },
 ): Promise<{ error?: string }> {
     try {
@@ -657,8 +671,12 @@ export async function updateOrganizationAdmin(
             (a == null) !== (b == null) ? `Faltan ${que}: hacen falta latitud y longitud` : null;
         const e1 = par(data.latitud, data.longitud, "las coordenadas de la sucursal");
         if (e1) return { error: e1 };
-        const e2 = par(data.almacenLatitud, data.almacenLongitud, "las coordenadas del almacén");
-        if (e2) return { error: e2 };
+        for (const a of data.almacenes ?? []) {
+            if (!a.nombre?.trim()) return { error: "Cada almacén necesita un nombre" };
+            const e = par(a.latitud, a.longitud, `las coordenadas del almacén "${a.nombre}"`);
+
+            if (e) return { error: e };
+        }
 
         // Cuba entera cae en este rectángulo. No es validar por validar: un dígito de
         // más en una latitud pone el almacén en otro continente y el domicilio se
@@ -666,17 +684,55 @@ export async function updateOrganizationAdmin(
         const fuera = (lat?: number | null, lng?: number | null) =>
             lat != null && lng != null && (lat < 19 || lat > 24 || lng < -85 || lng > -73);
         if (fuera(data.latitud, data.longitud)) return { error: "Esas coordenadas no caen en Cuba" };
-        if (fuera(data.almacenLatitud, data.almacenLongitud)) return { error: "Las coordenadas del almacén no caen en Cuba" };
+        for (const a of data.almacenes ?? []) {
+            if (fuera(a.latitud, a.longitud)) {
+                return { error: `Las coordenadas del almacén "${a.nombre}" no caen en Cuba` };
+            }
+        }
+
+        // Un solo principal. Con dos, cada aplicación elegiría uno distinto para medir la
+        // distancia y el mismo domicilio saldría a dos precios según quién pregunte.
+        const principales = (data.almacenes ?? []).filter((a) => a.principal).length;
+
+        if (principales > 1) return { error: "Sólo puede haber un almacén principal" };
+        if ((data.almacenes?.length ?? 0) > 0 && principales === 0) {
+            return { error: "Marca cuál es el almacén principal" };
+        }
 
         const patch: Record<string, unknown> = {};
         for (const k of [
             "name", "slug", "logo", "codigo", "activa", "timezone", "telefono",
             "direccion", "latitud", "longitud",
-            "almacenNombre", "almacenDireccion", "almacenLatitud", "almacenLongitud",
         ] as const) if (k in data) patch[k] = data[k];
         if (typeof patch.codigo === "string") patch.codigo = patch.codigo.trim().toUpperCase() || null;
         try {
-            await prisma.organization.update({ where: { id: orgId }, data: patch });
+            await prisma.$transaction(async (tx) => {
+                await tx.organization.update({ where: { id: orgId }, data: patch });
+
+                if (!data.almacenes) return;
+
+                // Se reemplaza la lista entera, dentro de la MISMA transacción: si el
+                // alta de uno falla a mitad, no se queda la sucursal sin los que tenía.
+                const quedan = data.almacenes.filter((a) => a.id).map((a) => a.id as string);
+
+                await tx.almacen.deleteMany({
+                    where: { orgId, ...(quedan.length ? { id: { notIn: quedan } } : {}) },
+                });
+
+                for (const a of data.almacenes) {
+                    const campos = {
+                        nombre: a.nombre.trim(),
+                        direccion: a.direccion?.trim() || null,
+                        latitud: a.latitud ?? null,
+                        longitud: a.longitud ?? null,
+                        principal: !!a.principal,
+                        activo: a.activo !== false,
+                    };
+
+                    if (a.id) await tx.almacen.update({ where: { id: a.id }, data: campos });
+                    else await tx.almacen.create({ data: { ...campos, orgId } });
+                }
+            });
         } catch (err) {
             if ((err as { code?: string }).code === "P2002") {
                 // El único otro único es el código, y decir "slug" cuando el choque es

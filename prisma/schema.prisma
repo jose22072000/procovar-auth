@@ -157,16 +157,13 @@ model Organization {
   latitud     Float?
   longitud    Float?
 
-  /// El ALMACÉN: de dónde sale la mercancía.
+  /// Los ALMACENES de esta sucursal. Ver el modelo `Almacen`.
   ///
-  /// No es lo mismo que la sucursal y por eso son campos aparte: el domicilio se
-  /// cobra por la distancia desde el almacén, no desde la oficina. Hoy esto vive
-  /// sólo en delivery (`SavedOrigin`) y si esa aplicación se apaga, se pierde el
-  /// dato con el que se cobra.
-  almacenNombre    String?
-  almacenDireccion String?
-  almacenLatitud   Float?
-  almacenLongitud  Float?
+  /// Estuvieron aquí dentro como cuatro campos sueltos —almacenNombre, almacenLatitud…—
+  /// dando por hecho que cada sucursal tiene uno. No es cierto: una sucursal puede
+  /// tener varios, y con un solo juego de campos el segundo no cabe. Quien lo
+  /// necesitara acabaría metiéndolo en la dirección del primero.
+  almacenes   Almacen[]
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -404,4 +401,35 @@ model TermsAcceptance {
   @@index([authUserId])
   @@index([invoiceId])
   @@map("terms_acceptances")
+}
+
+
+/// Un almacén: de dónde sale la mercancía.
+///
+/// No es lo mismo que la sucursal, y por eso es una tabla y no unos campos dentro: el
+/// domicilio se cobra por la distancia desde EL ALMACÉN, no desde la oficina. Una
+/// sucursal grande tiene varios, y hasta ahora sólo cabía uno.
+///
+/// Vive aquí y no sólo en delivery (`SavedOrigin`) porque es el dato con el que se
+/// cobra: si esa aplicación se apaga, se pierde.
+model Almacen {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  nombre    String
+  direccion String?
+  latitud   Float?
+  longitud  Float?
+
+  /// El que se usa cuando nadie dice cuál. Con varios almacenes hay que poder decir
+  /// desde cuál se mide por defecto, o cada aplicación elegiría uno distinto.
+  principal Boolean      @default(false)
+  activo    Boolean      @default(true)
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([orgId])
+  @@index([orgId, principal])
 }

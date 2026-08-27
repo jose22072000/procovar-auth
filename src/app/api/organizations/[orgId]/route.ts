@@ -238,7 +238,6 @@ export async function PATCH(request: Request, { params }: Params) {
         // sistemas, y dónde está su almacén.
         const {
             codigo, activa, timezone, telefono, direccion, latitud, longitud,
-            almacenNombre, almacenDireccion, almacenLatitud, almacenLongitud,
         } = body;
 
         // Un número que llega vacío desde un formulario es "" y `Number("")` es 0 —
@@ -294,10 +293,9 @@ export async function PATCH(request: Request, { params }: Params) {
                 ...(direccion !== undefined && { direccion: txt(direccion) ?? null }),
                 ...(latitud !== undefined && { latitud: num(latitud) }),
                 ...(longitud !== undefined && { longitud: num(longitud) }),
-                ...(almacenNombre !== undefined && { almacenNombre: txt(almacenNombre) ?? null }),
-                ...(almacenDireccion !== undefined && { almacenDireccion: txt(almacenDireccion) ?? null }),
-                ...(almacenLatitud !== undefined && { almacenLatitud: num(almacenLatitud) }),
-                ...(almacenLongitud !== undefined && { almacenLongitud: num(almacenLongitud) }),
+                // Los almacenes ya no son campos de la sucursal: viven en su propia
+                // tabla porque una sucursal puede tener varios. Se editan desde el
+                // formulario de Sucursales, que manda la lista entera.
             },
         });
 

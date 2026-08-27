@@ -20,8 +20,11 @@ interface OrgRow {
   codigo?: string | null; activa?: boolean; timezone?: string | null;
   telefono?: string | null; direccion?: string | null;
   latitud?: number | null; longitud?: number | null;
-  almacenNombre?: string | null; almacenDireccion?: string | null;
-  almacenLatitud?: number | null; almacenLongitud?: number | null;
+  almacenes?: {
+    id: string; nombre: string; direccion: string | null;
+    latitud: number | null; longitud: number | null;
+    principal: boolean; activo: boolean;
+  }[];
 }
 
 function RoleChip({ role }: { role: RoleRow }) {
@@ -37,6 +40,22 @@ function RoleChip({ role }: { role: RoleRow }) {
 }
 
 interface Persona { id: string; name: string; email: string }
+
+/**
+ * Un almacén tal como se edita en el formulario.
+ *
+ * Latitud y longitud van como TEXTO y no como número: mientras alguien escribe "21."
+ * eso no es un número válido, y forzarlo borraría el punto en cuanto lo teclea. Se
+ * convierten al guardar.
+ */
+interface AlmacenForm {
+  id?: string;
+  nombre: string;
+  direccion: string;
+  latitud: string;
+  longitud: string;
+  principal: boolean;
+}
 
 export function OrgsManager({
   initialOrgs,
@@ -57,7 +76,7 @@ export function OrgsManager({
     name: "", slug: "", logo: "",
     codigo: "", activa: true, timezone: "America/Havana", telefono: "", direccion: "",
     latitud: "", longitud: "",
-    almacenNombre: "", almacenDireccion: "", almacenLatitud: "", almacenLongitud: "",
+    almacenes: [] as AlmacenForm[],
   });
   const [delConfirm, setDelConfirm] = useState("");
   const [editingMember, setEditingMember] = useState<MemberRow | null>(null);
@@ -101,8 +120,14 @@ export function OrgsManager({
       timezone: selected.timezone || "America/Havana",
       telefono: txt(selected.telefono), direccion: txt(selected.direccion),
       latitud: txt(selected.latitud), longitud: txt(selected.longitud),
-      almacenNombre: txt(selected.almacenNombre), almacenDireccion: txt(selected.almacenDireccion),
-      almacenLatitud: txt(selected.almacenLatitud), almacenLongitud: txt(selected.almacenLongitud),
+      almacenes: (selected.almacenes ?? []).map((a) => ({
+        id: a.id,
+        nombre: a.nombre,
+        direccion: a.direccion ?? "",
+        latitud: txt(a.latitud),
+        longitud: txt(a.longitud),
+        principal: a.principal,
+      })),
     });
     editOrg.onOpen();
   }
@@ -166,8 +191,18 @@ export function OrgsManager({
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
-      {/* Org list */}
-      <div className="space-y-3">
+      {/*
+        La columna de la lista, FIJA.
+        
+        Antes bajaba con el contenido de la derecha: al mirar el miembro número treinta
+        de una sucursal, la lista de sucursales ya no estaba en pantalla y había que
+        subir del todo para cambiar de una a otra. Ahora se queda quieta y se desplaza
+        por dentro.
+        
+        `self-start` es lo que hace que sticky funcione dentro de un grid: sin él la
+        celda se estira a la altura de la fila y no hay nada respecto a lo que pegarse.
+      */}
+      <div className="space-y-3 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-1">
         {/* Crear sucursal. Faltaba entero: se podían editar y borrar, pero abrir
             una nueva exigía tocar la base a mano. */}
         <Button
@@ -182,7 +217,7 @@ export function OrgsManager({
           value={query} onValueChange={setQuery} isClearable onClear={() => setQuery("")}
           startContent={<Icon icon="lucide:search" className="size-4 text-slate-400" aria-hidden />}
         />
-        <div className="max-h-[70vh] space-y-1.5 overflow-y-auto pr-1">
+        <div className="space-y-1.5">
           {orgs.map((o) => {
             const active = o.id === selectedId;
             return (
@@ -434,24 +469,114 @@ export function OrgsManager({
             {/* EL ALMACÉN, aparte y avisado. No es un dato más de contacto: el
                 domicilio se cobra por la distancia DESDE AQUÍ, así que un punto mal
                 puesto se cobra mal en cada entrega. */}
+            {/*
+              Los almacenes, en lista. Una sucursal puede tener varios.
+              
+              Estaba como un solo juego de campos, dando por hecho que hay uno. Con dos,
+              el segundo no cabía en ninguna parte y acabaría metido en la dirección del
+              primero — y el domicilio se cobra por la distancia DESDE EL ALMACÉN, así
+              que medir desde el que no es se cobra mal en cada entrega.
+            */}
             <div className="rounded-lg border border-warning-200 bg-warning-50/40 p-3 dark:border-warning-800 dark:bg-warning-900/10">
-              <p className="mb-1 text-sm font-semibold">Almacén</p>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">Almacenes</p>
+                <Button
+                  size="sm" variant="flat"
+                  startContent={<Icon icon="lucide:plus" className="size-3.5" aria-hidden />}
+                  onPress={() =>
+                    setOrgForm((f) => ({
+                      ...f,
+                      almacenes: [
+                        ...f.almacenes,
+                        // El primero que se añade es el principal: si no, hay que
+                        // acordarse de marcarlo y sin ninguno marcado no se sabe desde
+                        // dónde medir.
+                        { nombre: "", direccion: "", latitud: "", longitud: "", principal: f.almacenes.length === 0 },
+                      ],
+                    }))
+                  }
+                >
+                  Añadir
+                </Button>
+              </div>
               <p className="mb-3 text-xs text-slate-500">
                 De aquí sale la mercancía. El domicilio se cobra por la distancia desde
-                este punto, no desde la oficina.
+                el almacén, no desde la oficina.
               </p>
-              <div className="grid gap-3">
-                <Input label="Nombre del almacén" variant="bordered" value={orgForm.almacenNombre}
-                  onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenNombre: v }))} />
-                <Input label="Dirección del almacén" variant="bordered" value={orgForm.almacenDireccion}
-                  onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenDireccion: v }))} />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Input label="Latitud" variant="bordered" value={orgForm.almacenLatitud}
-                    onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenLatitud: v }))} />
-                  <Input label="Longitud" variant="bordered" value={orgForm.almacenLongitud}
-                    onValueChange={(v) => setOrgForm((f) => ({ ...f, almacenLongitud: v }))} />
+
+              {orgForm.almacenes.length === 0 ? (
+                <p className="py-2 text-xs text-slate-500">
+                  Esta sucursal no tiene almacenes. Sin uno, no se puede calcular el
+                  domicilio de sus pedidos.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {orgForm.almacenes.map((a, idx) => (
+                    <div key={a.id ?? `nuevo-${idx}`} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Switch
+                          size="sm"
+                          isSelected={a.principal}
+                          onValueChange={() =>
+                            // Sólo uno puede ser el principal: marcar otro desmarca el
+                            // anterior. Con dos, cada aplicación mediría desde uno
+                            // distinto y el mismo domicilio saldría a dos precios.
+                            setOrgForm((f) => ({
+                              ...f,
+                              almacenes: f.almacenes.map((x, i2) => ({ ...x, principal: i2 === idx })),
+                            }))
+                          }
+                        >
+                          <span className="text-xs">Principal</span>
+                        </Switch>
+                        <Button
+                          size="sm" variant="light" color="danger" className="ml-auto"
+                          onPress={() =>
+                            setOrgForm((f) => {
+                              const quedan = f.almacenes.filter((_, i2) => i2 !== idx);
+
+                              // Si se borra el principal, el primero que quede lo hereda.
+                              if (quedan.length && !quedan.some((x) => x.principal)) quedan[0].principal = true;
+
+                              return { ...f, almacenes: quedan };
+                            })
+                          }
+                        >
+                          Quitar
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <Input
+                          label="Nombre" variant="bordered" size="sm" value={a.nombre}
+                          onValueChange={(v) =>
+                            setOrgForm((f) => ({ ...f, almacenes: f.almacenes.map((x, i2) => (i2 === idx ? { ...x, nombre: v } : x)) }))
+                          }
+                        />
+                        <Input
+                          label="Dirección" variant="bordered" size="sm" value={a.direccion}
+                          onValueChange={(v) =>
+                            setOrgForm((f) => ({ ...f, almacenes: f.almacenes.map((x, i2) => (i2 === idx ? { ...x, direccion: v } : x)) }))
+                          }
+                        />
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Input
+                            label="Latitud" variant="bordered" size="sm" value={a.latitud}
+                            onValueChange={(v) =>
+                              setOrgForm((f) => ({ ...f, almacenes: f.almacenes.map((x, i2) => (i2 === idx ? { ...x, latitud: v } : x)) }))
+                            }
+                          />
+                          <Input
+                            label="Longitud" variant="bordered" size="sm" value={a.longitud}
+                            onValueChange={(v) =>
+                              setOrgForm((f) => ({ ...f, almacenes: f.almacenes.map((x, i2) => (i2 === idx ? { ...x, longitud: v } : x)) }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
 
             <Switch isSelected={orgForm.activa} onValueChange={(v) => setOrgForm((f) => ({ ...f, activa: v }))}>
@@ -474,10 +599,14 @@ export function OrgsManager({
                   telefono: orgForm.telefono.trim() || null,
                   direccion: orgForm.direccion.trim() || null,
                   latitud: num(orgForm.latitud), longitud: num(orgForm.longitud),
-                  almacenNombre: orgForm.almacenNombre.trim() || null,
-                  almacenDireccion: orgForm.almacenDireccion.trim() || null,
-                  almacenLatitud: num(orgForm.almacenLatitud),
-                  almacenLongitud: num(orgForm.almacenLongitud),
+                  almacenes: orgForm.almacenes.map((a) => ({
+                    id: a.id,
+                    nombre: a.nombre.trim(),
+                    direccion: a.direccion.trim() || null,
+                    latitud: num(a.latitud),
+                    longitud: num(a.longitud),
+                    principal: a.principal,
+                  })),
                 }), t('dashboard.orgsManager.orgUpdated'));
                 if (ok) editOrg.onClose();
               }}>

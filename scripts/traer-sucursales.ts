@@ -82,18 +82,34 @@ async function main() {
                 direccion: org.direccion ?? b.address,
                 latitud: org.latitud ?? b.lat,
                 longitud: org.longitud ?? b.lng,
-                almacenNombre: org.almacenNombre ?? b.alm_nombre,
-                almacenDireccion: org.almacenDireccion ?? b.alm_address,
-                almacenLatitud: org.almacenLatitud ?? b.alm_lat,
-                almacenLongitud: org.almacenLongitud ?? b.alm_lng,
             },
         })
+
+        // El almacén, ahora en su propia tabla: una sucursal puede tener varios. Este
+        // script trae el que viene de delivery y lo deja como principal SÓLO si la
+        // sucursal no tiene ninguno — no vaya a pisar los que se hayan añadido a mano.
+        if (b.alm_lat != null && b.alm_lng != null) {
+            const yaTiene = await prisma.almacen.count({ where: { orgId: org.id } })
+
+            if (yaTiene === 0) {
+                await prisma.almacen.create({
+                    data: {
+                        orgId: org.id,
+                        nombre: b.alm_nombre || org.name,
+                        direccion: b.alm_address ?? null,
+                        latitud: b.alm_lat,
+                        longitud: b.alm_lng,
+                        principal: true,
+                    },
+                })
+            }
+        }
         actualizadas++
     }
 
     const total = await prisma.organization.count()
     const conCoords = await prisma.organization.count({ where: { latitud: { not: null } } })
-    const conAlmacen = await prisma.organization.count({ where: { almacenLatitud: { not: null } } })
+    const conAlmacen = await prisma.organization.count({ where: { almacenes: { some: { latitud: { not: null } } } } })
 
     console.log(`\n  ${actualizadas} completadas · ${sinPareja} sin pareja en Accesos`)
     console.log(`  sucursales en Accesos: ${total}`)

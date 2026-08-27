@@ -208,8 +208,18 @@ export function RolesManager({
 
     return (
         <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-            {/* Los roles */}
-            <div className="space-y-1.5">
+            {/*
+              La columna de roles, FIJA, igual que la de sucursales.
+              
+              Bajaba con la matriz de permisos de la derecha, que es larguísima: al llegar
+              a los permisos del final, la lista de roles ya no estaba en pantalla y había
+              que subir del todo para cambiar de rol — justo lo que se hace todo el rato
+              al repartir permisos.
+              
+              `self-start` es lo que hace que sticky funcione dentro de un grid: sin él la
+              celda se estira a la altura de la fila y no queda nada a lo que pegarse.
+            */}
+            <div className="space-y-1.5 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-1">
                 {roles.map((r) => {
                     const activo = r.id === rolActivo.id;
                     return (

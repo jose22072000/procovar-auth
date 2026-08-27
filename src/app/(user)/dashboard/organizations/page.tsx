@@ -27,7 +27,11 @@ export default async function DashboardOrgsPage() {
         // edición abriría en blanco y el primer guardado borraría lo que había.
         codigo: true, activa: true, timezone: true, telefono: true, direccion: true,
         latitud: true, longitud: true,
-        almacenNombre: true, almacenDireccion: true, almacenLatitud: true, almacenLongitud: true,
+        // Los almacenes, ya no un juego de campos sueltos: una sucursal tiene varios.
+        almacenes: {
+            select: { id: true, nombre: true, direccion: true, latitud: true, longitud: true, principal: true, activo: true },
+            orderBy: [{ principal: "desc" }, { nombre: "asc" }],
+        },
         members: {
           select: {
             id: true, userId: true, role: true,
@@ -42,8 +46,7 @@ export default async function DashboardOrgsPage() {
     id: o.id, name: o.name, slug: o.slug, logo: o.logo, memberCount: o.members.length,
     codigo: o.codigo, activa: o.activa, timezone: o.timezone, telefono: o.telefono,
     direccion: o.direccion, latitud: o.latitud, longitud: o.longitud,
-    almacenNombre: o.almacenNombre, almacenDireccion: o.almacenDireccion,
-    almacenLatitud: o.almacenLatitud, almacenLongitud: o.almacenLongitud,
+    almacenes: o.almacenes,
     roles,
     members: o.members.map((m) => ({
       memberId: m.id, userId: m.userId, name: m.user.name, email: m.user.email,
