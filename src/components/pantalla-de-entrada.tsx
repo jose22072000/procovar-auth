@@ -27,10 +27,22 @@ import { SignInForm } from "@/components/forms/sign-in";
  * pantalla con la marca en un teléfono es dejar el formulario debajo del pliegue.
  */
 
+/**
+ * Las aplicaciones que se anuncian en la portada, antes de entrar.
+ *
+ * Es una lista APARTE de la del panel (account-view.tsx), y por eso se quedó con cuatro
+ * cuando la otra se completó: dos sitios con la misma lista y sólo uno actualizado. Se
+ * queda separada a propósito —aquí sólo son nombres, sin enlaces ni permisos— pero si se
+ * añade una aplicación hay que tocar las dos.
+ */
 const APLICACIONES = [
     { icono: "lucide:clipboard-list", nombre: "PEDIDO" },
     { icono: "lucide:bar-chart-3", nombre: "Analitics" },
+    { icono: "lucide:route", nombre: "Rutas" },
     { icono: "lucide:truck", nombre: "Delivery" },
+    { icono: "lucide:package-check", nombre: "Entrega" },
+    { icono: "lucide:banknote", nombre: "Caja" },
+    { icono: "lucide:arrow-left-right", nombre: "Traslado" },
     { icono: "lucide:layout-dashboard", nombre: "Parranda" },
 ];
 
