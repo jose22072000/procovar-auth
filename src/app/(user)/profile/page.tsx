@@ -20,6 +20,27 @@ export default async function ProfilePage() {
     const { data: user } = await getCurrentUser();
     if (!user) redirect("/");
 
+    /**
+     * El rol de verdad, no uno supuesto.
+     *
+     * La pantalla escribía "Super Admin" a fuego en cuanto isSystemAdmin era cierto, así
+     * que quien tiene DESARROLLADOR —que está por encima— se veía etiquetado como algo
+     * que no es. Y no es un detalle cosmético: la etiqueta del perfil es donde uno
+     * comprueba con qué permisos está entrando.
+     */
+    const conRol = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+            defaultRole: {
+                select: {
+                    name: true,
+                    description: true,
+                },
+            },
+        },
+    });
+
+
     const miembros = await prisma.member.findMany({
         where: { userId: user.id },
         select: {
@@ -45,5 +66,18 @@ export default async function ProfilePage() {
         };
     });
 
-    return <ProfileContent user={user} pertenencias={pertenencias} />;
+    return (
+        <ProfileContent
+            user={user}
+            pertenencias={pertenencias}
+            rol={
+                conRol?.defaultRole
+                    ? {
+                          name: conRol.defaultRole.name,
+                          description: conRol.defaultRole.description,
+                      }
+                    : null
+            }
+        />
+    );
 }

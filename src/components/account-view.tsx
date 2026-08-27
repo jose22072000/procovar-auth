@@ -32,6 +32,17 @@ interface Destino {
     externo?: boolean;
 }
 
+/**
+ * Todo el ecosistema, no sólo las cuatro de siempre.
+ *
+ * Faltaban cinco de las nueve —Rutas, Entrega, Caja, Traslado y el Portal—, así que
+ * quien entraba aquí veía media plataforma y tenía que saberse las direcciones de
+ * memoria para llegar al resto. Comprobadas una a una antes de ponerlas: todas responden.
+ *
+ * n8n se queda fuera a propósito. Es la herramienta de automatizaciones, no una
+ * aplicación de negocio: quien la necesita sabe dónde está, y ponerla aquí invita a
+ * entrar a quien no tiene por qué.
+ */
 const APLICACIONES: Destino[] = [
     {
         href: "https://pedidos.procovar.cloud",
@@ -48,13 +59,56 @@ const APLICACIONES: Destino[] = [
         externo: true,
     },
     {
+        href: "https://rutas.procovar.cloud",
+        icono: "lucide:route",
+        titulo: "Rutas",
+        descripcion: "Recorridos de los vendedores sobre el mapa.",
+        externo: true,
+    },
+    {
         href: "https://delivery.procovar.cloud",
         icono: "lucide:truck",
         titulo: "Delivery",
-        descripcion: "Reparto y rutas.",
+        descripcion: "Reparto y planificación de rutas.",
+        externo: true,
+    },
+    {
+        href: "https://entrega.procovar.cloud",
+        icono: "lucide:package-check",
+        titulo: "Entrega",
+        descripcion: "Panel de la aplicación de los repartidores.",
+        externo: true,
+    },
+    {
+        href: "https://caja.procovar.cloud",
+        icono: "lucide:banknote",
+        titulo: "Caja",
+        descripcion: "Cobros y cierres de caja.",
+        externo: true,
+    },
+    {
+        href: "https://traslado.procovar.cloud",
+        icono: "lucide:arrow-left-right",
+        titulo: "Traslado",
+        descripcion: "Movimientos de mercancía entre sucursales.",
+        externo: true,
+    },
+    {
+        href: "https://ccsa.procovar.cloud",
+        icono: "lucide:layout-dashboard",
+        titulo: "Tablero Parranda",
+        descripcion: "El tablero de Parranda / CCSA.",
+        externo: true,
+    },
+    {
+        href: "https://procovar.cloud",
+        icono: "lucide:home",
+        titulo: "Portal",
+        descripcion: "La entrada común a todo lo demás.",
         externo: true,
     },
 ];
+
 
 export async function AccountView({ user, role }: AccountViewProps) {
     const t = await getTranslations();

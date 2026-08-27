@@ -89,7 +89,13 @@
     "title": "My account",
     "myBranches": "Where I work",
     "noBranches": "You are not in any sucursal yet. Ask an administrator.",
-    "superAdminScope": "Super Admin: you see and manage all eight sucursales. You do not belong to any one of them."
+    "superAdminScope": "Super Admin: you see and manage all eight sucursales. You do not belong to any one of them.",
+    "myRole": "My role",
+    "myScope": "What I can do",
+    "noRole": "You don't have a role yet. Ask an administrator for one.",
+    "settingsHint": "Name, password and language",
+    "notificationsHint": "What has reached you",
+    "logoutHint": "Sign out"
   },
   "cards": {
     "viewAll": "View all",

@@ -26,14 +26,34 @@ export const ROL_MINIMO: SystemRoleName = 'GESTOR'
  */
 export const PRECEDENCE: readonly string[] = SYSTEM_ROLE_NAMES
 
+/**
+ * Qué es cada rol, dicho para quien lo va a repartir.
+ *
+ * Cada una dice TRES cosas, en este orden: quién es esa persona en la práctica, qué
+ * puede hacer, y dónde está el límite. Antes decían sólo lo del medio —"Global. Ve y
+ * gestiona todas las sucursales"— y así no se puede elegir: quien reparte accesos no
+ * está mirando una lista de permisos, está pensando en una persona concreta y en si le
+ * da esto o lo de abajo.
+ *
+ * El límite es la parte que importa y la que faltaba. Un rol se elige tanto por lo que
+ * deja hacer como por lo que impide, y si sólo se cuenta la mitad buena, se acaba dando
+ * de más por si acaso.
+ */
 export const ROLE_DESCRIPTIONS: Record<SystemRoleName, string> = {
-  DESARROLLADOR: 'Quien mantiene la plataforma. Todo lo del Super Admin más la trastienda técnica: el módulo de Avisos (tipos, plantillas y canales de notificación). No es un rol de negocio: se reparte a mano y a muy poca gente.',
-  'SUPER ADMIN': 'Global. Ve y gestiona todas las sucursales.',
-  ADMINISTRADOR: 'Gestiona las sucursales a las que pertenece, y solo esas.',
-  GERENTE: 'Ve todo lo de su sucursal y lleva el día a día, pero no reparte accesos ni toca la configuración.',
-  SUPERVISOR: 'Ve lo suyo y lo de sus gestores dentro de su sucursal, y puede actuar.',
-  GESTOR: 'Solo sus propios datos: sus vendedores, sus pedidos, sus clientes.',
-  OPERADOR: 'El facturador. Lee y completa los pedidos de su sucursal. Sin informes.',
+  DESARROLLADOR:
+    'Quien mantiene la plataforma por dentro. Puede todo lo del Super Admin y además el módulo de Avisos: tipos, plantillas y canales de notificación. No es un rol de negocio y no se pide: se da a mano y a muy poca gente, porque desde aquí se tocan cosas que afectan a las ocho sucursales a la vez.',
+  'SUPER ADMIN':
+    'Manda en todas las sucursales. Crea sucursales y personas, reparte y quita accesos, y ve los datos de cualquiera. No pertenece a ninguna sucursal en concreto — precisamente por eso las ve todas.',
+  ADMINISTRADOR:
+    'Manda, pero sólo donde está dado de alta. Dentro de sus sucursales hace lo mismo que un Super Admin: personas, accesos y configuración. Fuera de ellas no ve nada, ni siquiera que existen.',
+  GERENTE:
+    'Lleva el día a día de su sucursal. Ve todos los pedidos, clientes y vendedores, y los informes completos. Lo que no puede es repartir accesos ni cambiar la configuración: para eso está el Administrador.',
+  SUPERVISOR:
+    'Tiene gestores a su cargo. Ve y trabaja lo suyo y lo de ellos, dentro de su sucursal. No alcanza al resto de la sucursal, sólo a su gente.',
+  GESTOR:
+    'El vendedor. Ve y trabaja únicamente lo suyo: sus clientes, sus pedidos, sus comisiones. Es el rol que se da por defecto a quien entra nuevo, porque es el que menos abarca.',
+  OPERADOR:
+    'El de facturación. Lee los pedidos de su sucursal y los marca como completados, que es su trabajo entero. Sin informes y sin ver nada de otras sucursales.',
 }
 
 const allKeys = () => PERMISSION_CATALOG.filter((p) => !p.isDeprecated).map((p) => p.key)

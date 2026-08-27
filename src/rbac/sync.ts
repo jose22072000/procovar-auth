@@ -76,7 +76,15 @@ export async function syncRbac(): Promise<{
   for (const name of SYSTEM_ROLE_NAMES) {
     const existente = await prisma.role.findUnique({ where: { name }, select: { id: true } })
     if (existente) {
-      await prisma.role.update({ where: { id: existente.id }, data: { isSystem: true } })
+      // La descripción SÍ se refresca. Es documentación, no permisos: no hay pantalla
+      // donde editarla, así que este fichero es su única fuente y dejarla congelada
+      // significaba que mejorar un texto aquí no llegaba nunca a quien reparte accesos.
+      //
+      // Los PERMISOS siguen sin tocarse, que es lo que protege el aviso de arriba.
+      await prisma.role.update({
+        where: { id: existente.id },
+        data: { isSystem: true, description: ROLE_DESCRIPTIONS[name] },
+      })
       continue
     }
 

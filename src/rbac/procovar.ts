@@ -53,13 +53,43 @@ export const APLICACIONES = [
     host: 'delivery.procovar.cloud',
   },
   {
+    clientId: 'rutas',
+    name: 'Rutas',
+    description: 'Recorridos de los vendedores sobre el mapa.',
+    host: 'rutas.procovar.cloud',
+  },
+  {
+    clientId: 'entrega',
+    name: 'Entrega',
+    description: 'Panel de la aplicación de los repartidores.',
+    host: 'entrega.procovar.cloud',
+  },
+  {
+    clientId: 'caja',
+    name: 'Caja',
+    description: 'Cobros y cierres de caja.',
+    host: 'caja.procovar.cloud',
+  },
+  {
+    clientId: 'traslado',
+    name: 'Traslado',
+    description: 'Movimientos de mercancía entre sucursales.',
+    host: 'traslado.procovar.cloud',
+  },
+  {
     clientId: 'ccsa',
     name: 'Tablero Parranda',
     description: 'Tablero de Parranda / CCSA.',
-    // OJO: este dominio todavía no existe. El tablero sigue en el VPS viejo, y
-    // se registra ya para no tener que acordarse el día que se mude — hasta
-    // entonces la entrada está ahí sin hacer nada.
+    // Ya está en el VPS nuevo y responde. El aviso de que "todavía no existe" se
+    // quedó de cuando seguía en el viejo: un comentario que dice lo contrario de lo
+    // que pasa hace dudar de todo el fichero.
     host: 'ccsa.procovar.cloud',
+  },
+  {
+    clientId: 'portal',
+    name: 'Portal',
+    description: 'La entrada común a todo lo demás.',
+    host: 'procovar.cloud',
   },
 ] as const
 

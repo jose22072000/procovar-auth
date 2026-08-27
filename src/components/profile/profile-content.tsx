@@ -25,6 +25,8 @@ interface ProfileContentProps {
     user: User;
     /** Las sucursales de esta persona y el rol que tiene en cada una. */
     pertenencias: Pertenencia[];
+    /** El rol de verdad, con su descripción. Null si nadie le asignó ninguno. */
+    rol: { name: string; description: string | null } | null;
 }
 
 /**
@@ -38,9 +40,19 @@ interface ProfileContentProps {
  * "Dónde puede trabajar" no es un adorno: es la primera pregunta cuando algo no
  * deja hacer algo, y hasta ahora había que ir a buscarla al panel.
  */
-export function ProfileContent({ user, pertenencias }: ProfileContentProps) {
+export function ProfileContent({ user, pertenencias, rol }: ProfileContentProps) {
     const t = useTranslations();
     const inicial = user.name?.[0]?.toUpperCase() || "?";
+
+    /**
+     * Qué poner en la etiqueta del rol.
+     *
+     * El rol asignado manda sobre `isSystemAdmin`. Antes se escribía "Super Admin" en
+     * cuanto esa bandera era cierta, y quien tiene DESARROLLADOR —que está por encima—
+     * se veía etiquetado como algo que no es. Aquí es donde uno comprueba con qué
+     * permisos entra, así que decir el que no es resulta peor que no decir ninguno.
+     */
+    const etiquetaRol = rol?.name ?? (user.isSystemAdmin ? "SUPER ADMIN" : null);
 
     return (
         <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
@@ -70,8 +82,8 @@ export function ProfileContent({ user, pertenencias }: ProfileContentProps) {
                         <h2 className="pv-titulo truncate text-lg">{user.name}</h2>
                         <p className="truncate text-sm text-pv-tinta-suave">{user.email}</p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            {user.isSystemAdmin && (
-                                <span className="pv-etiqueta pv-etiqueta-azul">Super Admin</span>
+                            {etiquetaRol && (
+                                <span className="pv-etiqueta pv-etiqueta-azul">{etiquetaRol}</span>
                             )}
                             <span
                                 className={
@@ -97,43 +109,106 @@ export function ProfileContent({ user, pertenencias }: ProfileContentProps) {
                 </div>
             </div>
 
-            <div className="pv-ficha">
-                <div className="pv-ficha-cabecera">
-                    <Icon icon="lucide:building-2" className="size-4 text-pv-tinta-suave" aria-hidden />
-                    <h2 className="text-sm font-semibold">{t("profile.myBranches")}</h2>
+            {/*
+                Mosaico y no una lista.
+                
+                Antes esto era una sola ficha con una frase dentro y el resto de la
+                pantalla en blanco. Las cosas que se miran aquí son independientes entre
+                sí —qué rol tengo, dónde trabajo, a dónde voy— y en una lista vertical
+                cada una obliga a bajar la vista para descubrir que la siguiente cabía al
+                lado.
+            */}
+            <div className="grid gap-4 sm:grid-cols-2">
+                {/* Qué puedo hacer. Va primero porque es lo que se viene a comprobar. */}
+                <div className="pv-ficha flex flex-col">
+                    <div className="pv-ficha-cabecera">
+                        <Icon icon="lucide:shield-check" className="size-4 text-pv-tinta-suave" aria-hidden />
+                        <h2 className="text-sm font-semibold">{t("profile.myRole")}</h2>
+                    </div>
+                    <div className="flex-1 px-4 py-4">
+                        {etiquetaRol ? (
+                            <>
+                                <p className="pv-codigo text-lg font-semibold text-pv-azul">
+                                    {etiquetaRol}
+                                </p>
+                                {/* La descripción del rol, aquí y no escondida en el panel
+                                    de permisos: es donde uno se pregunta qué alcanza. */}
+                                <p className="mt-2 text-sm leading-relaxed text-pv-tinta-suave">
+                                    {rol?.description ?? t("profile.superAdminScope")}
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-sm text-pv-tinta-suave">{t("profile.noRole")}</p>
+                        )}
+                    </div>
                 </div>
 
-                {user.isSystemAdmin ? (
-                    // Un Super Admin no pertenece a ninguna sucursal: las ve todas.
-                    // Decir "no tienes ninguna" seria mentirle al que mas puede.
-                    <p className="px-4 py-5 text-sm text-pv-tinta-suave">
-                        {t("profile.superAdminScope")}
-                    </p>
-                ) : pertenencias.length === 0 ? (
-                    <p className="px-4 py-5 text-sm text-pv-tinta-suave">
-                        {t("profile.noBranches")}
-                    </p>
-                ) : (
-                    <ul className="divide-y divide-pv-trazo-tenue">
-                        {pertenencias.map((p) => (
-                            <li key={p.sucursal} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                                {p.codigo && (
-                                    <span className="pv-etiqueta pv-etiqueta-gris">{p.codigo}</span>
-                                )}
-                                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                                    {p.sucursal}
-                                </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {p.roles.map((r) => (
-                                        <span key={r} className="pv-etiqueta pv-etiqueta-azul">
-                                            {r}
-                                        </span>
-                                    ))}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                {/* Dónde trabajo. */}
+                <div className="pv-ficha flex flex-col">
+                    <div className="pv-ficha-cabecera">
+                        <Icon icon="lucide:building-2" className="size-4 text-pv-tinta-suave" aria-hidden />
+                        <h2 className="text-sm font-semibold">{t("profile.myBranches")}</h2>
+                    </div>
+
+                    {user.isSystemAdmin && pertenencias.length === 0 ? (
+                        // Quien manda en todas no pertenece a ninguna. Decirle "no tienes
+                        // ninguna" sería mentirle al que más puede.
+                        <div className="flex-1 px-4 py-4">
+                            <p className="pv-codigo text-lg font-semibold text-pv-azul">
+                                {t("cuenta.todasLasSucursales")}
+                            </p>
+                            <p className="mt-2 text-sm leading-relaxed text-pv-tinta-suave">
+                                {t("profile.superAdminScope")}
+                            </p>
+                        </div>
+                    ) : pertenencias.length === 0 ? (
+                        <p className="flex-1 px-4 py-4 text-sm text-pv-tinta-suave">
+                            {t("profile.noBranches")}
+                        </p>
+                    ) : (
+                        <ul className="flex-1 divide-y divide-pv-trazo-tenue">
+                            {pertenencias.map((p) => (
+                                <li key={p.sucursal} className="flex flex-wrap items-center gap-2 px-4 py-3">
+                                    {p.codigo && (
+                                        <span className="pv-etiqueta pv-etiqueta-gris">{p.codigo}</span>
+                                    )}
+                                    <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                        {p.sucursal}
+                                    </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {p.roles.map((r) => (
+                                            <span key={r} className="pv-etiqueta pv-etiqueta-azul">
+                                                {r}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+
+            {/* A dónde ir desde aquí. Enlaces, no adornos: cada uno lleva a algo que se
+                hace de verdad desde el perfil. */}
+            <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                    { href: "/profile/me", icono: "lucide:settings", titulo: t("profile.settings"), pie: t("profile.settingsHint") },
+                    { href: "/profile/notifications", icono: "lucide:bell", titulo: t("rail.avisos"), pie: t("profile.notificationsHint") },
+                    { href: "/logout", icono: "lucide:log-out", titulo: t("nav.logOut"), pie: t("profile.logoutHint") },
+                ].map((a) => (
+                    <Link
+                        key={a.href}
+                        href={a.href}
+                        className="pv-ficha flex items-start gap-3 p-4 transition-colors hover:bg-pv-azul/5"
+                    >
+                        <Icon icon={a.icono} className="mt-0.5 size-4 shrink-0 text-pv-azul" aria-hidden />
+                        <span className="min-w-0">
+                            <span className="block text-sm font-semibold">{a.titulo}</span>
+                            <span className="mt-0.5 block text-xs text-pv-tinta-suave">{a.pie}</span>
+                        </span>
+                    </Link>
+                ))}
             </div>
         </div>
     );
