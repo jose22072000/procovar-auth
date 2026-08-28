@@ -207,27 +207,33 @@ export function OrgsManager({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] lg:h-[calc(100dvh-8.5rem)] lg:overflow-hidden">
       {/*
       Dos columnas con ALTURA PROPIA, y cada una con su desplazamiento.
 
-      Antes la lista de sucursales era `sticky`, y no se quedaba: bajaba con el contenido
-      de la derecha, así que al mirar el miembro número treinta de una sucursal la lista ya
-      no estaba en pantalla y había que subir del todo para cambiar de una a otra.
+      Empezó siendo `sticky` y no se quedaba: bajaba con el contenido de la derecha, así
+      que al mirar el miembro número treinta de una sucursal la lista ya no estaba en
+      pantalla. `sticky` depende de a qué ancestro se pega, y aquí hay varios con
+      `overflow` por medio —el panel del menú, el contenedor que desplaza la página—:
+      basta uno para que deje de agarrar, y desde fuera parece que la clase no hace nada.
 
-      `sticky` depende de a qué ancestro se pega, y aquí hay varios con `overflow` por
-      medio —el panel del menú, el contenedor que desplaza la página—: basta uno para que
-      deje de agarrar, y desde fuera parece que la clase no hace nada. Fijar la altura de
-      la fila y dar a cada columna su `overflow-y-auto` no depende de ningún ancestro: la
-      lista no se mueve porque no tiene por dónde moverse.
+      Con altura propia no depende de ningún ancestro. Y DENTRO de la columna sólo se
+      desplaza la lista: el botón de crear y el buscador se quedan arriba. Desplazando la
+      columna entera se iban con ella —para buscar una sucursal había que subir primero—,
+      y el final de la lista quedaba por debajo del borde de la pantalla, sin forma de
+      llegar a las últimas.
+
+      `dvh` y no `vh`: en el móvil la barra del navegador aparece y desaparece, y con `vh`
+      la última fila se queda debajo de ella justo cuando se va a tocar.
 
       Sólo en pantallas anchas. En un teléfono las dos columnas van una debajo de otra y
       partir la pantalla en dos trozos con desplazamiento propio la haría inservible.
     */}
-      <div className="space-y-3 lg:h-full lg:overflow-y-auto lg:pr-1">
+      <div className="flex flex-col gap-3 lg:h-full lg:min-h-0">
         {/* Crear sucursal. Faltaba entero: se podían editar y borrar, pero abrir
             una nueva exigía tocar la base a mano. */}
         <Button
+          className="shrink-0"
           fullWidth color="primary"
           startContent={<Icon icon="lucide:plus" className="size-4" aria-hidden />}
           onPress={() => nuevaOrg.onOpen()}
@@ -235,11 +241,14 @@ export function OrgsManager({
           Nueva sucursal
         </Button>
         <Input
+          className="shrink-0"
           variant="bordered" label={t('dashboard.orgsManager.searchOrgLabel')} labelPlacement="outside" placeholder={t('dashboard.orgsManager.searchOrgPlaceholder')}
           value={query} onValueChange={setQuery} isClearable onClear={() => setQuery("")}
           startContent={<Icon icon="lucide:search" className="size-4 text-slate-400" aria-hidden />}
         />
-        <div className="space-y-1.5">
+        {/* `min-h-0` es lo que hace que un hijo con scroll dentro de un flex se encoja:
+            sin él crece con su contenido y el desplazamiento se va al padre. */}
+        <div className="space-y-1.5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
           {orgs.map((o) => {
             const active = o.id === selectedId;
             return (
