@@ -130,6 +130,31 @@ model Verification {
   @@map("verification")
 }
 
+/// La tasa de cambio USD -> CUP de cada sucursal.
+///
+/// Vive AQUÍ porque es un dato de la sucursal, y la sucursal es de Accesos. Estaba sólo
+/// en PEDIDO, así que delivery se apañaba con una tasa escrita a mano en su pantalla de
+/// Configuración: dos números para lo mismo, y un domicilio que vale distinto según dónde
+/// se mire. Eso no falla en pantalla — sale un importe creíble y cuadra mal en la caja.
+///
+/// El valor lo pone la API de Entrega, que ya la mantiene para su aplicación. Se trae de
+/// ahí en vez de teclearla para que todos cobren con la MISMA.
+model TasaCambio {
+  /// El CÓDIGO de la sucursal (CAM, HAB, STG…), que es la clave que cruza todo.
+  codigo    String   @id
+  /// Cuántos CUP vale un USD.
+  cupPorUsd Float
+  /// De dónde salió: "entrega", "manual", el nombre de quien la puso.
+  fuente    String?
+  /// Cuándo se trajo. Una tasa sin saber de cuándo es no se puede usar para cobrar: en
+  /// Cuba se mueve a diario y un importe calculado con la de la semana pasada está mal
+  /// sin que el número lo diga.
+  traidoAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@index([traidoAt])
+}
+
 model Organization {
   id          String       @id @default(cuid())
   name        String
