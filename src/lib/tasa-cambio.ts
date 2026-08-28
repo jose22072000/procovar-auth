@@ -36,6 +36,11 @@ const REFRESCO_MS = Number(process.env.TASA_CAMBIO_MS || 6 * 60 * 60 * 1000);
 export interface Tasa {
     codigo: string;
     cupPorUsd: number;
+    /**
+     * CUP por km y por kg. Es con lo que Entrega cobra el domicilio:
+     * `importe = tarifaBase × distancia × peso`.
+     */
+    tarifaBase: number | null;
     fuente: string | null;
     traidoAt: Date;
     /** false cuando lleva más de `HORAS_FRESCA` sin actualizarse. */
@@ -45,6 +50,7 @@ export interface Tasa {
 const conFrescura = (t: {
     codigo: string;
     cupPorUsd: number;
+    tarifaBase: number | null;
     fuente: string | null;
     traidoAt: Date;
 }): Tasa => ({
@@ -74,19 +80,26 @@ export async function todasLasTasas(): Promise<Tasa[]> {
 }
 
 /** La escribe a mano quien administra. Queda marcada como manual, para saberlo. */
-export async function ponerTasa(codigo: string, cupPorUsd: number, fuente = 'manual'): Promise<Tasa> {
+export async function ponerTasa(
+    codigo: string,
+    cupPorUsd: number,
+    fuente = 'manual',
+    tarifaBase?: number | null,
+): Promise<Tasa> {
     const clave = codigo.trim().toUpperCase();
+    // La tarifa sólo se pisa si viene: al ponerla a mano se cambia la tasa, no la tarifa.
+    const conTarifa = tarifaBase != null && Number.isFinite(tarifaBase) ? { tarifaBase } : {};
     const t = await prisma.tasaCambio.upsert({
         where: { codigo: clave },
-        update: { cupPorUsd, fuente, traidoAt: new Date() },
-        create: { codigo: clave, cupPorUsd, fuente },
+        update: { cupPorUsd, fuente, traidoAt: new Date(), ...conTarifa },
+        create: { codigo: clave, cupPorUsd, fuente, ...conTarifa },
     });
 
     return conFrescura(t);
 }
 
 /** Pide la tasa de UNA sucursal a la API de Entrega. */
-async function preguntarAEntrega(codigo: string): Promise<{ valor?: number; error?: string }> {
+async function preguntarAEntrega(codigo: string): Promise<{ valor?: number; tarifaBase?: number; error?: string }> {
     try {
         const r = await fetch(`${URL_TASAS}?codigoSucursal=${encodeURIComponent(codigo)}`, {
             // En la cabecera y no en la URL: un token en el query string queda escrito en
@@ -127,7 +140,16 @@ async function preguntarAEntrega(codigo: string): Promise<{ valor?: number; erro
             return { error: `no se entendió la respuesta: ${JSON.stringify(b).slice(0, 120)}` };
         }
 
-        return { valor };
+        /**
+         * Y la TARIFA BASE, que viene en la misma respuesta.
+         *
+         * Se descartaba. Es el otro número con el que Entrega cobra —el importe es
+         * `tarifa × distancia × peso`— y sin él, quien tenga que calcular lo mismo fuera
+         * de la APK acaba inventándose una fórmula parecida que da otro número.
+         */
+        const tarifa = Number(b?.tarifa_base ?? b?.tarifaBase);
+
+        return { valor, tarifaBase: Number.isFinite(tarifa) && tarifa > 0 ? tarifa : undefined };
     } catch (e) {
         return { error: (e as Error).message };
     }
@@ -154,13 +176,13 @@ export async function refrescarTasas(): Promise<{
 
     for (const s of sucursales) {
         const codigo = (s.codigo as string).toUpperCase();
-        const { valor, error } = await preguntarAEntrega(codigo);
+        const { valor, tarifaBase, error } = await preguntarAEntrega(codigo);
 
         if (valor == null) {
             fallos.push({ codigo, error: error ?? 'sin respuesta' });
             continue;
         }
-        await ponerTasa(codigo, valor, 'entrega');
+        await ponerTasa(codigo, valor, 'entrega', tarifaBase ?? null);
         actualizadas.push(codigo);
     }
 

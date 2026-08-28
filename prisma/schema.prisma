@@ -144,6 +144,13 @@ model TasaCambio {
   codigo    String   @id
   /// Cuántos CUP vale un USD.
   cupPorUsd Float
+  /// La TARIFA BASE de esa sucursal, en CUP por km y por kg.
+  ///
+  /// Es el otro número con el que Entrega cobra un domicilio: el importe es
+  /// `tarifa_base × distancia × peso`. Viene en la misma respuesta que la tasa, así que
+  /// guardarlo cuesta nada y evita que quien tenga que calcular lo mismo —delivery, para
+  /// los pedidos que se meten a mano— se invente una fórmula propia.
+  tarifaBase Float?
   /// De dónde salió: "entrega", "manual", el nombre de quien la puso.
   fuente    String?
   /// Cuándo se trajo. Una tasa sin saber de cuándo es no se puede usar para cobrar: en
