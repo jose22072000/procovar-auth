@@ -84,6 +84,14 @@ export function OrgsManager({
   const alta = useDisclosure();
   const nuevaOrg = useDisclosure();
   const [nombreNueva, setNombreNueva] = useState("");
+  // Lo demás de la sucursal nueva. Todo opcional menos el nombre, pero se pide AQUÍ:
+  // es cuando la persona tiene los datos delante, y el código es la clave con la que las
+  // otras aplicaciones la van a reconocer.
+  const [nuevaCodigo, setNuevaCodigo] = useState("");
+  const [nuevaTelefono, setNuevaTelefono] = useState("");
+  const [nuevaDireccion, setNuevaDireccion] = useState("");
+  const [nuevaLat, setNuevaLat] = useState("");
+  const [nuevaLng, setNuevaLng] = useState("");
   // Aquí NO se crean cuentas: se elige a alguien que ya existe y se le dice en qué
   // sucursal trabaja. Crear la persona es de la pantalla de Personas.
   const [altaForm, setAltaForm] = useState<{ userId: string }>({ userId: "" });
@@ -176,7 +184,15 @@ export function OrgsManager({
     const nombre = nombreNueva.trim();
     if (!nombre) return;
     setBusy(true);
-    const res = await crearSucursal({ nombre });
+    const res = await crearSucursal({
+      nombre,
+      codigo: nuevaCodigo.trim() || undefined,
+      telefono: nuevaTelefono.trim() || undefined,
+      direccion: nuevaDireccion.trim() || undefined,
+      // Vacío es «no lo sé», no cero: un cero en latitud pone la sucursal en el Atlántico.
+      latitud: nuevaLat.trim() ? Number(nuevaLat) : null,
+      longitud: nuevaLng.trim() ? Number(nuevaLng) : null,
+    });
     setBusy(false);
     if (res.error) {
       addToast({ title: res.error, color: "danger" });
@@ -185,24 +201,30 @@ export function OrgsManager({
     addToast({ title: `Sucursal "${nombre}" creada`, color: "success" });
     if (res.orgId) setSelectedId(res.orgId);
     setNombreNueva("");
+    setNuevaCodigo(""); setNuevaTelefono(""); setNuevaDireccion(""); setNuevaLat(""); setNuevaLng("");
     nuevaOrg.onClose();
     router.refresh();
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
       {/*
-        La columna de la lista, FIJA.
-        
-        Antes bajaba con el contenido de la derecha: al mirar el miembro número treinta
-        de una sucursal, la lista de sucursales ya no estaba en pantalla y había que
-        subir del todo para cambiar de una a otra. Ahora se queda quieta y se desplaza
-        por dentro.
-        
-        `self-start` es lo que hace que sticky funcione dentro de un grid: sin él la
-        celda se estira a la altura de la fila y no hay nada respecto a lo que pegarse.
-      */}
-      <div className="space-y-3 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-1">
+      Dos columnas con ALTURA PROPIA, y cada una con su desplazamiento.
+
+      Antes la lista de sucursales era `sticky`, y no se quedaba: bajaba con el contenido
+      de la derecha, así que al mirar el miembro número treinta de una sucursal la lista ya
+      no estaba en pantalla y había que subir del todo para cambiar de una a otra.
+
+      `sticky` depende de a qué ancestro se pega, y aquí hay varios con `overflow` por
+      medio —el panel del menú, el contenedor que desplaza la página—: basta uno para que
+      deje de agarrar, y desde fuera parece que la clase no hace nada. Fijar la altura de
+      la fila y dar a cada columna su `overflow-y-auto` no depende de ningún ancestro: la
+      lista no se mueve porque no tiene por dónde moverse.
+
+      Sólo en pantallas anchas. En un teléfono las dos columnas van una debajo de otra y
+      partir la pantalla en dos trozos con desplazamiento propio la haría inservible.
+    */}
+      <div className="space-y-3 lg:h-full lg:overflow-y-auto lg:pr-1">
         {/* Crear sucursal. Faltaba entero: se podían editar y borrar, pero abrir
             una nueva exigía tocar la base a mano. */}
         <Button
@@ -248,9 +270,10 @@ export function OrgsManager({
         </div>
       </div>
 
-      {/* Selected org detail */}
+      {/* Selected org detail — con su propio desplazamiento, para que la lista de la
+          izquierda no tenga que bajar con él. */}
       {selected ? (
-        <div className="space-y-5 rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+        <div className="space-y-5 rounded-xl border border-gray-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800 lg:h-full lg:overflow-y-auto">
           {/* Detail header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -407,19 +430,48 @@ export function OrgsManager({
       </Panel>
 
       {/* Edit org */}
-      <Panel isOpen={nuevaOrg.isOpen} onOpenChange={nuevaOrg.onOpenChange}>
+      <Panel isOpen={nuevaOrg.isOpen} onOpenChange={nuevaOrg.onOpenChange} size="lg" scrollBehavior="inside">
         <ModalContent>
           <ModalHeader>Nueva sucursal</ModalHeader>
-          <ModalBody>
+          <ModalBody className="gap-3">
             <Input
               autoFocus variant="bordered" label="Nombre" labelPlacement="outside"
               placeholder="Camagüey"
               value={nombreNueva} onValueChange={setNombreNueva}
-              onKeyDown={(e) => { if (e.key === "Enter") void crearNueva(); }}
             />
+            {/* El CÓDIGO es lo que más falta hace de lo que no se pedía: es la clave con
+                la que PEDIDO, delivery y Rutas se refieren a esta sucursal. Sin él existe
+                aquí y no la conoce nadie más. */}
+            <Input
+              variant="bordered" label="Código" labelPlacement="outside"
+              placeholder="CAM"
+              description="Con el que la reconocen PEDIDO, delivery y Rutas. Sin él, esta sucursal sólo existe aquí."
+              value={nuevaCodigo}
+              onValueChange={(v) => setNuevaCodigo(v.toUpperCase())}
+            />
+            <Input
+              variant="bordered" label="Teléfono" labelPlacement="outside"
+              value={nuevaTelefono} onValueChange={setNuevaTelefono}
+            />
+            <Input
+              variant="bordered" label="Dirección" labelPlacement="outside"
+              value={nuevaDireccion} onValueChange={setNuevaDireccion}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                variant="bordered" label="Latitud" labelPlacement="outside" type="number"
+                value={nuevaLat} onValueChange={setNuevaLat}
+              />
+              <Input
+                variant="bordered" label="Longitud" labelPlacement="outside" type="number"
+                value={nuevaLng} onValueChange={setNuevaLng}
+              />
+            </div>
             <p className="text-xs text-slate-400">
-              La dirección se saca del nombre. Quien la crea entra dentro como
-              ADMINISTRADOR: una sucursal sin nadie no se puede ni abrir.
+              Sólo el nombre es obligatorio; el resto se puede completar después en
+              «Editar», y los almacenes también. La dirección web se saca del nombre, y
+              quien la crea entra dentro como ADMINISTRADOR: una sucursal sin nadie no se
+              puede ni abrir.
             </p>
           </ModalBody>
           <ModalFooter>

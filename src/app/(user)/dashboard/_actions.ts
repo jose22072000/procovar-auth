@@ -572,14 +572,45 @@ export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Pr
  * "camaguey" son la misma URL, y fallar con "ese slug ya está en uso" ante algo
  * que quien crea la sucursal ni ha escrito es hacerle adivinar.
  */
+/**
+ * Abrir una sucursal, con lo que hace falta para que sirva desde el primer día.
+ *
+ * Antes sólo pedía el nombre, y una sucursal recién creada nacía sin código, sin teléfono
+ * y sin coordenadas. El CÓDIGO es lo peor de los tres: es la clave con la que PEDIDO,
+ * delivery y Rutas se refieren a ella, así que sin él la sucursal existe en Accesos y no
+ * la conoce nadie más. Y sin coordenadas delivery no puede medir un domicilio.
+ *
+ * Todo menos el nombre es opcional y se puede completar después en «Editar» — pero se
+ * pide aquí, que es cuando la persona tiene los datos delante.
+ */
 export async function crearSucursal(
-    datos: { nombre: string },
+    datos: {
+        nombre: string;
+        codigo?: string;
+        telefono?: string;
+        direccion?: string;
+        latitud?: number | null;
+        longitud?: number | null;
+    },
 ): Promise<{ error?: string; orgId?: string }> {
     try {
         const actor = await requireAdmin();
 
         const nombre = datos.nombre.trim();
         if (!nombre) return { error: "La sucursal necesita un nombre." };
+
+        // El código, en mayúsculas y único: es la clave que cruza las cuatro
+        // aplicaciones, y "cam" y "CAM" tienen que ser la misma sucursal.
+        const codigo = datos.codigo?.trim().toUpperCase() || null;
+
+        if (codigo) {
+            const repetido = await prisma.organization.findUnique({
+                where: { codigo },
+                select: { name: true },
+            });
+
+            if (repetido) return { error: `El código ${codigo} ya es de ${repetido.name}.` };
+        }
 
         const base =
             nombre
@@ -599,7 +630,15 @@ export async function crearSucursal(
             try {
                 const org = await prisma.$transaction(async (tx) => {
                     const creada = await tx.organization.create({
-                        data: { name: nombre, slug },
+                        data: {
+                            name: nombre,
+                            slug,
+                            codigo,
+                            telefono: datos.telefono?.trim() || null,
+                            direccion: datos.direccion?.trim() || null,
+                            latitud: datos.latitud ?? null,
+                            longitud: datos.longitud ?? null,
+                        },
                         select: { id: true },
                     });
                     const miembro = await tx.member.create({
