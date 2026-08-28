@@ -324,7 +324,7 @@ export const MICROSERVICES: MicroserviceInfo[] = [
     },
     {
         id: 'entrega',
-        name: 'Entrega (delivery-apk)',
+        name: 'Entrega',
         role: 'La aplicación de los repartidores y su panel. Calcula el costo del domicilio y se lo manda a PEDIDO.',
         baseUrl: 'https://entrega.procovar.cloud',
     },
