@@ -13,11 +13,10 @@ import {
     Chip,
     Code,
     Divider,
-    Drawer,
-    DrawerBody,
-    DrawerContent,
-    DrawerFooter,
-    DrawerHeader,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
     Input,
     Select,
     SelectItem,
@@ -28,6 +27,11 @@ import {
     Tooltip,
     addToast,
 } from "@heroui/react";
+// Modal en la computadora, cajón desde abajo en el móvil. Estos tres eran `Drawer` a
+// pelo, y uno de ellos con `placement="right"`: un cajón lateral en un teléfono deja el
+// formulario contra el borde y el botón de guardar debajo del teclado, que es justo lo
+// que `Panel` existe para evitar.
+import { Panel } from "@/components/ui/panel";
 import { Icons } from "@/components/icons/iconify";
 import type {
     MicroserviceInfo,
@@ -672,22 +676,22 @@ function CreateClientDrawer({
     };
 
     return (
-        <Drawer
+        <Panel
             isOpen={open}
             onClose={onClose}
-            placement="right"
-            size="md"
+            size="xl"
+            scrollBehavior="inside"
         >
-            <DrawerContent className="sm:max-w-xl overflow-y-auto">
-                <DrawerHeader className="flex flex-col gap-1">
+            <ModalContent>
+                <ModalHeader className="flex flex-col gap-1">
                     <h3 className="text-xl font-semibold">{t('apiKeys.createClient.title')}</h3>
                     <p className="text-default-500 text-sm">
                         {t.rich('apiKeys.createClient.subtitle', {
                             code: (chunks) => <code>{chunks}</code>,
                         })}
                     </p>
-                </DrawerHeader>
-                <DrawerBody className="px-4 pb-4 space-y-4">
+                </ModalHeader>
+                <ModalBody className="px-4 pb-4 space-y-4">
                     <Select
                         label={t('apiKeys.createClient.presetLabel')}
                         placeholder={t('apiKeys.createClient.presetPlaceholder')}
@@ -743,8 +747,8 @@ function CreateClientDrawer({
                         selected={scopes}
                         onChange={setScopes}
                     />
-                </DrawerBody>
-                <DrawerFooter className="px-4 pb-4 flex gap-2">
+                </ModalBody>
+                <ModalFooter className="px-4 pb-4 flex gap-2">
                     <Button
                         variant="bordered"
                         className="flex-1"
@@ -767,9 +771,9 @@ function CreateClientDrawer({
                     >
                         {t('apiKeys.createClient.createButton')}
                     </Button>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+                </ModalFooter>
+            </ModalContent>
+        </Panel>
     );
 }
 
@@ -829,14 +833,14 @@ function MintPlatformJwtDrawer({
     };
 
     return (
-        <Drawer
+        <Panel
             isOpen={!!client}
             onClose={onClose}
-            placement="right"
-            size="md"
+            size="xl"
+            scrollBehavior="inside"
         >
-            <DrawerContent className="sm:max-w-xl overflow-y-auto">
-                <DrawerHeader className="flex flex-col gap-1">
+            <ModalContent>
+                <ModalHeader className="flex flex-col gap-1">
                     <h3 className="text-xl font-semibold">
                         {client ? t('apiKeys.mintJwt.titleFor', { clientId: client.clientId }) : t('apiKeys.mintJwt.titleBase')}
                     </h3>
@@ -845,8 +849,8 @@ function MintPlatformJwtDrawer({
                             code: (chunks) => <code>{chunks}</code>,
                         })}
                     </p>
-                </DrawerHeader>
-                <DrawerBody className="px-4 pb-4 space-y-4">
+                </ModalHeader>
+                <ModalBody className="px-4 pb-4 space-y-4">
                     <Alert
                         color="primary"
                         variant="flat"
@@ -877,8 +881,8 @@ function MintPlatformJwtDrawer({
                             </div>
                         </div>
                     )}
-                </DrawerBody>
-                <DrawerFooter className="px-4 pb-4 flex gap-2">
+                </ModalBody>
+                <ModalFooter className="px-4 pb-4 flex gap-2">
                     <Button
                         variant="bordered"
                         className="flex-1"
@@ -897,9 +901,9 @@ function MintPlatformJwtDrawer({
                     >
                         {t('apiKeys.mintJwt.mintButton')}
                     </Button>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+                </ModalFooter>
+            </ModalContent>
+        </Panel>
     );
 }
 
@@ -1095,15 +1099,15 @@ function CreateApiKeyDrawer({
     };
 
     return (
-        <Drawer isOpen={open} onClose={onClose} placement="right" size="md">
-            <DrawerContent className="sm:max-w-xl overflow-y-auto">
-                <DrawerHeader className="flex flex-col gap-1">
+        <Panel isOpen={open} onClose={onClose} size="xl" scrollBehavior="inside">
+            <ModalContent>
+                <ModalHeader className="flex flex-col gap-1">
                     <h3 className="text-xl font-semibold">{t('apiKeys.createApiKey.title')}</h3>
                     <p className="text-default-500 text-sm">
                         {t('apiKeys.createApiKey.subtitle')}
                     </p>
-                </DrawerHeader>
-                <DrawerBody className="px-4 pb-4 space-y-4">
+                </ModalHeader>
+                <ModalBody className="px-4 pb-4 space-y-4">
                     <Input
                         label={t('apiKeys.createApiKey.nameLabel')}
                         placeholder={t('apiKeys.createApiKey.namePlaceholder')}
@@ -1135,8 +1139,8 @@ function CreateApiKeyDrawer({
                         selected={scopes}
                         onChange={setScopes}
                     />
-                </DrawerBody>
-                <DrawerFooter className="px-4 pb-4 flex gap-2">
+                </ModalBody>
+                <ModalFooter className="px-4 pb-4 flex gap-2">
                     <Button
                         variant="bordered"
                         className="flex-1"
@@ -1159,9 +1163,9 @@ function CreateApiKeyDrawer({
                     >
                         {t('apiKeys.createApiKey.createButton')}
                     </Button>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+                </ModalFooter>
+            </ModalContent>
+        </Panel>
     );
 }
 
