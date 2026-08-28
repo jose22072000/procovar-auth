@@ -207,7 +207,7 @@ export function RolesManager({
     }
 
     return (
-        <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[260px_1fr] lg:h-full lg:overflow-hidden">
             {/*
               La columna de roles, FIJA, igual que la de sucursales.
               
@@ -219,7 +219,7 @@ export function RolesManager({
               `self-start` es lo que hace que sticky funcione dentro de un grid: sin él la
               celda se estira a la altura de la fila y no queda nada a lo que pegarse.
             */}
-            <div className="space-y-1.5 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-1">
+            <div className="space-y-1.5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1">
                 {roles.map((r) => {
                     const activo = r.id === rolActivo.id;
                     return (
@@ -254,9 +254,11 @@ export function RolesManager({
                 })}
             </div>
 
-            {/* Los permisos del rol elegido */}
-            <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-                <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
+            {/* Los permisos del rol elegido. Con su propio desplazamiento: son ochenta y
+                nueve repartidos en aplicaciones, y si desplazaran la página entera se
+                llevarían con ellos la lista de roles de la izquierda. */}
+            <div className="flex flex-col rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:h-full lg:min-h-0">
+                <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800 lg:shrink-0">
                     <div className="min-w-0">
                         <h2 className="text-lg font-bold text-slate-900 dark:text-white">{rolActivo.name}</h2>
                         <p className="text-sm text-slate-500">{t("dashboard.rolesManager.avisoGlobal")}</p>
@@ -296,7 +298,7 @@ export function RolesManager({
                     </div>
                 )}
 
-                <div className="p-4">
+                <div className="p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                     <Input
                         className="mb-4 max-w-xs"
                         variant="bordered"

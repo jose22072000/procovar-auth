@@ -54,9 +54,17 @@ export default async function DashboardOrgsPage() {
     })),
   }));
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('dashboard.organizationsPage.title')}</h1>
-      <OrgsManager initialOrgs={data} personas={personas} />
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 lg:flex lg:h-screen lg:flex-col lg:space-y-0 lg:gap-6 lg:overflow-hidden">
+      {/* La PÁGINA no se desplaza; se desplazan las columnas.
+          Con la página desplazándose, la columna de la izquierda se iba hacia arriba con
+          el contenido de la derecha —daba igual lo que se hiciera dentro de ella— y para
+          cambiar de sucursal había que subir del todo. Aquí se le da el alto de la
+          pantalla y se le quita el scroll: lo que corre es cada columna por dentro.
+          Sólo en pantallas anchas: en un teléfono las columnas van una debajo de otra. */}
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white lg:shrink-0">{t('dashboard.organizationsPage.title')}</h1>
+      <div className="lg:min-h-0 lg:flex-1">
+        <OrgsManager initialOrgs={data} personas={personas} />
+      </div>
     </div>
   );
 }

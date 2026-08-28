@@ -207,7 +207,7 @@ export function OrgsManager({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] lg:h-[calc(100dvh-8.5rem)] lg:overflow-hidden">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr] lg:h-full lg:overflow-hidden">
       {/*
       Dos columnas con ALTURA PROPIA, y cada una con su desplazamiento.
 

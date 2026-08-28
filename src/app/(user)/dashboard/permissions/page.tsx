@@ -61,8 +61,14 @@ export default async function DashboardPermissionsPage() {
     const puedeEditar = Boolean(session?.user?.isSystemAdmin);
 
     return (
-        <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
-            <div>
+        <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 lg:flex lg:h-screen lg:flex-col lg:space-y-0 lg:gap-5 lg:overflow-hidden">
+      {/* La PÁGINA no se desplaza; se desplazan las columnas.
+          Con la página desplazándose, la columna de la izquierda se iba hacia arriba con
+          el contenido de la derecha —daba igual lo que se hiciera dentro de ella— y para
+          cambiar de rol había que subir del todo. Aquí se le da el alto de la
+          pantalla y se le quita el scroll: lo que corre es cada columna por dentro.
+          Sólo en pantallas anchas: en un teléfono las columnas van una debajo de otra. */}
+            <div className="lg:shrink-0">
                 <p className="pv-rotulo">{t("rail.permisos")}</p>
                 <h1 className="pv-titulo mt-1 text-2xl">{t("dashboard.permissionsPage.title")}</h1>
                 <p className="mt-1 max-w-2xl text-sm text-pv-tinta-suave">
@@ -72,7 +78,9 @@ export default async function DashboardPermissionsPage() {
                     })}
                 </p>
             </div>
-            <RolesManager roles={roles} permisos={permissions} puedeEditar={puedeEditar} />
+            <div className="lg:min-h-0 lg:flex-1">
+                <RolesManager roles={roles} permisos={permissions} puedeEditar={puedeEditar} />
+            </div>
         </div>
     );
 }

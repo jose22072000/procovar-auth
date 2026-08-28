@@ -107,7 +107,19 @@ async function preguntarAEntrega(codigo: string): Promise<{ valor?: number; erro
         }
 
         const b = (await r.json()) as Record<string, unknown>;
-        const valor = Number(b?.tasa ?? b?.valor ?? b?.cupPorUsd ?? b?.venta);
+        /**
+         * Entrega la llama `tasa_cup`.
+         *
+         * Su respuesta es:
+         *   {"codigo_sucursal":"HAB0001","sucursal":"Sucursal Habana","tasa_cup":685,
+         *    "vigente_desde":"2026-08-25","tarifa_base":1,...}
+         *
+         * Se probaron primero los nombres de siempre —`tasa`, `valor`, `cupPorUsd`— y
+         * ninguno estaba, así que TODAS las sucursales se guardaron como fallidas: la
+         * llamada iba bien, contestaba 200 con el número dentro, y aquí se descartaba.
+         * Se dejan los otros nombres detrás por si algún día cambia.
+         */
+        const valor = Number(b?.tasa_cup ?? b?.tasa ?? b?.valor ?? b?.cupPorUsd ?? b?.venta);
 
         // Una tasa de 0 o negativa no es una tasa: es un fallo con forma de dato.
         // Guardarla dejaría todos los importes en CUP a cero sin que nada avisara.
