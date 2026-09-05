@@ -19,7 +19,12 @@
  * Por dentro no hay dos versiones de nada: en HeroUI el Drawer ES el Modal con otra
  * animación, y `DrawerContent` es literalmente `ModalContent`. Así que lo de dentro se
  * escribe una sola vez y aquí sólo se elige el borde por el que entra.
- */
+ *
+ * **Y así se queda, también en escritorio.** El 05/09/2026 se decidió que el resto de
+ * las aplicaciones usen modal en escritorio y cajón por debajo de 1024 px; ésta es una
+ * excepción aprobada por Jose ese mismo día, por lo de arriba. No hay que
+ * «armonizarla»: se miró y se dejó a propósito.
+ * */
 
 import { useEffect, useState } from "react";
 import { Drawer, type DrawerProps, type ModalProps } from "@heroui/react";
