@@ -1093,5 +1093,11 @@
     "cerrarMenu": "Cerrar el menú",
     "miCuenta": "Mi cuenta",
     "configurarPerfil": "Configurar perfil"
+  },
+  "versionNueva": {
+    "titulo": "Hay una versión nueva",
+    "detalle": "Esta pestaña está usando una versión anterior. Recarga para tener los últimos cambios; lo que ya está guardado no se pierde.",
+    "recargar": "Recargar ahora",
+    "posponer": "Ahora no"
   }
 }

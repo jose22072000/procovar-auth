@@ -1093,5 +1093,11 @@
     "cerrarMenu": "Close menu",
     "miCuenta": "My account",
     "configurarPerfil": "Edit profile"
+  },
+  "versionNueva": {
+    "titulo": "A new version is available",
+    "detalle": "This tab is running an older version. Reload to get the latest changes; nothing already saved is lost.",
+    "recargar": "Reload now",
+    "posponer": "Not now"
   }
 }

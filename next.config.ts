@@ -3,9 +3,23 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+/**
+ * La marca de esta version. Se calcula UNA vez, al evaluar este fichero durante el
+ * build, y viaja a dos sitios: al `buildId` de Next y —via `env`— incrustada como
+ * literal tanto en el JavaScript del navegador como en /api/version.
+ *
+ * Con eso se sabe si una pestaña esta usando codigo viejo: lleva DENTRO la marca del
+ * build del que salio, y /api/version, que corre en el contenedor desplegado ahora,
+ * devuelve la de hoy. El Dockerfile puede pasar BUILD_ID (el commit) para que la marca
+ * diga algo; si no, la hora del build vale igual.
+ */
+const VERSION_APP = process.env.BUILD_ID || String(Date.now());
+
 const nextConfig: NextConfig = {
   /* config options here */
   output: "standalone",
+  generateBuildId: () => VERSION_APP,
+  env: { VERSION_APP },
   images: {
     remotePatterns: [
       {
