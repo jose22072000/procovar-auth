@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { authClient } from "@/lib/auth-client";
 
 // Types
@@ -154,7 +154,18 @@ export function FullUserProvider({ children }: FullUserProviderProps) {
         return linkedProviders.includes(providerId);
     }, [linkedProviders]);
 
-    const value: FullUserContextType = {
+    /**
+     * El valor del contexto, MEMORIZADO.
+     *
+     * Era un objeto literal nuevo en cada render, y un contexto compara por identidad: con
+     * eso, cada vez que este proveedor se pintaba se volvían a pintar TODOS sus
+     * consumidores, aunque ninguno de los datos hubiera cambiado. Y este proveedor envuelve
+     * la aplicación entera.
+     *
+     * Las funciones ya venían con `useCallback`, así que sólo faltaba esto para que la
+     * cadena sirviera de algo. Sin ello, los `useCallback` de arriba no evitaban nada.
+     */
+    const value: FullUserContextType = useMemo(() => ({
         user,
         isLoading,
         error,
@@ -167,7 +178,10 @@ export function FullUserProvider({ children }: FullUserProviderProps) {
         isMemberOf,
         hasProvider,
         linkedProviders,
-    };
+    }), [
+        user, isLoading, error, organizations, refreshUser, setActiveOrganization,
+        hasRole, isOwner, isAdmin, isMemberOf, hasProvider, linkedProviders,
+    ]);
 
     return (
         <FullUserContext.Provider value={value}>

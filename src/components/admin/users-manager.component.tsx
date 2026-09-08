@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import {
   Avatar, Button, Chip, Input, Select, SelectItem, Spinner, Switch, Tooltip,
   Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, addToast,
+  Pagination,
 } from "@heroui/react";
 import {
   toggleUserAdmin, toggleEmailVerified, adminDeleteUser, updateUserProfile,
@@ -71,7 +72,50 @@ export function UsersManager({
 
   const adminCount = useMemo(() => initialUsers.filter((u) => u.isSystemAdmin).length, [initialUsers]);
 
-  async function run(fn: () => Promise<{ error?: string }>, okMsg: string) {
+  /**
+   * LA TABLA SE PAGINA, Y ADEMÁS SE MEMORIZA.
+   *
+   * Escribir en cualquier campo de esta pantalla iba a trompicones, y no era el campo: era
+   * la tabla. Pintaba las 163 filas de golpe, y cada fila lleva un Avatar, tres Tooltip,
+   * varios Icon, un Chip y un Switch — unos ocho componentes de HeroUI por fila, más de
+   * mil trescientos en total.
+   *
+   * Y el formulario de «Nueva persona» vive en ESTE mismo componente, así que cada letra
+   * que se teclea en él cambia el estado de aquí y React vuelve a pintar las mil
+   * trescientas. De ahí que el texto apareciera tarde.
+   *
+   * Dos cosas, y hacen falta las dos:
+   *
+   *   - Paginar: veinticinco por página en vez de ciento sesenta y tres. Una tabla de 163
+   *     filas tampoco se lee, así que esto es mejor de todas formas.
+   *   - Memorizar las filas: dependen sólo de lo que se ve y de `busy`. Escribir en el
+   *     formulario no toca ninguno de los dos, así que las filas ya no se vuelven a
+   *     pintar en absoluto mientras se teclea.
+   */
+  const POR_PAGINA = 25;
+  const [pagina, setPagina] = useState(1);
+  const paginas = Math.max(1, Math.ceil(filtered.length / POR_PAGINA));
+
+  // Al filtrar, a la primera página: quedarse en la 5 de una lista que ahora tiene 2
+  // enseña una tabla vacía y parece que el buscador no encontró nada.
+  useEffect(() => {
+    setPagina(1);
+  }, [query]);
+
+  const enPagina = useMemo(
+    () => filtered.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA),
+    [filtered, pagina],
+  );
+
+  /*
+   * `useCallback` en las cuatro que usan las filas de la tabla.
+   *
+   * No es adorno: las filas se memorizan más abajo, y una función nueva en cada render
+   * hace que la memoria no sirva de nada — cambiaría una dependencia en cada tecleo y se
+   * volverían a pintar igual. Sólo usan cosas estables (los `set` del estado, el
+   * `useDisclosure` y el router), así que fijarlas no cambia el comportamiento.
+   */
+  const run = useCallback(async (fn: () => Promise<{ error?: string }>, okMsg: string) => {
     setBusy(true);
     const res = await fn();
     setBusy(false);
@@ -79,15 +123,15 @@ export function UsersManager({
     addToast({ title: okMsg, color: "success" });
     router.refresh();
     return true;
-  }
+  }, [router]);
 
-  function openEdit(u: UserRow) {
+  const openEdit = useCallback((u: UserRow) => {
     setEditing(u);
     setForm({ name: u.name, phone: u.phone ?? "" });
     setNuevaClave("");
     setRolElegido(u.defaultRoleId ?? "");
     editModal.onOpen();
-  }
+  }, [editModal]);
   async function saveEdit() {
     if (!editing) return;
     const ok = await run(() => updateUserProfile(editing.id, {
@@ -155,22 +199,105 @@ export function UsersManager({
     router.refresh();
   }
 
-  async function openDetail(u: UserRow) {
+  const openDetail = useCallback(async (u: UserRow) => {
     setDetail(u); setSessions([]); setLoadingSessions(true); detailModal.onOpen();
     const res = await listUserSessions(u.id);
     setLoadingSessions(false);
     if (res.error) addToast({ title: res.error, color: "danger" });
     else setSessions(res.sessions ?? []);
-  }
+  }, [detailModal]);
   async function reloadSessions(userId: string) {
     const r = await listUserSessions(userId);
     if (r.sessions) setSessions(r.sessions);
   }
 
-  async function del(u: UserRow) {
+  const del = useCallback(async (u: UserRow) => {
     if (!confirm(t('dashboard.usersManager.confirmDeleteUser', { email: u.email }))) return;
     await run(() => adminDeleteUser(u.id), t('dashboard.usersManager.userDeleted'));
-  }
+  }, [run, t]);
+
+  /**
+   * Las filas, memorizadas.
+   *
+   * Dependen sólo de lo que se ve en la página y de `busy`. Escribir en el formulario de
+   * «Nueva persona» —que vive en este mismo componente— no toca ninguno de los dos, así
+   * que mientras se teclea estas filas ya no se vuelven a pintar. Antes se repintaban las
+   * ciento sesenta y tres con cada letra.
+   */
+  const filas = useMemo(
+    () =>
+      enPagina.map((u) => (
+            <TableRow key={u.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40">
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Avatar size="sm" name={u.name} src={u.image ?? undefined} imgProps={{ referrerPolicy: "no-referrer" }} />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate font-medium text-slate-900 dark:text-slate-100">{u.name}</span>
+                      {u.isSystemAdmin && (
+                        <Tooltip content={t('dashboard.usersManager.systemAdminTooltip')}>
+                          <span className="inline-flex"><Icon icon="lucide:shield-check" className="size-3.5 text-pv-azul dark:text-sky-400" aria-hidden /></span>
+                        </Tooltip>
+                      )}
+                    </div>
+                    <div className="pv-codigo text-xs text-pv-tinta-suave">
+                      {u.username ?? t('dashboard.usersManager.sinUsuario')}
+                    </div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-600 dark:text-slate-300">
+                    {correoVisible(u.email) ?? t('dashboard.usersManager.sinCorreo')}
+                  </span>
+                  <Chip
+                    size="sm" variant="flat" color={u.emailVerified ? "success" : "warning"}
+                    startContent={<Icon icon={u.emailVerified ? "lucide:badge-check" : "lucide:mail-warning"} className="ml-1 size-3.5" aria-hidden />}
+                  >
+                    {u.emailVerified ? t('dashboard.usersManager.verified') : t('dashboard.usersManager.unverified')}
+                  </Chip>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Switch size="sm" isSelected={u.isSystemAdmin} isDisabled={busy}
+                  onValueChange={(v) => run(() => toggleUserAdmin(u.id, v), t('dashboard.usersManager.permissionsUpdated'))} />
+              </TableCell>
+              <TableCell>
+                <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                  <Icon icon="lucide:building-2" className="size-4" aria-hidden />
+                  {u.orgCount}
+                </span>
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-0.5">
+                  <Tooltip content={t('dashboard.usersManager.viewDetailTooltip')}>
+                    <Button isIconOnly size="sm" variant="light" aria-label={t('dashboard.usersManager.detailAriaLabel')} onPress={() => openDetail(u)}>
+                      <Icon icon="lucide:eye" className="size-4" aria-hidden />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content={t('dashboard.usersManager.editProfileTooltip')}>
+                    <Button isIconOnly size="sm" variant="light" aria-label={t('dashboard.usersManager.editAriaLabel')} onPress={() => openEdit(u)}>
+                      <Icon icon="lucide:pencil" className="size-4" aria-hidden />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content={u.emailVerified ? t('dashboard.usersManager.markUnverified') : t('dashboard.usersManager.markVerified')}>
+                    <Button isIconOnly size="sm" variant="light" color="warning" aria-label={t('dashboard.usersManager.verifyAriaLabel')} isDisabled={busy}
+                      onPress={() => run(() => toggleEmailVerified(u.id, !u.emailVerified), t('dashboard.usersManager.emailUpdated'))}>
+                      <Icon icon={u.emailVerified ? "lucide:mail-x" : "lucide:mail-check"} className="size-4" aria-hidden />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content={t('dashboard.usersManager.deleteUserTooltip')} color="danger">
+                    <Button isIconOnly size="sm" variant="light" color="danger" aria-label={t('dashboard.usersManager.deleteAriaLabel')} isDisabled={busy} onPress={() => del(u)}>
+                      <Icon icon="lucide:trash-2" className="size-4" aria-hidden />
+                    </Button>
+                  </Tooltip>
+                </div>
+              </TableCell>
+            </TableRow>
+      )),
+    [enPagina, busy, t, run, openDetail, openEdit, del],
+  );
 
   const activeSessions = sessions.filter((s) => !s.revokedAt).length;
 
@@ -217,79 +344,27 @@ export function UsersManager({
             <TableColumn align="end">{t('dashboard.usersManager.colActions')}</TableColumn>
           </TableHeader>
           <TableBody emptyContent={query ? t('dashboard.usersManager.noUsersMatch') : t('dashboard.usersManager.noUsers')}>
-            {filtered.map((u) => (
-              <TableRow key={u.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/40">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar size="sm" name={u.name} src={u.image ?? undefined} imgProps={{ referrerPolicy: "no-referrer" }} />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate font-medium text-slate-900 dark:text-slate-100">{u.name}</span>
-                        {u.isSystemAdmin && (
-                          <Tooltip content={t('dashboard.usersManager.systemAdminTooltip')}>
-                            <span className="inline-flex"><Icon icon="lucide:shield-check" className="size-3.5 text-pv-azul dark:text-sky-400" aria-hidden /></span>
-                          </Tooltip>
-                        )}
-                      </div>
-                      <div className="pv-codigo text-xs text-pv-tinta-suave">
-                        {u.username ?? t('dashboard.usersManager.sinUsuario')}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-600 dark:text-slate-300">
-                      {correoVisible(u.email) ?? t('dashboard.usersManager.sinCorreo')}
-                    </span>
-                    <Chip
-                      size="sm" variant="flat" color={u.emailVerified ? "success" : "warning"}
-                      startContent={<Icon icon={u.emailVerified ? "lucide:badge-check" : "lucide:mail-warning"} className="ml-1 size-3.5" aria-hidden />}
-                    >
-                      {u.emailVerified ? t('dashboard.usersManager.verified') : t('dashboard.usersManager.unverified')}
-                    </Chip>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Switch size="sm" isSelected={u.isSystemAdmin} isDisabled={busy}
-                    onValueChange={(v) => run(() => toggleUserAdmin(u.id, v), t('dashboard.usersManager.permissionsUpdated'))} />
-                </TableCell>
-                <TableCell>
-                  <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                    <Icon icon="lucide:building-2" className="size-4" aria-hidden />
-                    {u.orgCount}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-0.5">
-                    <Tooltip content={t('dashboard.usersManager.viewDetailTooltip')}>
-                      <Button isIconOnly size="sm" variant="light" aria-label={t('dashboard.usersManager.detailAriaLabel')} onPress={() => openDetail(u)}>
-                        <Icon icon="lucide:eye" className="size-4" aria-hidden />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip content={t('dashboard.usersManager.editProfileTooltip')}>
-                      <Button isIconOnly size="sm" variant="light" aria-label={t('dashboard.usersManager.editAriaLabel')} onPress={() => openEdit(u)}>
-                        <Icon icon="lucide:pencil" className="size-4" aria-hidden />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip content={u.emailVerified ? t('dashboard.usersManager.markUnverified') : t('dashboard.usersManager.markVerified')}>
-                      <Button isIconOnly size="sm" variant="light" color="warning" aria-label={t('dashboard.usersManager.verifyAriaLabel')} isDisabled={busy}
-                        onPress={() => run(() => toggleEmailVerified(u.id, !u.emailVerified), t('dashboard.usersManager.emailUpdated'))}>
-                        <Icon icon={u.emailVerified ? "lucide:mail-x" : "lucide:mail-check"} className="size-4" aria-hidden />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip content={t('dashboard.usersManager.deleteUserTooltip')} color="danger">
-                      <Button isIconOnly size="sm" variant="light" color="danger" aria-label={t('dashboard.usersManager.deleteAriaLabel')} isDisabled={busy} onPress={() => del(u)}>
-                        <Icon icon="lucide:trash-2" className="size-4" aria-hidden />
-                      </Button>
-                    </Tooltip>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filas}
           </TableBody>
         </Table>
       </div>
+
+      {/* El paginador sólo cuando hace falta. Con una página, un control que no se puede
+          pulsar es ruido. */}
+      {paginas > 1 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-sm text-slate-500 dark:text-slate-400">
+            {filtered.length} {filtered.length === 1 ? "persona" : "personas"}
+            {query ? " que coinciden" : ""}
+          </span>
+          <Pagination
+            showControls
+            page={pagina}
+            total={paginas}
+            onChange={setPagina}
+          />
+        </div>
+      )}
 
       {/* Edit profile */}
       <Panel isOpen={altaModal.isOpen} onOpenChange={altaModal.onOpenChange} size="lg">
