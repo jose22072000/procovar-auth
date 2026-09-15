@@ -77,6 +77,7 @@ model User {
   accounts      Account[]
   members       Member[]
   invitations   Invitation[]
+  refreshTokens RefreshToken[]
 
   @@index([codigoVendedor])
   @@index([supervisorId])
@@ -98,6 +99,50 @@ model Session {
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
+}
+
+/// El refresh de la APK. Opaco, de UN SOLO USO y sustituido entero en cada
+/// renovación (`docs/identidad.md` de delivery-logistica).
+///
+/// Va en una tabla y no en Redis porque su trabajo más importante lo hace DESPUÉS
+/// de gastarse: una fila usada se conserva precisamente para poder reconocerla si
+/// vuelve a aparecer. Un token que se borra al usarlo no se distingue de uno
+/// inventado, y entonces el robo no se detecta nunca.
+///
+/// Del token **no se guarda el valor**, sino su sha256. Quien se lleve un volcado
+/// de la base no se lleva ninguna sesión. Es sha256 y no argon2 a propósito: aquí
+/// el secreto son 32 bytes al azar, no una contraseña humana, así que no hay
+/// diccionario contra el que encarecer el intento — y esto se comprueba en cada
+/// renovación de cada aparato.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  /// sha256 (hex) del token que se le dio al aparato.
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// La sesión de better-auth que abrió este aparato. Revocarla desde el panel
+  /// cierra la APK en la siguiente renovación, o sea como mucho en 15 minutos.
+  sessionId String?
+  /// La cadena de renovaciones que arrancó con un acceso. Sirve para cerrar UN
+  /// aparato (logout) sin tocar los demás; la reutilización, en cambio, se lleva
+  /// por delante la cuenta entera.
+  familyId  String
+  /// Qué aplicación lo pidió, para la auditoría: "delivery-apk".
+  clientId  String?
+  expiresAt DateTime
+  /// Cuándo se gastó. No nulo = ya se canjeó: si vuelve, es robo.
+  usedAt    DateTime?
+  revokedAt DateTime?
+  /// El que salió al canjear este. Deja ver la cadena entera en una auditoría.
+  replacedBy String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_token")
 }
 
 model Account {
