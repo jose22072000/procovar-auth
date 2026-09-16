@@ -1,4 +1,29 @@
-# CLAUDE.md — qb-auth (Identity Hub)
+# CLAUDE.md — procovar-auth
+
+> **OJO: lo que sigue está copiado del `qb-auth` del que salió este repo y habla
+> de OTRO sistema.** Este repositorio es `jose22072000/procovar-auth`, el acceso
+> único de Procovar (`auth.procovar.cloud`), y tiene cosas que qb-auth no tiene
+> —`apk-tokens.ts`, las sucursales cubanas, `seed-procovar`—. Lo de abajo sirve
+> como referencia de cómo está montado better-auth, no como descripción de para
+> qué se usa aquí. Contrastar siempre con `procovar/CLAUDE.md`, que es el que
+> manda.
+>
+> Dos cosas de abajo que YA NO SON CIERTAS:
+>
+>  * **Los ids propios ya no son `cuid()`**: desde el 16/09/2026 los nuevos son
+>    **UUIDv7** (`src/lib/uuidv7.ts`, enganchado en `advanced.database.generateId`).
+>    Los viejos se quedan como están, y conviven sin problema porque todo lo que
+>    guarda un id de auth río abajo es `text`.
+>  * **Aquí no se despliega por registro de Docker.** Lo hace Dokploy,
+>    compilando desde este repo con su `Dockerfile`. Había un flujo de GitHub
+>    (`Build And Push Account`) que empujaba a `docker.divergtech.com` —el
+>    registro de la otra empresa— y llevaba **fallando en cada push desde el
+>    08/09/2026**, mandando un correo cada vez. Se quitó el 16/09/2026: no
+>    desplegaba nada de Procovar.
+
+---
+
+## Lo heredado de qb-auth (Identity Hub)
 
 The ecosystem's **Auth Center**. TypeScript + **better-auth** + **Prisma** (its own
 `accounts` Postgres). Also drives the checkout / pago / cancel-reservation flows.
