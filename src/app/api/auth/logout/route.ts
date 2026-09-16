@@ -30,13 +30,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
 import { CLIENTE_POR_DEFECTO, cerrarSesionDelAparato, desdeDondePide } from '@/lib/apk-tokens';
+import { conCors, preflight } from '@/lib/cors-apk';
 
 const BodySchema = z.object({
     refresh_token: z.string().min(1).optional(),
     refresh: z.string().min(1).optional(),
 });
 
-export async function POST(req: NextRequest) {
+async function manejar(req: NextRequest) {
     let body: unknown;
     try {
         body = await req.json();
@@ -61,4 +62,15 @@ export async function POST(req: NextRequest) {
         logger.error('[auth/logout] no se pudo revocar', { error: (e as Error).message });
     }
     return NextResponse.json({ ok: true });
+}
+
+// CORS. La puerta se abre tambien desde un navegador —la web del reparto vive en
+// otro dominio que auth— y sin estas dos lineas el navegador tira la peticion
+// antes de que salga. El porque entero, en `lib/cors-apk.ts`.
+export async function OPTIONS(req: NextRequest) {
+    return preflight(req);
+}
+
+export async function POST(req: NextRequest) {
+    return conCors(await manejar(req), req);
 }

@@ -46,6 +46,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { audit } from '@/lib/audit';
 import { logger } from '@/lib/logger';
+import { conCors, preflight } from '@/lib/cors-apk';
 import {
     CLIENTE_POR_DEFECTO,
     ErrorDeIdentidad,
@@ -71,7 +72,7 @@ const BodySchema = z
 /** Un solo cuerpo para todos los fallos de credencial. Ver la cabecera. */
 const credencialesMal = () => NextResponse.json({ error: 'invalid_credentials' }, { status: 401 });
 
-export async function POST(req: NextRequest) {
+async function manejar(req: NextRequest) {
     let body: unknown;
     try {
         body = await req.json();
@@ -211,4 +212,15 @@ export async function POST(req: NextRequest) {
         logger.error('[auth/token] error', { error: (e as Error).message });
         return NextResponse.json({ error: 'internal_error' }, { status: 500 });
     }
+}
+
+// CORS. La puerta se abre tambien desde un navegador —la web del reparto vive en
+// otro dominio que auth— y sin estas dos lineas el navegador tira la peticion
+// antes de que salga. El porque entero, en `lib/cors-apk.ts`.
+export async function OPTIONS(req: NextRequest) {
+    return preflight(req);
+}
+
+export async function POST(req: NextRequest) {
+    return conCors(await manejar(req), req);
 }
