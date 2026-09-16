@@ -11,6 +11,7 @@ import {
     notifyPasswordResetSuccess,
     notifyWelcome,
 } from "./notifications";
+import { uuidv7 } from './uuidv7';
 
 const APP_NAME = process.env.APP_NAME ?? "QB Auth";
 /**
@@ -135,6 +136,24 @@ export const auth = betterAuth({
         },
     },
     advanced: {
+        // LOS IDS NUEVOS SON UUIDv7. Sólo los nuevos: no se reescribe nada.
+        //
+        // Hasta aquí los ponía better-auth —32 caracteres alfanuméricos al azar—
+        // y el `@default(cuid())` del `schema.prisma` casi nunca llegaba a
+        // aplicarse, porque el id venía ya puesto. En la base conviven desde el
+        // primer día los dos formatos, 163 cuid de las semillas y alnum32 de
+        // better-auth, y nunca ha roto nada: todas las columnas son `text` y
+        // ningún otro proyecto valida su forma. Un tercer formato entra en el
+        // mismo hueco, y cuanto antes entre, menos historia vieja queda.
+        //
+        // v7 y no el atajo `generateId: "uuid"`, que da **v4**: lo que se busca
+        // aquí es que ORDENEN. La hora va dentro, así que el orden alfabético de
+        // los ids es el orden en que se crearon — y eso es lo que hace falta
+        // cuando el trabajo se hace sin señal en cuatro sitios a la vez y sube
+        // después, que es de lo que va el reparto entero.
+        //
+        // Ver `src/lib/uuidv7.ts` para el porqué largo y las trampas.
+        database: { generateId: () => uuidv7() },
         cookiePrefix: 'qb',
         useSecureCookies: process.env.NODE_ENV === 'production',
         // Without this, better-auth only reads `x-forwarded-for` and discards it
