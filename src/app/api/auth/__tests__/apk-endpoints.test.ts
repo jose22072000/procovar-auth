@@ -233,7 +233,12 @@ describe('POST /api/auth/refresh', () => {
 
         db.refreshToken.findUnique.mockResolvedValue({
             id: 'rt1', userId: 'u1', sessionId: 's1', familyId: 'fam1',
-            expiresAt: new Date(Date.now() + 1000), usedAt: new Date(), revokedAt: null,
+            expiresAt: new Date(Date.now() + 1000),
+            // Gastado hace DIEZ MINUTOS, no hace un instante: uno recién gastado
+            // es un reintento de red y sale con un par nuevo por la ventana de
+            // gracia (`SEGUNDOS_DE_GRACIA`). El robo es el que vuelve tarde.
+            usedAt: new Date(Date.now() - 10 * 60 * 1000),
+            revokedAt: null,
         })
         const robado = await llamar(refresh, { refresh_token: 'c' })
 

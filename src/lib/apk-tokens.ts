@@ -21,10 +21,13 @@
  *    caduca. Quince minutos acotan a casi nada la ventana de uno robado.
  * 2. **El refresh es de un solo uso y se sustituye entero.** Cada renovación
  *    devuelve un par NUEVO, los dos.
- * 3. **Un refresh que vuelve es un robo.** El aparato legítimo ya tiene el
- *    siguiente, así que quien presenta el viejo tiene una copia. Se revocan
- *    TODAS las sesiones de esa cuenta — no sólo la de ese aparato — porque no se
- *    sabe cuál de los dos es el ladrón.
+ * 3. **Un refresh que vuelve es un robo — pasada la ventana de gracia.** El
+ *    aparato legítimo ya tiene el siguiente, así que quien presenta el viejo
+ *    tiene una copia: se revocan TODAS las sesiones de esa cuenta —no sólo la de
+ *    ese aparato— porque no se sabe cuál de los dos es el ladrón. Lo único que
+ *    se exceptúa es el refresh que vuelve **en los segundos siguientes** a
+ *    haberse gastado, que no es un ladrón sino una respuesta que se perdió por
+ *    el camino: ver `SEGUNDOS_DE_GRACIA`, que cuenta el día que esto costó.
  *
  * ## Por qué el acceso va firmado con `JWT_SECRET` y no con la JWKS
  *
@@ -47,6 +50,38 @@ import { logger } from '@/lib/logger';
 export const SEGUNDOS_ACCESO = 15 * 60;
 /** 30 días. Sólo muerde a quien pasa ese tiempo entero sin conectarse ni una vez. */
 export const SEGUNDOS_REFRESH = 30 * 24 * 60 * 60;
+
+/**
+ * LA VENTANA DE GRACIA. Un refresh recién gastado vuelve a valer estos segundos.
+ *
+ * ## El día que esto se escribió — 22/09/2026
+ *
+ * La APK de reparto echó a Jose a la pantalla de entrar dos veces en veinte
+ * minutos, en mitad de una descarga, sin que nadie robara nada. En el registro,
+ * las dos veces: `todas las sesiones revocadas — motivo: refresh reutilizado`.
+ *
+ * Lo que pasa de verdad en una conexión con pérdidas —la de allá, y la del
+ * teléfono con la línea saturada bajando 100 MB de mapa— es esto:
+ *
+ *  1. el aparato manda `POST /refresh` con R1;
+ *  2. aquí se gasta R1 y se emite R2;
+ *  3. **la respuesta se pierde por el camino.** El aparato sigue guardando R1,
+ *     porque sólo guarda lo que recibe;
+ *  4. el aparato lo intenta otra vez con R1 — y hasta hoy eso era «robo».
+ *
+ * Nadie se equivocó y aun así la cuenta entera se quedaba fuera. Y fuera de
+ * verdad: para volver a entrar hace falta señal, así que a un repartidor en el
+ * patio de un almacén esto le deja el día dentro del teléfono sin poder subirlo.
+ *
+ * **Lo que la gracia NO afloja.** Un ladrón que copia un refresh lo usa cuando
+ * puede, no en los dos minutos siguientes a que el dueño lo gastara; y si lo
+ * usa después de la ventana, la regla 3 salta igual que siempre. Lo único que
+ * se le concede es lo que un reintento de red no puede distinguir de sí mismo.
+ *
+ * Dos minutos porque el reintento no es inmediato: el aparato vuelve a pedir
+ * cuando algo lo necesita, y con la línea saturada eso llega tarde.
+ */
+export const SEGUNDOS_DE_GRACIA = 120;
 
 /** La variable de entorno con el secreto de firma. La pone Dokploy. */
 const SECRETO_ACCESO = 'JWT_SECRET';
@@ -328,40 +363,91 @@ export async function renovar(raw: string, aparato?: DatosDelAparato): Promise<R
     // que revocar ni a quién avisar. No es un robo detectable: es ruido.
     if (!fila) return { ok: false, motivo: 'invalid' };
 
+    const ahora = new Date();
+
     if (fila.usedAt) {
-        await revocarTodasLasSesiones(fila.userId, 'refresh reutilizado');
-        audit({
-            action: 'auth.refresh.reuse',
-            userId: fila.userId,
-            clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
-            ip: aparato?.ip ?? null,
-            userAgent: aparato?.userAgent ?? null,
-            meta: { refreshTokenId: fila.id, familyId: fila.familyId },
-        });
-        return { ok: false, motivo: 'reuse' };
+        // GASTADO. Aquí se decide si esto es un robo o un reintento, y lo único
+        // que los separa es el reloj (ver `SEGUNDOS_DE_GRACIA`). Un token
+        // revocado no entra en la gracia: eso ya lo cerramos nosotros.
+        if (fila.revokedAt || !dentroDeLaGracia(fila.usedAt, ahora)) {
+            await revocarTodasLasSesiones(fila.userId, 'refresh reutilizado');
+            audit({
+                action: 'auth.refresh.reuse',
+                userId: fila.userId,
+                clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
+                ip: aparato?.ip ?? null,
+                userAgent: aparato?.userAgent ?? null,
+                meta: { refreshTokenId: fila.id, familyId: fila.familyId },
+            });
+            return { ok: false, motivo: 'reuse' };
+        }
+        return emitirDesde(fila, ahora, aparato, 'la respuesta anterior no llegó');
     }
     if (fila.revokedAt) return { ok: false, motivo: 'revoked' };
 
-    const ahora = new Date();
     const gastado = await prisma.refreshToken.updateMany({
         where: { id: fila.id, usedAt: null, revokedAt: null },
         data: { usedAt: ahora },
     });
     if (gastado.count === 0) {
-        // Otra petición se lo llevó entre la lectura y aquí: es el MISMO token
-        // presentado dos veces, o sea la regla 3 otra vez.
-        await revocarTodasLasSesiones(fila.userId, 'refresh reutilizado (a la vez)');
-        audit({
-            action: 'auth.refresh.reuse',
-            userId: fila.userId,
-            clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
-            ip: aparato?.ip ?? null,
-            userAgent: aparato?.userAgent ?? null,
-            meta: { refreshTokenId: fila.id, familyId: fila.familyId, carrera: true },
+        // Otra petición se lo llevó entre la lectura y aquí. Dos peticiones a la
+        // vez con el mismo token es el aparato mandándolo dos veces, no un
+        // ladrón: se vuelve a leer la fila para saber qué le pasó y se trata
+        // igual que arriba.
+        const otraVez = await prisma.refreshToken.findUnique({
+            where: { id: fila.id },
+            select: { usedAt: true, revokedAt: true },
         });
-        return { ok: false, motivo: 'reuse' };
+        if (otraVez?.revokedAt || !otraVez?.usedAt || !dentroDeLaGracia(otraVez.usedAt, ahora)) {
+            await revocarTodasLasSesiones(fila.userId, 'refresh reutilizado (a la vez)');
+            audit({
+                action: 'auth.refresh.reuse',
+                userId: fila.userId,
+                clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
+                ip: aparato?.ip ?? null,
+                userAgent: aparato?.userAgent ?? null,
+                meta: { refreshTokenId: fila.id, familyId: fila.familyId, carrera: true },
+            });
+            return { ok: false, motivo: 'reuse' };
+        }
+        return emitirDesde(fila, ahora, aparato, 'dos peticiones a la vez');
     }
 
+    return emitirDesde(fila, ahora, aparato, null);
+}
+
+/** ¿Se gastó hace tan poco que no se puede distinguir de un reintento de red? */
+function dentroDeLaGracia(usado: Date, ahora: Date): boolean {
+    const pasado = ahora.getTime() - usado.getTime();
+    // El `>= 0` no sobra: un reloj que va hacia atrás daría un negativo, y un
+    // negativo «dentro de la ventana» convertiría la gracia en barra libre.
+    return pasado >= 0 && pasado <= SEGUNDOS_DE_GRACIA * 1000;
+}
+
+/** La fila que hace falta para emitir. Se escribe suelta para poder pasarla. */
+type FilaDeRefresh = {
+    id: string;
+    userId: string;
+    sessionId: string | null;
+    familyId: string;
+    expiresAt: Date;
+};
+
+/**
+ * Emitir el par a partir de la fila ya comprobada. Es el final común de los tres
+ * caminos: la renovación normal y las dos de gracia.
+ *
+ * En los de gracia **se emite un par nuevo, no se repite el anterior**: el
+ * anterior sólo existe aquí como `sha256`, así que devolverlo es imposible. El
+ * que se perdió se queda en la tabla sin gastar y caduca solo — nadie lo tiene,
+ * porque nunca llegó a ningún sitio.
+ */
+async function emitirDesde(
+    fila: FilaDeRefresh,
+    ahora: Date,
+    aparato: DatosDelAparato | undefined,
+    gracia: string | null
+): Promise<Renovacion> {
     if (fila.expiresAt.getTime() <= ahora.getTime()) {
         await prisma.refreshToken.update({ where: { id: fila.id }, data: { revokedAt: ahora } });
         return { ok: false, motivo: 'expired' };
@@ -396,6 +482,23 @@ export async function renovar(raw: string, aparato?: DatosDelAparato): Promise<R
             await prisma.session.updateMany({
                 where: { id: fila.sessionId },
                 data: { expiresAt: new Date(Date.now() + SEGUNDOS_REFRESH * 1000) },
+            });
+        }
+        if (gracia) {
+            // Se deja dicho, porque es lo que hay que poder contar después: la
+            // cuenta NO se cerró, y por qué.
+            logger.warn('[apk-tokens] refresh repetido dentro de la ventana de gracia', {
+                userId: fila.userId,
+                familyId: fila.familyId,
+                motivo: gracia,
+            });
+            audit({
+                action: 'auth.refresh.gracia',
+                userId: fila.userId,
+                clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
+                ip: aparato?.ip ?? null,
+                userAgent: aparato?.userAgent ?? null,
+                meta: { refreshTokenId: fila.id, familyId: fila.familyId, motivo: gracia },
             });
         }
         return { ok: true, par };

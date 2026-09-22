@@ -38,6 +38,7 @@ vi.mock('@/lib/logger', () => ({
 import {
     ErrorDeIdentidad,
     SEGUNDOS_ACCESO,
+    SEGUNDOS_DE_GRACIA,
     SEGUNDOS_REFRESH,
     cerrarSesionDelAparato,
     desdeDondePide,
@@ -72,6 +73,12 @@ function persona(extra: Record<string, unknown> = {}) {
         ],
         ...extra,
     }
+}
+
+/** Un instante de hace N segundos. La gracia se mide con el reloj, así que casi
+ *  todas las pruebas de abajo se escriben con esto. */
+function hace(segundos: number): Date {
+    return new Date(Date.now() - segundos * 1000)
 }
 
 /** Una fila de refresh viva, tal y como sale de la base. */
@@ -317,17 +324,116 @@ describe('un refresh reutilizado es un robo', () => {
         )
     })
 
-    it('dos a la vez: la que pierde la carrera también cuenta como robo', async () => {
-        // Las dos leen la fila limpia; sólo una consigue gastarla. La otra NO puede
-        // salir adelante — si lo hiciera, el mismo refresh habría emitido dos pares
-        // válidos, que es justo lo que esta regla persigue.
-        mockRefresh.findUnique.mockResolvedValue(fila() as never)
+    it('dos a la vez, pero la fila la gastó otro hace rato: robo', async () => {
+        // Las dos leen la fila limpia y sólo una consigue gastarla. Si al volver a
+        // mirarla resulta que el gasto es viejo —o que no hay gasto ninguno, que es
+        // una fila que se movió por debajo—, no hay reintento que valga.
+        mockRefresh.findUnique
+            .mockResolvedValueOnce(fila() as never)
+            .mockResolvedValueOnce({ usedAt: hace(SEGUNDOS_DE_GRACIA + 5), revokedAt: null } as never)
         mockRefresh.updateMany.mockResolvedValueOnce({ count: 0 } as never)
 
         const salida = await renovar('el-mismo')
 
         expect(salida).toEqual({ ok: false, motivo: 'reuse' })
         expect(mockSession.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { userId: 'u1', revokedAt: null } })
+        )
+    })
+})
+
+/**
+ * LA VENTANA DE GRACIA, que es lo que separa «se perdió la respuesta» de «me
+ * robaron el token». Sin ella, la conexión de allá echa a la gente sola: el
+ * 22/09/2026 sacó a Jose de la APK dos veces en veinte minutos, en mitad de una
+ * descarga, y las dos con el registro diciendo «refresh reutilizado».
+ *
+ * Las pruebas van en pareja a propósito: una que la gracia se conceda cuando
+ * toca, y otra que NO se conceda cuando no. Una gracia que no caduca nunca es
+ * quitar la regla 3 sin decirlo.
+ */
+describe('la ventana de gracia', () => {
+    it('un refresh que vuelve a los diez segundos NO cierra nada: se emite par', async () => {
+        mockRefresh.findUnique.mockResolvedValue(fila({ usedAt: hace(10) }) as never)
+
+        const salida = await renovar('el-que-no-llego')
+
+        expect(salida.ok).toBe(true)
+        expect(mockRefresh.create).toHaveBeenCalled()
+        // Y sobre todo: la cuenta sigue abierta.
+        expect(mockSession.updateMany).not.toHaveBeenCalledWith(
+            expect.objectContaining({ where: { userId: 'u1', revokedAt: null } })
+        )
+    })
+
+    it('el par que sale es NUEVO, no el que se perdió', async () => {
+        // El anterior aquí sólo existe como sha256: devolverlo es imposible. Lo que
+        // no puede pasar es que la gracia devuelva algo que no sirva.
+        mockRefresh.findUnique.mockResolvedValue(fila({ usedAt: hace(10) }) as never)
+
+        const salida = await renovar('el-que-no-llego')
+
+        expect(salida.ok && salida.par.refresh_token.length).toBeGreaterThan(20)
+        expect(salida.ok && salida.par.expires_in).toBe(SEGUNDOS_ACCESO)
+    })
+
+    it('queda en la auditoría como gracia, NO como robo', async () => {
+        mockRefresh.findUnique.mockResolvedValue(fila({ usedAt: hace(10) }) as never)
+        await renovar('el-que-no-llego')
+
+        expect(mockAudit).toHaveBeenCalledWith(
+            expect.objectContaining({ action: 'auth.refresh.gracia', userId: 'u1' })
+        )
+        expect(mockAudit).not.toHaveBeenCalledWith(
+            expect.objectContaining({ action: 'auth.refresh.reuse' })
+        )
+    })
+
+    it('pasada la ventana vuelve a ser un robo', async () => {
+        mockRefresh.findUnique.mockResolvedValue(
+            fila({ usedAt: hace(SEGUNDOS_DE_GRACIA + 1) }) as never
+        )
+
+        expect(await renovar('el-viejo')).toEqual({ ok: false, motivo: 'reuse' })
+        expect(mockSession.updateMany).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { userId: 'u1', revokedAt: null } })
+        )
+    })
+
+    it('gastado Y revocado no tiene gracia, aunque sea de hace un segundo', async () => {
+        // Revocado es que lo cerramos nosotros. Reabrirlo por la puerta de atrás
+        // dejaría que un logout se deshiciera solo.
+        mockRefresh.findUnique.mockResolvedValue(
+            fila({ usedAt: hace(1), revokedAt: hace(1) }) as never
+        )
+
+        expect(await renovar('cerrado-y-gastado')).toEqual({ ok: false, motivo: 'reuse' })
+        expect(mockRefresh.create).not.toHaveBeenCalled()
+    })
+
+    it('un reloj que va hacia atrás no abre la puerta', async () => {
+        // Un `usedAt` en el futuro da una diferencia negativa. Con un `<=` a secas
+        // eso entra en la ventana, y la gracia se convierte en barra libre.
+        mockRefresh.findUnique.mockResolvedValue(
+            fila({ usedAt: new Date(Date.now() + 60_000) }) as never
+        )
+
+        expect(await renovar('del-futuro')).toEqual({ ok: false, motivo: 'reuse' })
+        expect(mockRefresh.create).not.toHaveBeenCalled()
+    })
+
+    it('dos peticiones a la vez del mismo aparato: la que pierde también entra', async () => {
+        // Es el caso de la cola que sale de golpe al recuperar señal. Antes las dos
+        // salían por «robo» y la cuenta entera se cerraba.
+        mockRefresh.findUnique
+            .mockResolvedValueOnce(fila() as never)
+            .mockResolvedValueOnce({ usedAt: new Date(), revokedAt: null } as never)
+        mockRefresh.updateMany.mockResolvedValueOnce({ count: 0 } as never)
+
+        const salida = await renovar('el-mismo')
+
+        expect(salida.ok).toBe(true)
+        expect(mockSession.updateMany).not.toHaveBeenCalledWith(
             expect.objectContaining({ where: { userId: 'u1', revokedAt: null } })
         )
     })
