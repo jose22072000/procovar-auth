@@ -133,6 +133,14 @@ model RefreshToken {
   /// Cuándo se gastó. No nulo = ya se canjeó: si vuelve, es robo.
   usedAt    DateTime?
   revokedAt DateTime?
+  /// Cuándo se concedió LA gracia de esta fila. La ventana de gracia deja que un
+  /// refresh ya gastado valga unos segundos más —una respuesta que se perdió por
+  /// el camino no es un robo—, pero eso vale UNA vez y no una por intento: cada
+  /// concesión abre una rama nueva de 30 días, y sin este tope un refresh robado
+  /// podía abrir tantas como quisiera y dejar la cuenta un mes sin detección.
+  /// Se reclama con un `updateMany` condicionado a que esté a null, igual que
+  /// `usedAt`, que es lo único que aguanta cinco peticiones a la vez.
+  graceUsedAt DateTime?
   /// El que salió al canjear este. Deja ver la cadena entera en una auditoría.
   replacedBy String?
   ip        String?

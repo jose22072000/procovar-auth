@@ -28,6 +28,11 @@
  *    se exceptúa es el refresh que vuelve **en los segundos siguientes** a
  *    haberse gastado, que no es un ladrón sino una respuesta que se perdió por
  *    el camino: ver `SEGUNDOS_DE_GRACIA`, que cuenta el día que esto costó.
+ * 4. **La gracia se concede UNA vez por fila, y punto.** Cada concesión abre una
+ *    rama nueva que vive 30 días; una gracia sin tope deja que un solo refresh
+ *    robado abra las que quiera y apague la detección de esa cuenta un mes. El
+ *    tope es la columna `graceUsedAt`, reclamada con el mismo `updateMany`
+ *    condicionado que `usedAt`. Ver `reclamarLaGracia`.
  *
  * ## Por qué el acceso va firmado con `JWT_SECRET` y no con la JWKS
  *
@@ -80,6 +85,42 @@ export const SEGUNDOS_REFRESH = 30 * 24 * 60 * 60;
  *
  * Dos minutos porque el reintento no es inmediato: el aparato vuelve a pedir
  * cuando algo lo necesita, y con la línea saturada eso llega tarde.
+ *
+ * ## Y lo que SÍ afloja, que costó una segunda vuelta el mismo día
+ *
+ * La primera versión de esto no tenía tope: la misma fila gastada se podía
+ * canjear **una vez por intento** mientras durase la ventana. Cinco llamadas,
+ * cinco pares válidos distintos, cinco ramas de 30 días. Un refresh robado no
+ * sacaba un par: bifurcaba la familia, y como la reutilización se detecta cuando
+ * una fila vuelve, tener ramas paralelas equivale a **apagar la detección de esa
+ * cuenta durante un mes**. Cerraba de menos donde antes cerraba de más.
+ *
+ * El tope es `graceUsedAt`: **una gracia por fila**, reclamada de forma atómica
+ * (`reclamarLaGracia`). Lo que queda en pie es exactamente lo que se midió el
+ * 22/09/2026 —una respuesta perdida no cierra la cuenta—, y lo que se cierra es
+ * que multiplicarse salga gratis.
+ *
+ * ## Por qué la gracia NO se ata al aparato, aunque parezca que debería
+ *
+ * Lo evidente sería exigir que el reintento traiga el mismo `clientId`, el mismo
+ * `userAgent` o la misma IP. No se hace, y conviene que quede escrito por qué:
+ *
+ *  - **`clientId` y `userAgent` los escribe el cliente.** `clientId` es la
+ *    constante `delivery-apk` y el `userAgent` es una cabecera de texto. Quien ha
+ *    copiado el refresh ha copiado la petición entera: repetir dos cadenas no le
+ *    cuesta nada. Atar a eso no es una comprobación, es un adorno que se lee como
+ *    una defensa — y lo peligroso de una falsa defensa es que invita a ensanchar
+ *    la ventana «porque ya está atada».
+ *  - **La IP sí es difícil de falsificar, y justo por eso rompe el caso.** El
+ *    reintento que esto existe para tolerar llega de un teléfono que cambió de
+ *    celda, de un NAT de carrier que rota, o del salto de la línea de allá a
+ *    Starlink. Atar a la IP convertiría la mitad de los reintentos legítimos en
+ *    «robo» y devolvería, literalmente, el fallo del 22/09.
+ *
+ * Lo que sí se hace es **anotarlo**: la auditoría de la gracia deja dicho si el
+ * cliente coincide (`mismoCliente`) junto con la IP y el `userAgent` de quien
+ * pidió. Eso no bloquea a nadie, pero deja el rastro para responder «¿esto fue
+ * una red mala o alguien con una copia?» sin tener que adivinarlo.
  */
 export const SEGUNDOS_DE_GRACIA = 120;
 
@@ -118,6 +159,17 @@ export type MotivoDeFallo =
     | 'invalid'
     /** Ya se había canjeado. Es la regla 3: se revoca la cuenta entera. */
     | 'reuse'
+    /**
+     * Ya se había canjeado, vuelve DENTRO de la ventana, pero su única gracia ya
+     * se gastó (regla 4). No se emite par y NO se cierra la cuenta: quien vuelve
+     * una tercera vez con el mismo refresh es casi siempre un aparato que perdió
+     * dos respuestas seguidas —el ladrón, que sí recibió su par en la primera,
+     * no tiene ningún motivo para insistir con el viejo—, así que castigar esto
+     * con la revocación en cadena sería castigar la mala red otra vez. Se queda
+     * fuera ese aparato, que es lo que se puede afirmar; de cara al cliente es un
+     * 401 igual que los demás.
+     */
+    | 'gracia_gastada'
     | 'expired'
     /** Lo cerramos nosotros: logout, revocación desde el panel, o baja de la persona. */
     | 'revoked'
@@ -354,6 +406,7 @@ export async function renovar(raw: string, aparato?: DatosDelAparato): Promise<R
             userId: true,
             sessionId: true,
             familyId: true,
+            clientId: true,
             expiresAt: true,
             usedAt: true,
             revokedAt: true,
@@ -366,22 +419,20 @@ export async function renovar(raw: string, aparato?: DatosDelAparato): Promise<R
     const ahora = new Date();
 
     if (fila.usedAt) {
-        // GASTADO. Aquí se decide si esto es un robo o un reintento, y lo único
-        // que los separa es el reloj (ver `SEGUNDOS_DE_GRACIA`). Un token
-        // revocado no entra en la gracia: eso ya lo cerramos nosotros.
-        if (fila.revokedAt || !dentroDeLaGracia(fila.usedAt, ahora)) {
-            await revocarTodasLasSesiones(fila.userId, 'refresh reutilizado');
-            audit({
-                action: 'auth.refresh.reuse',
-                userId: fila.userId,
-                clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
-                ip: aparato?.ip ?? null,
-                userAgent: aparato?.userAgent ?? null,
-                meta: { refreshTokenId: fila.id, familyId: fila.familyId },
-            });
-            return { ok: false, motivo: 'reuse' };
-        }
-        return emitirDesde(fila, ahora, aparato, 'la respuesta anterior no llegó');
+        // GASTADO. Tres salidas, y el orden es la mitad del arreglo:
+        //
+        //  1. **Revocado por nosotros → `revoked`.** Un `revokedAt` lo ponemos
+        //     nosotros: un logout, el panel de Personas, o una revocación previa.
+        //     Hasta hoy esto caía en la rama de robo y cerraba la cuenta ENTERA,
+        //     o sea que un logout que se cruzaba con la renovación en vuelo hacía
+        //     exactamente el daño que la gracia venía a quitar. Cerrar lo ya
+        //     cerrado no protege de nada: la familia está muerta y el token no
+        //     abre ninguna puerta.
+        //  2. **Fuera de la ventana → la regla 3, intacta.** Cuenta entera.
+        //  3. **Dentro de la ventana → la gracia, UNA vez** (regla 4).
+        if (fila.revokedAt) return { ok: false, motivo: 'revoked' };
+        if (!dentroDeLaGracia(fila.usedAt, ahora)) return esUnRobo(fila, aparato, false);
+        return conLaGracia(fila, ahora, aparato, 'la respuesta anterior no llegó');
     }
     if (fila.revokedAt) return { ok: false, motivo: 'revoked' };
 
@@ -393,27 +444,84 @@ export async function renovar(raw: string, aparato?: DatosDelAparato): Promise<R
         // Otra petición se lo llevó entre la lectura y aquí. Dos peticiones a la
         // vez con el mismo token es el aparato mandándolo dos veces, no un
         // ladrón: se vuelve a leer la fila para saber qué le pasó y se trata
-        // igual que arriba.
+        // igual que arriba, con las mismas tres salidas y en el mismo orden.
         const otraVez = await prisma.refreshToken.findUnique({
             where: { id: fila.id },
             select: { usedAt: true, revokedAt: true },
         });
-        if (otraVez?.revokedAt || !otraVez?.usedAt || !dentroDeLaGracia(otraVez.usedAt, ahora)) {
-            await revocarTodasLasSesiones(fila.userId, 'refresh reutilizado (a la vez)');
-            audit({
-                action: 'auth.refresh.reuse',
-                userId: fila.userId,
-                clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
-                ip: aparato?.ip ?? null,
-                userAgent: aparato?.userAgent ?? null,
-                meta: { refreshTokenId: fila.id, familyId: fila.familyId, carrera: true },
-            });
-            return { ok: false, motivo: 'reuse' };
+        if (otraVez?.revokedAt) return { ok: false, motivo: 'revoked' };
+        // Sin `usedAt` y sin `revokedAt` la fila se movió por debajo de una forma
+        // que no sabemos explicar: eso no entra en la gracia.
+        if (!otraVez?.usedAt || !dentroDeLaGracia(otraVez.usedAt, ahora)) {
+            return esUnRobo(fila, aparato, true);
         }
-        return emitirDesde(fila, ahora, aparato, 'dos peticiones a la vez');
+        return conLaGracia(fila, ahora, aparato, 'dos peticiones a la vez');
     }
 
     return emitirDesde(fila, ahora, aparato, null);
+}
+
+/** La regla 3 entera: se cierra la cuenta y queda dicho en la auditoría. */
+async function esUnRobo(
+    fila: { id: string; userId: string; familyId: string },
+    aparato: DatosDelAparato | undefined,
+    carrera: boolean
+): Promise<Renovacion> {
+    await revocarTodasLasSesiones(
+        fila.userId,
+        carrera ? 'refresh reutilizado (a la vez)' : 'refresh reutilizado'
+    );
+    audit({
+        action: 'auth.refresh.reuse',
+        userId: fila.userId,
+        clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
+        ip: aparato?.ip ?? null,
+        userAgent: aparato?.userAgent ?? null,
+        meta: { refreshTokenId: fila.id, familyId: fila.familyId, ...(carrera ? { carrera: true } : {}) },
+    });
+    return { ok: false, motivo: 'reuse' };
+}
+
+/**
+ * La gracia, con su tope: se reclama `graceUsedAt` y sólo el que se lo lleva
+ * emite.
+ *
+ * El `updateMany` condicionado a `graceUsedAt: null` es el mismo candado que ya
+ * sujeta `usedAt`, y es lo único que aguanta el ataque de verdad: cinco
+ * peticiones a la vez con el refresh robado. Contar las ramas vivas de la familia
+ * —dos vivas sin gastar = la gracia ya se usó— habría evitado la migración, pero
+ * no es atómico: las cinco cuentan una y las cinco se conceden. Aquí la base dice
+ * que sí una vez.
+ *
+ * Quien llega segundo NO recibe par y NO cierra la cuenta: ver `gracia_gastada`.
+ */
+async function conLaGracia(
+    fila: FilaDeRefresh,
+    ahora: Date,
+    aparato: DatosDelAparato | undefined,
+    motivo: string
+): Promise<Renovacion> {
+    const concedida = await prisma.refreshToken.updateMany({
+        where: { id: fila.id, graceUsedAt: null },
+        data: { graceUsedAt: ahora },
+    });
+    if (concedida.count === 0) {
+        logger.warn('[apk-tokens] la gracia de esta fila ya estaba gastada', {
+            userId: fila.userId,
+            familyId: fila.familyId,
+            motivo,
+        });
+        audit({
+            action: 'auth.refresh.gracia_agotada',
+            userId: fila.userId,
+            clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
+            ip: aparato?.ip ?? null,
+            userAgent: aparato?.userAgent ?? null,
+            meta: { refreshTokenId: fila.id, familyId: fila.familyId, motivo },
+        });
+        return { ok: false, motivo: 'gracia_gastada' };
+    }
+    return emitirDesde(fila, ahora, aparato, motivo);
 }
 
 /** ¿Se gastó hace tan poco que no se puede distinguir de un reintento de red? */
@@ -430,6 +538,8 @@ type FilaDeRefresh = {
     userId: string;
     sessionId: string | null;
     familyId: string;
+    /** Con quién nació la fila. NO se compara para decidir: sólo se anota. */
+    clientId: string | null;
     expiresAt: Date;
 };
 
@@ -498,7 +608,19 @@ async function emitirDesde(
                 clientId: aparato?.clientId ?? CLIENTE_POR_DEFECTO,
                 ip: aparato?.ip ?? null,
                 userAgent: aparato?.userAgent ?? null,
-                meta: { refreshTokenId: fila.id, familyId: fila.familyId, motivo: gracia },
+                meta: {
+                    refreshTokenId: fila.id,
+                    familyId: fila.familyId,
+                    motivo: gracia,
+                    // Se ANOTA, no se exige. Un ladrón que copia el refresh copia
+                    // también la cabecera, así que esto no sirve de guarda; sirve
+                    // para poder mirar después si la gracia la están usando redes
+                    // malas o alguien con una copia. El porqué entero, arriba en
+                    // `SEGUNDOS_DE_GRACIA`.
+                    mismoCliente:
+                        (aparato?.clientId ?? CLIENTE_POR_DEFECTO) ===
+                        (fila.clientId ?? CLIENTE_POR_DEFECTO),
+                },
             });
         }
         return { ok: true, par };

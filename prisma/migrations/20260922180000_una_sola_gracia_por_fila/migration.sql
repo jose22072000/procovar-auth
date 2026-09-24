@@ -1,0 +1,21 @@
+-- UNA sola gracia por fila.
+--
+-- El 22/09/2026 se añadió la ventana de gracia: un refresh recién gastado sigue
+-- valiendo unos segundos, porque en una conexión con pérdidas la respuesta con el
+-- par nuevo se pierde y el aparato reintenta con el viejo sin que nadie robe nada.
+-- Eso arregló las expulsiones. Pero la gracia no tenía tope: la MISMA fila se podía
+-- canjear tantas veces como uno quisiera dentro de la ventana, y cada canje abría
+-- una rama nueva de 30 días. Un refresh robado bifurcaba la familia y dejaba la
+-- detección de reutilización de esa cuenta apagada un mes — peor que el fallo que
+-- vino a arreglar.
+--
+-- Esta columna es el tope. Se reclama con un UPDATE condicionado a que esté a NULL,
+-- exactamente igual que "usedAt": el primero que llega se la lleva y los demás
+-- actualizan cero filas. Contar ramas vivas de la familia habría evitado la
+-- migración, pero no es atómico: cinco peticiones a la vez cuentan todas cero.
+--
+-- ALTER TABLE ... ADD COLUMN con valor por defecto NULL no reescribe la tabla en
+-- PostgreSQL, así que esto no bloquea nada aunque la tabla esté viva. Y es
+-- compatible hacia atrás: un contenedor con el código viejo sigue funcionando con
+-- la columna puesta, que es lo que hace falta durante el relevo del despliegue.
+ALTER TABLE "refresh_token" ADD COLUMN "graceUsedAt" TIMESTAMP(3);
