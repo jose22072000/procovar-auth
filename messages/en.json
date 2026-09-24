@@ -1070,7 +1070,15 @@
     "explicacion": "One account for orders, analytics, delivery and the dashboard. Your sucursal and what you may do travel with you.",
     "rotuloFormulario": "Your account",
     "sinCuenta": "No account? Your sucursal administrator creates it for you.",
-    "pie": "Procovar · internal use"
+    "pie": "Procovar · internal use",
+    "salidas": {
+      "descargar": "Download the Android app",
+      "descargarConTamano": "Download the Android app ({tamano})",
+      "detalleDescarga": "Version {version}. It downloads the APK; open it on the phone to install it. The installed app works with no signal; this page does not.",
+      "sinTamano": "The server does not say how big it is: download it over wifi.",
+      "portal": "Go to procovar.cloud",
+      "detallePortal": "The Procovar portal: the other applications are reached from there."
+    }
   },
   "cuenta": {
     "rotulo": "Your account",

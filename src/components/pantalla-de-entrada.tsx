@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { getTranslations } from "next-intl/server";
 import { SignInForm } from "@/components/forms/sign-in";
+import { SalidasDeLaPuerta } from "@/components/salidas-de-la-puerta";
 
 /**
  * La entrada a Procovar.
@@ -108,6 +109,12 @@ export async function PantallaDeEntrada({ savedEmail }: { savedEmail?: string })
                     <p className="mt-7 border-t border-pv-trazo-tenue pt-5 text-sm text-pv-tinta-suave">
                         {t("entrada.sinCuenta")}
                     </p>
+
+                    {/* Bajarse la aplicación del reparto e irse al portal. Van
+                        DEBAJO del formulario y en segundo plano: quien llega aquí
+                        viene a entrar, y esto es lo segundo. Ver
+                        `salidas-de-la-puerta.tsx`. */}
+                    <SalidasDeLaPuerta />
                 </div>
             </main>
         </div>

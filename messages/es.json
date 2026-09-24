@@ -1070,7 +1070,15 @@
     "explicacion": "La misma cuenta para los pedidos, la analítica, el reparto y el tablero. Tu sucursal y lo que puedes hacer viajan contigo.",
     "rotuloFormulario": "Tu cuenta",
     "sinCuenta": "¿No tienes cuenta? Te la crea el administrador de tu sucursal.",
-    "pie": "Procovar · uso interno"
+    "pie": "Procovar · uso interno",
+    "salidas": {
+      "descargar": "Descargar la aplicación para Android",
+      "descargarConTamano": "Descargar la aplicación para Android ({tamano})",
+      "detalleDescarga": "Versión {version}. Se descarga el APK; ábrelo en el teléfono para instalarlo. La aplicación instalada trabaja sin señal; esta página, no.",
+      "sinTamano": "El servidor no dice cuánto pesa: bájalo con wifi.",
+      "portal": "Ir a procovar.cloud",
+      "detallePortal": "El portal de Procovar: desde ahí se entra a las demás aplicaciones."
+    }
   },
   "cuenta": {
     "rotulo": "Tu cuenta",
