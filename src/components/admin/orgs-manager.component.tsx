@@ -7,16 +7,32 @@ import {
   Avatar, Button, Chip, Input, Select, SelectItem, Switch, Tooltip,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, addToast,
 } from "@heroui/react";
-import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, agregarMiembro, crearSucursal } from "@/app/(user)/dashboard/_actions";
+import { removeOrgMember, setOrgMemberRoles, updateOrganizationAdmin, deleteOrganizationAdmin, agregarMiembro, crearSucursal, anadirPersona } from "@/app/(user)/dashboard/_actions";
 import { useTranslations } from "next-intl";
 import { Panel } from "@/components/ui/panel";
 import { correoVisible } from "@/lib/correo-visible";
 
-interface RoleRow { id: string; name: string; color: string | null; icon: string | null; isSystem: boolean }
+interface RoleRow {
+  id: string; name: string; color: string | null; icon: string | null; isSystem: boolean;
+  /** Lleva `vendedor.codigo`: entonces —y sólo entonces— se le pide el código. */
+  vende?: boolean;
+}
 interface MemberRow { memberId: string; userId: string; name: string; email: string; legacyRole: string; roleIds: string[] }
 interface OrgRow {
   id: string; name: string; slug: string; logo: string | null;
   memberCount: number; roles: RoleRow[]; members: MemberRow[];
+  /**
+   * Los ids de los roles que QUIEN MIRA puede repartir en esta sucursal: sólo los
+   * de debajo del suyo. Que la lista llegue ya filtrada es comodidad — el
+   * servidor lo vuelve a comprobar en `anadirPersona` y en `setOrgMemberRoles`,
+   * que es lo que de verdad lo impide.
+   *
+   * Sin decir nada, ninguno: una pantalla que se olvide de pasarlo no puede
+   * acabar ofreciendo SUPER ADMIN por descuido.
+   */
+  rolesRepartibles?: string[];
+  /** Si quien mira puede abrir cuentas aquí (`member.invite`). */
+  puedeCrearCuenta?: boolean;
   codigo?: string | null; activa?: boolean; timezone?: string | null;
   telefono?: string | null; direccion?: string | null;
   latitud?: number | null; longitud?: number | null;
@@ -70,10 +86,19 @@ export function OrgsManager({
   const [nuevaDireccion, setNuevaDireccion] = useState("");
   const [nuevaLat, setNuevaLat] = useState("");
   const [nuevaLng, setNuevaLng] = useState("");
-  // Aquí NO se crean cuentas: se elige a alguien que ya existe y se le dice en qué
-  // sucursal trabaja. Crear la persona es de la pantalla de Personas.
+  // Dos caminos, y hacían falta los dos: elegir a alguien que YA tiene cuenta, o
+  // abrirle una nueva ahí mismo.
+  //
+  // Antes sólo estaba el primero, y remataba con "para abrir una cuenta nueva,
+  // Personas → Nueva persona" — una pantalla que el Administrador no puede abrir:
+  // `/dashboard` es del Super Admin. O sea que la única forma de que un
+  // administrador de sucursal diera de alta a un vendedor era pedírselo a otro.
   const [altaForm, setAltaForm] = useState<{ userId: string }>({ userId: "" });
   const [buscaPersona, setBuscaPersona] = useState("");
+  const [modoAlta, setModoAlta] = useState<"existente" | "nueva">("existente");
+  const [nueva, setNueva] = useState({
+    nombre: "", usuario: "", email: "", password: "", roleId: "", codigoVendedor: "",
+  });
 
   const orgs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -112,14 +137,64 @@ export function OrgsManager({
   function openDelOrg() { setDelConfirm(""); delOrg.onOpen(); }
   function openRoles(m: MemberRow) { setEditingMember(m); setMemberRoleIds(m.roleIds); roleModal.onOpen(); }
 
+  // Los roles que quien mira puede repartir aquí. Sin lista, ninguno: negar por
+  // defecto también en la pantalla.
+  const repartibles = useMemo(() => {
+    if (!selected) return [] as RoleRow[];
+    const permitidos = new Set(selected.rolesRepartibles ?? []);
+    return selected.roles.filter((r) => permitidos.has(r.id));
+  }, [selected]);
+
   function abrirAlta() {
     if (!selected) return;
     // El rol más limitado por defecto. Quien añade a diez personas seguidas acaba
     // dándole a Guardar sin mirar, y equivocarse hacia abajo se arregla con un
-    // clic; hacia arriba, no se nota.
+    // clic; hacia arriba, no se nota. Por eso GESTOR si está, y si no el último de
+    // los que puede repartir — nunca el primero, que es el de más poder.
+    const permitidos = new Set(selected.rolesRepartibles ?? []);
+    const puede = selected.roles.filter((r) => permitidos.has(r.id));
+    const porDefecto = puede.find((r) => r.name === "GESTOR") ?? puede[puede.length - 1];
     setAltaForm({ userId: "" });
     setBuscaPersona("");
+    setModoAlta(personas.length === 0 && selected.puedeCrearCuenta ? "nueva" : "existente");
+    setNueva({
+      nombre: "", usuario: "", email: "", password: "",
+      roleId: porDefecto?.id ?? "", codigoVendedor: "",
+    });
     alta.onOpen();
+  }
+
+  /**
+   * Abrir la cuenta y dejarla dentro de esta sucursal, de una vez.
+   *
+   * Aquí SÍ se manda la sucursal —al revés que en Personas, donde la cuenta se abre
+   * suelta—: quien está en esta pantalla está mirando una sucursal concreta y a
+   * alguien que va a trabajar en ella. Dejarla sin sucursal obligaría a un segundo
+   * paso para algo que ya se sabe.
+   */
+  async function crearCuenta() {
+    if (!selected) return;
+    if (!nueva.nombre.trim() || !nueva.password || !nueva.roleId) return;
+    setBusy(true);
+    const res = await anadirPersona({
+      organizationId: selected.id,
+      nombre: nueva.nombre.trim(),
+      usuario: nueva.usuario.trim() || undefined,
+      email: nueva.email.trim() || undefined,
+      password: nueva.password,
+      roleId: nueva.roleId,
+      codigoVendedor: nueva.codigoVendedor.trim() || undefined,
+    });
+    setBusy(false);
+    if (res.error) { addToast({ title: res.error, color: "danger" }); return; }
+    addToast({
+      title: res.yaExistia
+        ? `Esa persona ya tenía cuenta; ahora está en ${selected.name}`
+        : `Cuenta creada en ${selected.name}`,
+      color: "success",
+    });
+    alta.onClose();
+    router.refresh();
   }
 
   // Los que todavía no están en esta sucursal: ofrecer a quien ya está dentro solo
@@ -342,6 +417,95 @@ export function OrgsManager({
             <span className="text-sm font-normal text-slate-500">{selected?.name}</span>
           </ModalHeader>
           <ModalBody className="gap-3">
+            {/* Los dos caminos. Botones y no pestañas de librería: son dos, se ven
+                los dos a la vez y cuál está elegido no depende de recordar nada. */}
+            {selected?.puedeCrearCuenta && (
+              <div className="flex gap-2">
+                <Button
+                  size="sm" variant={modoAlta === "existente" ? "solid" : "bordered"}
+                  color={modoAlta === "existente" ? "primary" : "default"}
+                  onPress={() => setModoAlta("existente")}
+                  startContent={<Icon icon="lucide:user-search" className="size-4" aria-hidden />}
+                >
+                  Ya tiene cuenta
+                </Button>
+                <Button
+                  size="sm" variant={modoAlta === "nueva" ? "solid" : "bordered"}
+                  color={modoAlta === "nueva" ? "primary" : "default"}
+                  onPress={() => setModoAlta("nueva")}
+                  startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}
+                >
+                  Cuenta nueva
+                </Button>
+              </div>
+            )}
+
+            {modoAlta === "nueva" && selected?.puedeCrearCuenta ? (
+            <>
+            <Input
+              autoFocus variant="bordered" label="Nombre" labelPlacement="outside"
+              placeholder="Nombre y apellidos"
+              value={nueva.nombre} onValueChange={(v) => setNueva({ ...nueva, nombre: v })}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Mucha gente de PEDIDO no tiene correo y entra por su usuario. Uno
+                  de los dos basta; pedir el correo a la fuerza obligaba a
+                  inventárselo, y un correo inventado acaba recibiendo un aviso. */}
+              <Input
+                variant="bordered" label="Usuario" labelPlacement="outside" placeholder="opcional"
+                value={nueva.usuario} onValueChange={(v) => setNueva({ ...nueva, usuario: v.toLowerCase() })}
+              />
+              <Input
+                variant="bordered" label="Correo" labelPlacement="outside" placeholder="opcional"
+                value={nueva.email} onValueChange={(v) => setNueva({ ...nueva, email: v })}
+              />
+            </div>
+            <Input
+              variant="bordered" type="text" label="Contraseña" labelPlacement="outside"
+              placeholder="La que se le va a dar"
+              description="Ocho caracteres o más. Se la puede cambiar ella después."
+              value={nueva.password} onValueChange={(v) => setNueva({ ...nueva, password: v })}
+            />
+            {/* Sólo los roles de DEBAJO del suyo. Un administrador reparte gerente,
+                supervisor, gestor y operador; ni super admin, ni desarrollador, ni
+                otro administrador. Esconderlos es comodidad: quien lo intente a
+                mano se lleva el mismo "no" del servidor. */}
+            <Select
+              variant="bordered" label="Rol" labelPlacement="outside"
+              selectedKeys={nueva.roleId ? [nueva.roleId] : []}
+              onChange={(e) => {
+                const rol = repartibles.find((r) => r.id === e.target.value);
+                // Al pasar a un rol que no vende se limpia el código: si no, se
+                // guardaría uno escrito antes de cambiar de idea, en alguien que no
+                // vende.
+                setNueva({
+                  ...nueva,
+                  roleId: e.target.value,
+                  codigoVendedor: rol?.vende ? nueva.codigoVendedor : "",
+                });
+              }}
+            >
+              {repartibles.map((r) => <SelectItem key={r.id}>{r.name}</SelectItem>)}
+            </Select>
+            {/* El código de vendedor, aquí y no en otra pantalla: vendedor y usuario
+                son la MISMA persona, así que poniéndolo al abrir la cuenta no queda
+                nada que emparejar después. Sale sólo si el rol vende. */}
+            {repartibles.find((r) => r.id === nueva.roleId)?.vende && (
+              <Input
+                variant="bordered" label="Código de vendedor" labelPlacement="outside"
+                placeholder="andy.almanza"
+                description="Es el código con el que aparece en los pedidos."
+                value={nueva.codigoVendedor}
+                onValueChange={(v) => setNueva({ ...nueva, codigoVendedor: v.toLowerCase() })}
+              />
+            )}
+            <p className="text-xs text-slate-400">
+              La cuenta se abre ya dentro de <b>{selected?.name}</b> y puede entrar
+              desde ese momento.
+            </p>
+            </>
+            ) : (
+            <>
             {/* Se busca por nombre o por correo. El correo es único, así que es lo
                 que distingue a dos personas que se llaman igual — y en una empresa
                 pasa. */}
@@ -380,7 +544,7 @@ export function OrgsManager({
               {candidatos.length === 0 && (
                 <div className="px-3 py-8 text-center text-sm text-slate-400">
                   {personas.length === 0
-                    ? "Desde esta pantalla no se puede elegir a nadie. Se hace en Personas."
+                    ? "Desde esta pantalla no se ve la lista de personas. Usa «Cuenta nueva»."
                     : buscaPersona
                       ? "Nadie coincide con esa búsqueda."
                       : "Todas las personas ya están en esta sucursal."}
@@ -390,20 +554,29 @@ export function OrgsManager({
 
             <p className="text-xs text-slate-400">
               Se queda con el rol que ya tiene: se le dio al abrir su cuenta. Aquí solo
-              se dice en qué sucursal trabaja. Para abrir una cuenta nueva,
-              Personas → Nueva persona.
+              se dice en qué sucursal trabaja.
             </p>
+            </>
+            )}
           </ModalBody>
           <ModalFooter>
             <Button variant="bordered" onPress={alta.onClose}
               startContent={<Icon icon="lucide:x-circle" className="size-4" aria-hidden />}>
               {t('dashboard.common.cancel')}
             </Button>
-            <Button color="primary" isLoading={busy} onPress={guardarAlta}
-              isDisabled={!altaForm.userId}
-              startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
-              {t('dashboard.orgsManager.addPerson')}
-            </Button>
+            {modoAlta === "nueva" && selected?.puedeCrearCuenta ? (
+              <Button color="primary" isLoading={busy} onPress={crearCuenta}
+                isDisabled={!nueva.nombre.trim() || nueva.password.length < 8 || !nueva.roleId}
+                startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
+                Crear cuenta
+              </Button>
+            ) : (
+              <Button color="primary" isLoading={busy} onPress={guardarAlta}
+                isDisabled={!altaForm.userId}
+                startContent={<Icon icon="lucide:user-plus" className="size-4" aria-hidden />}>
+                {t('dashboard.orgsManager.addPerson')}
+              </Button>
+            )}
           </ModalFooter>
         </ModalContent>
       </Panel>
@@ -570,9 +743,18 @@ export function OrgsManager({
             </div>
           </ModalHeader>
           <ModalBody>
+            {/* Los que no puede repartir salen apagados, no escondidos.
+                Escondidos, un rol que la persona YA lleva desaparecería de la lista
+                y al guardar se le quitaría sin que nadie lo hubiera pedido.
+                Apagados se ven, se conservan, y no se pueden dar. */}
             <Select label={t('dashboard.orgsManager.rolesSelectLabel')} labelPlacement="outside" selectionMode="multiple" variant="bordered"
               placeholder={t('dashboard.orgsManager.selectRolesPlaceholder')}
               selectedKeys={new Set(memberRoleIds)}
+              disabledKeys={new Set(
+                (selected?.roles ?? [])
+                  .filter((r) => !repartibles.some((p) => p.id === r.id))
+                  .map((r) => r.id),
+              )}
               onSelectionChange={(keys) => setMemberRoleIds(Array.from(keys as Set<string>))}>
               {(selected?.roles ?? []).map((r) => <SelectItem key={r.id}>{r.name}</SelectItem>)}
             </Select>

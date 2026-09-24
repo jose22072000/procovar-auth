@@ -4,17 +4,15 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { notifyOrganizationInvitation, humanizeExpirationDays } from '@/lib/notifications';
-import { resolveRbac } from '@/rbac/resolve-permissions';
 import { can } from '@/rbac/can';
-import { SYSTEM_ROLE_NAMES, ROL_MINIMO } from '@/rbac/system-roles';
+import { rbacEnSucursal, rolesEnSucursal } from '@/rbac/en-sucursal';
+import { puedeRepartirRol } from '@/rbac/escalafon';
+import { SYSTEM_ROLE_NAMES, ROL_MINIMO, systemRolePermissionKeys } from '@/rbac/system-roles';
 
 type Params = { params: Promise<{ orgId: string }> };
 
 /** Single source of truth: drives both the DB expiry and the email copy. */
 const INVITATION_EXPIRES_IN_DAYS = 7;
-
-/** Roles nobody but a Super Admin may hand out. */
-const SOLO_SUPER_ADMIN = new Set(['SUPER ADMIN', 'ADMINISTRADOR']);
 
 function getBearerToken(request: Request): string | null {
     const authHeader = request.headers.get('authorization') || '';
@@ -196,18 +194,57 @@ export async function POST(request: Request, { params }: Params) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
             }
 
-            const rbac = await resolveRbac(session.user.id, orgId);
+            // El alcance sale de quién pregunta, no del `orgId` del camino:
+            // `rbacEnSucursal` exige además ser miembro de esa sucursal. Con
+            // `resolveRbac` a secas, un Administrador de Camagüey invitaba a
+            // Holguín cambiando el id de la URL.
+            const rbac = await rbacEnSucursal(session.user.id, orgId);
             if (!can(rbac, 'member.invite')) {
                 return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
             }
 
-            // Nobody hands out a role they could not use themselves: an
-            // Administrador inviting a Super Admin would be promoting themselves
-            // through a second account.
+            // Nadie reparte un rol por encima del suyo: un Administrador invitando
+            // a un Super Admin se estaría ascendiendo por una segunda cuenta.
+            //
+            // Antes esto era una lista escrita a mano —`['SUPER ADMIN',
+            // 'ADMINISTRADOR']`— y le FALTABA `DESARROLLADOR`, que está por encima
+            // de los dos: invitar con ese rol pasaba el filtro. Y no miraba
+            // `roleId`, que es el que de verdad acaba en `member_role` cuando se
+            // acepta la invitación, así que el rol de verdad iba sin comprobar.
+            // Ahora lo dice el escalafón, en un solo sitio y para los dos campos.
             const peek = await request.clone().json();
-            const pedido = String(peek.role ?? '').toUpperCase();
-            if (SOLO_SUPER_ADMIN.has(pedido) && !can(rbac, 'app.manage')) {
-                return NextResponse.json({ error: 'Solo un Super Admin puede dar ese rol' }, { status: 403 });
+            const mios = await rolesEnSucursal(session.user.id, orgId);
+
+            const pedido = String(peek.role ?? '').toUpperCase().trim();
+            if (pedido && (SYSTEM_ROLE_NAMES as readonly string[]).includes(pedido)) {
+                // Las claves, de la base si el rol está ahí —se editan desde la
+                // pantalla de Permisos— y si no, las sembradas.
+                const enBase = await prisma.role.findUnique({
+                    where: { name: pedido },
+                    select: { permissions: { select: { permission: { select: { key: true } } } } },
+                });
+                const claves = enBase
+                    ? enBase.permissions.map((p) => p.permission?.key).filter((k): k is string => Boolean(k))
+                    : systemRolePermissionKeys(pedido);
+                if (!puedeRepartirRol(rbac, mios, { name: pedido, claves })) {
+                    return NextResponse.json({ error: 'No puedes dar ese rol' }, { status: 403 });
+                }
+            }
+
+            if (peek.roleId) {
+                const pedidoPorId = await prisma.role.findUnique({
+                    where: { id: String(peek.roleId) },
+                    select: { name: true, permissions: { select: { permission: { select: { key: true } } } } },
+                });
+                if (!pedidoPorId) {
+                    return NextResponse.json({ error: 'Invalid roleId' }, { status: 400 });
+                }
+                const claves = pedidoPorId.permissions
+                    .map((p) => p.permission?.key)
+                    .filter((k): k is string => Boolean(k));
+                if (!puedeRepartirRol(rbac, mios, { name: pedidoPorId.name, claves })) {
+                    return NextResponse.json({ error: 'No puedes dar ese rol' }, { status: 403 });
+                }
             }
 
             inviterId = session.user.id;

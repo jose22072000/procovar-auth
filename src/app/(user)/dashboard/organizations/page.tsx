@@ -17,7 +17,11 @@ export default async function DashboardOrgsPage() {
     }),
     prisma.role.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, color: true, icon: true, isSystem: true },
+      select: {
+        id: true, name: true, color: true, icon: true, isSystem: true,
+        // Para saber si el rol VENDE, y entonces pedirle el código al darlo de alta.
+        permissions: { select: { permission: { select: { key: true } } } },
+      },
     }),
     prisma.organization.findMany({
       orderBy: { name: "asc" },
@@ -42,12 +46,24 @@ export default async function DashboardOrgsPage() {
       },
     }),
   ]);
+  // Sin las claves de permiso, que no pintan nada en el navegador. Sólo queda
+  // `vende`, que es lo único que la pantalla necesita saber de ellas.
+  const catalogo = roles.map(({ permissions, ...r }) => ({
+    ...r,
+    vende: permissions.some((p) => p.permission?.key === "vendedor.codigo"),
+  }));
+  // Esta pantalla es del Super Admin (el layout de `/dashboard` lo exige), y el
+  // Super Admin reparte cualquier rol: no hay nadie por encima suyo salvo el
+  // Desarrollador, y ése no se reparte desde aquí, se da a mano.
+  const todos = catalogo.map((r) => r.id);
   const data = orgs.map((o) => ({
     id: o.id, name: o.name, slug: o.slug, logo: o.logo, memberCount: o.members.length,
     codigo: o.codigo, activa: o.activa, timezone: o.timezone, telefono: o.telefono,
     direccion: o.direccion, latitud: o.latitud, longitud: o.longitud,
     almacenes: o.almacenes,
-    roles,
+    roles: catalogo,
+    rolesRepartibles: todos,
+    puedeCrearCuenta: true,
     members: o.members.map((m) => ({
       memberId: m.id, userId: m.userId, name: m.user.name, email: m.user.email,
       legacyRole: m.role, roleIds: m.memberRoles.map((r) => r.roleId),

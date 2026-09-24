@@ -6,9 +6,9 @@ import { revalidatePath } from "next/cache";
 import { getRedis } from "@/lib/redis";
 import { audit } from "@/lib/audit";
 import { altaPersona } from "@/lib/alta-persona";
-import { resolveRbac } from "@/rbac/resolve-permissions";
+import { rbacEnSucursal, rolesEnSucursal } from "@/rbac/en-sucursal";
 import { can } from "@/rbac/can";
-import { ungrantablePermissionKeys } from "@/rbac/grantable";
+import { puedeRepartirRol } from "@/rbac/escalafon";
 import { systemRolePermissionKeys } from "@/rbac/system-roles";
 import { hashPassword } from "better-auth/crypto";
 import { esSuperAdmin } from "@/lib/alta-persona";
@@ -22,15 +22,20 @@ async function requireAdmin() {
 /**
  * Quien pide esto, ¿puede hacerlo EN ESTA SUCURSAL?
  *
- * El Super Admin puede en todas. Cualquier otro solo en las suyas, y ni
- * siquiera en todas ellas: hace falta además el permiso concreto. Esto es lo
- * que impide que un Administrador de Camagüey toque la gente de Holguín
- * cambiando un identificador en la petición.
+ * El Super Admin puede en todas. Cualquier otro solo en las SUYAS —donde está
+ * dado de alta—, y ni siquiera en todas ellas: hace falta además el permiso
+ * concreto. Esto es lo que impide que un Administrador de Camagüey toque la
+ * gente de Holguín cambiando un identificador en la petición.
+ *
+ * Usa `rbacEnSucursal` y no `resolveRbac` a secas, y ahí está la diferencia: el
+ * segundo suma los permisos del rol de la persona AUNQUE no sea miembro de esa
+ * sucursal, así que mandando el id de Holguín la comprobación decía que sí. El
+ * alcance tiene que salir de quién pregunta, no del parámetro.
  */
 async function exigirEnSucursal(organizationId: string, permiso: string) {
     const { data: user } = await getCurrentUser();
     if (!user) throw new Error("No autorizado");
-    const rbac = await resolveRbac(user.id, organizationId);
+    const rbac = await rbacEnSucursal(user.id, organizationId);
     if (!can(rbac, permiso)) {
         // Sin sucursal no hay membresía que dé permisos: esto solo lo puede hacer
         // quien manda en todas. Decirlo así, y no "en esta sucursal", que sin
@@ -40,6 +45,41 @@ async function exigirEnSucursal(organizationId: string, permiso: string) {
             : "Esto solo lo puede hacer un Super Admin.");
     }
     return user;
+}
+
+/**
+ * Nadie reparte un rol por encima del suyo, ni el suyo mismo.
+ *
+ * Es la segunda mitad de este encargo, y la que no se podía dejar a la pantalla:
+ * que el desplegable no ofrezca SUPER ADMIN es comodidad; esto es lo que lo
+ * impide cuando la llamada llega a mano con el id que sea.
+ *
+ * Dice el porqué en el mensaje —"sólo los de debajo"— en vez de un "no puedes" a
+ * secas: quien reparte accesos necesita saber si es que le falta un permiso o es
+ * que ese rol nunca va a poder darlo.
+ *
+ * Devuelve el error, o `null` si puede.
+ */
+async function exigirRolRepartible(
+    actorId: string,
+    organizationId: string | null | undefined,
+    roles: readonly { name: string; claves: readonly string[] }[],
+): Promise<string | null> {
+    const rbac = await rbacEnSucursal(actorId, organizationId);
+    const mios = await rolesEnSucursal(actorId, organizationId);
+    for (const rol of roles) {
+        if (!puedeRepartirRol(rbac, mios, rol)) {
+            return `No puedes dar el rol ${rol.name}: sólo puedes repartir los que están por debajo del tuyo.`;
+        }
+    }
+    return null;
+}
+
+/** Las claves de permiso de un rol tal y como las devuelve Prisma. */
+function clavesDe(rol: { permissions: { permission: { key: string } | null }[] }): string[] {
+    return rol.permissions
+        .map((p) => p.permission?.key)
+        .filter((k): k is string => Boolean(k));
 }
 
 /**
@@ -61,21 +101,19 @@ export async function anadirPersona(datos: {
     try {
         const actor = await exigirEnSucursal(datos.organizationId ?? "", "member.invite");
 
-        // Nadie reparte un rol que no podría usar él mismo: si no, un
-        // Administrador se asciende creando una segunda cuenta y entrando con
-        // ella.
+        // Nadie reparte un rol por encima del suyo: si no, un Administrador se
+        // asciende creando una segunda cuenta con rol SUPER ADMIN y entrando con
+        // ella. El techo se mide EN la sucursal que se pide, que es donde ya se
+        // comprobó que puede dar de alta.
         const rol = await prisma.role.findUnique({
             where: { id: datos.roleId },
-            select: { permissions: { select: { permission: { select: { key: true } } } } },
+            select: { name: true, permissions: { select: { permission: { select: { key: true } } } } },
         });
         if (!rol) return { error: "Ese rol no existe." };
-        const rbacActor = await resolveRbac(actor.id, datos.organizationId ?? "");
-        const claves = rol.permissions
-            .map((p) => p.permission?.key)
-            .filter((k): k is string => Boolean(k));
-        if (ungrantablePermissionKeys(rbacActor, claves).length) {
-            return { error: "No puedes dar un rol con permisos que tú no tienes." };
-        }
+        const veto = await exigirRolRepartible(actor.id, datos.organizationId, [
+            { name: rol.name, claves: clavesDe(rol) },
+        ]);
+        if (veto) return { error: veto };
 
         const res = await altaPersona(datos);
         if (res.error) return { error: res.error };
@@ -145,20 +183,17 @@ export async function agregarMiembro(datos: {
             roleId = previo.roleId;
         }
 
-        // Mismo cuidado que al dar de alta: nadie reparte un rol con permisos que
-        // él no tiene, o se asciende metiendo a un cómplice.
+        // Mismo cuidado que al dar de alta: nadie reparte un rol por encima del
+        // suyo, o se asciende metiendo a un cómplice.
         const rol = await prisma.role.findUnique({
             where: { id: roleId },
             select: { name: true, permissions: { select: { permission: { select: { key: true } } } } },
         });
         if (!rol) return { error: "Ese rol no existe." };
-        const rbacActor = await resolveRbac(actor.id, datos.organizationId);
-        const claves = rol.permissions
-            .map((p) => p.permission?.key)
-            .filter((k): k is string => Boolean(k));
-        if (ungrantablePermissionKeys(rbacActor, claves).length) {
-            return { error: "No puedes dar un rol con permisos que tú no tienes." };
-        }
+        const veto = await exigirRolRepartible(actor.id, datos.organizationId, [
+            { name: rol.name, claves: clavesDe(rol) },
+        ]);
+        if (veto) return { error: veto };
 
         const ya = await prisma.member.findFirst({
             where: { organizationId: datos.organizationId, userId: datos.userId },
@@ -522,24 +557,31 @@ export async function setOrgMemberRoles(memberId: string, roleIds: string[]): Pr
         // Lo que ata a la persona a su sucursal es el miembro, no el rol.
         const valid = await prisma.role.findMany({
             where: { id: { in: roleIds } },
-            select: { id: true, permissions: { select: { permission: { select: { key: true } } } } },
+            select: { id: true, name: true, permissions: { select: { permission: { select: { key: true } } } } },
         });
         if (valid.length !== roleIds.length) return { error: "Rol inválido" };
 
-        // Nadie reparte un rol que no podria usar el mismo. Sin esto, un
-        // Administrador se asciende dandole Super Admin a una cuenta suya.
-        const rbacActor = await resolveRbac(actor.id, member.organizationId);
-        const claves = valid.flatMap((r) =>
-            r.permissions.map((p) => p.permission?.key).filter((k): k is string => Boolean(k)),
-        );
-        if (ungrantablePermissionKeys(rbacActor, claves).length) {
-            return { error: "No puedes dar un rol con permisos que tú no tienes." };
-        }
         const existing = await prisma.memberRole.findMany({ where: { memberId }, select: { roleId: true } });
         const have = new Set(existing.map((r) => r.roleId));
         const want = new Set(roleIds);
         const toAdd = roleIds.filter((id) => !have.has(id));
         const toRemove = existing.filter((r) => !want.has(r.roleId)).map((r) => r.roleId);
+
+        // Nadie reparte un rol por encima del suyo. Sin esto, un Administrador se
+        // asciende dandole Super Admin a una cuenta suya — o se clona dandole
+        // ADMINISTRADOR, que es lo mismo con otro nombre.
+        //
+        // Se miran los que se AÑADEN, no los que la persona ya tenía: repartir es
+        // dar algo nuevo. Comprobando la lista entera, tocarle un rol cualquiera a
+        // quien ya llevaba uno alto fallaba entero —y quien lo intentara no sabría
+        // por qué, porque lo que estaba cambiando sí podía dárselo.
+        const anadidos = valid.filter((r) => toAdd.includes(r.id));
+        const veto = await exigirRolRepartible(
+            actor.id,
+            member.organizationId,
+            anadidos.map((r) => ({ name: r.name, claves: clavesDe(r) })),
+        );
+        if (veto) return { error: veto };
         await prisma.$transaction([
             ...toAdd.map((roleId) => prisma.memberRole.create({ data: { memberId, roleId } })),
             ...(toRemove.length ? [prisma.memberRole.deleteMany({ where: { memberId, roleId: { in: toRemove } } })] : []),

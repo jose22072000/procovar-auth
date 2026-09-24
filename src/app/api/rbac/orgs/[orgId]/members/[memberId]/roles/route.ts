@@ -3,8 +3,9 @@ import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { resolveRbac } from '@/rbac/resolve-permissions'
+import { rbacEnSucursal, rolesEnSucursal } from '@/rbac/en-sucursal'
 import { can } from '@/rbac/can'
-import { ungrantablePermissionKeys } from '@/rbac/grantable'
+import { puedeRepartirRol } from '@/rbac/escalafon'
 import { PRECEDENCE, ROL_MINIMO } from '@/rbac/system-roles'
 import type { ResolvedRbac } from '@/rbac/types'
 
@@ -22,14 +23,21 @@ export async function PUT(request: Request, { params }: Params) {
   // is null only for a fully-trusted service call with no acting user (qb-panel
   // does its own gate; forward `x-acting-user-id` to also enforce the guard here).
   let actorRbac: ResolvedRbac | null = null
+  let actorId: string | null = null
   if (!isServiceAuth(request)) {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    actorRbac = await resolveRbac(session.user.id, orgId)
+    actorId = session.user.id
+    // `rbacEnSucursal`, no `resolveRbac`: sin ser miembro de ESTA sucursal no se
+    // reparten roles en ella, aunque el rol de la persona lleve el permiso.
+    actorRbac = await rbacEnSucursal(actorId, orgId)
     if (!can(actorRbac, 'member.assignRole')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   } else {
     const actingUserId = request.headers.get('x-acting-user-id')
-    if (actingUserId) actorRbac = await resolveRbac(actingUserId, orgId)
+    if (actingUserId) {
+      actorId = actingUserId
+      actorRbac = await resolveRbac(actingUserId, orgId)
+    }
   }
 
   // Ensure the member actually belongs to the org in the path (prevents cross-org IDOR).
@@ -54,15 +62,16 @@ export async function PUT(request: Request, { params }: Params) {
   const validIds = new Set(roles.map((r) => r.id))
   const valid = roleIds.filter((id) => validIds.has(id))
 
-  // Privilege-escalation guard: you may only assign a role whose permissions you
-  // yourself hold. Skipped for a fully-trusted service call with no acting user.
+  // Privilege-escalation guard: only a role BELOW your own, and never one
+  // carrying power you do not hold. Skipped for a fully-trusted service call
+  // with no acting user. See `@/rbac/escalafon`.
   if (actorRbac) {
-    const assignedKeys = [...new Set(
-      roles.flatMap((r) => r.permissions.map((p) => p.permission?.key).filter((k): k is string => Boolean(k))),
-    )]
-    const missing = ungrantablePermissionKeys(actorRbac, assignedKeys)
-    if (missing.length) {
-      return NextResponse.json({ error: 'cannot grant permissions you do not hold' }, { status: 403 })
+    const mios = actorId ? await rolesEnSucursal(actorId, orgId) : []
+    for (const r of roles) {
+      const claves = r.permissions.map((p) => p.permission?.key).filter((k): k is string => Boolean(k))
+      if (!puedeRepartirRol(actorRbac, mios, { name: r.name, claves })) {
+        return NextResponse.json({ error: 'cannot grant a role above your own' }, { status: 403 })
+      }
     }
   }
 
