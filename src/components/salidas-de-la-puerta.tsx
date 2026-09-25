@@ -2,15 +2,23 @@ import { Icon } from '@iconify/react';
 import { getTranslations } from 'next-intl/server';
 
 import { enlaceDelPortal } from '@/lib/anuncio-del-reparto';
-import { DescargaDelApk } from '@/components/descarga-del-apk';
 
 /**
- * LAS DOS SALIDAS DE LA PUERTA: bajarse la aplicación del reparto, e irse al portal.
+ * LA SALIDA DE LA PUERTA: irse al portal.
  *
- * Jose, 24/09/2026:
+ * ## AQUÍ NO SE OFRECE LA APK DEL REPARTO, Y ES A PROPÓSITO
  *
- * > «recuerda q tienes q poner en el login q puedan descargar la aplicación y
- * > entrar a procovar.cloud […] para q puedan descargar la apk y instalarla»
+ * Se puso el 24/09/2026 y se quitó el 25/09/2026, y el motivo es el que se ve en
+ * esta misma pantalla: por esta puerta entra TODA la casa —PEDIDO, Analitics,
+ * Rutas, Delivery, Entrega, Caja, Traslado y Parranda—, así que ofrecer aquí la
+ * aplicación de los repartidores es ponérsela delante a un contable que viene a
+ * abrir Caja. Jose, viéndolo:
+ *
+ * > «por qué en auth me pones a descargar, si eso va para el login de Reparto»
+ *
+ * La descarga vive donde tiene sentido: en la puerta del PROPIO reparto
+ * (`delivery-logistica/app/lib/pantallas/acceso/datos/oferta_de_la_puerta.dart`),
+ * que es la que ve quien viene a repartir.
  *
  * ## DÓNDE VA, Y POR QUÉ NO ESTORBA
  *
@@ -23,15 +31,11 @@ import { DescargaDelApk } from '@/components/descarga-del-apk';
  * aparezca tarde (la pide el navegador cuando la página ya está pintada) sin mover
  * nada bajo el dedo de quien iba a pulsar.
  *
- * ## LAS DOS NO SE PARECEN EN NADA
+ * ## EL PORTAL NO DEPENDE DE NADIE
  *
- *  * **El portal no depende de nadie.** Es una dirección que una persona pulsa. Se
+ *  * Es lo que permite que esto Es una dirección que una persona pulsa. Se
  *    pinta aquí, en el servidor, y sale SIEMPRE: también el día que la api del
  *    reparto esté caída, y también si el navegador no ejecuta JavaScript.
- *  * **La descarga depende del anuncio del reparto** y por eso vive en su propio
- *    componente de navegador (`descarga-del-apk.tsx`): si no hay anuncio, no hay
- *    botón. Nunca un enlace muerto ni un botón apagado con una explicación.
- *
  * Esta pantalla es la puerta de TODAS las aplicaciones de la casa —aquí llegan
  * redirigidos el reparto, PEDIDO, Analítica, Caja y Rutas—, así que la regla dura
  * es que nada de esto pueda retrasar ni romper una entrada. El porqué entero, y por
@@ -43,8 +47,6 @@ export async function SalidasDeLaPuerta() {
 
     return (
         <div className="mt-7 border-t border-pv-trazo-tenue pt-5">
-            <DescargaDelApk />
-
             <a
                 href={enlaceDelPortal()}
                 className="pv-toque inline-flex items-center gap-2 text-sm font-semibold text-pv-azul underline underline-offset-4"

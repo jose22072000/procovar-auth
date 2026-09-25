@@ -16,7 +16,6 @@ import path from 'node:path';
 
 const raiz = (...p: string[]) => path.join(process.cwd(), ...p);
 const SALIDAS = readFileSync(raiz('src/components/salidas-de-la-puerta.tsx'), 'utf8');
-const DESCARGA = readFileSync(raiz('src/components/descarga-del-apk.tsx'), 'utf8');
 const PANTALLA = readFileSync(raiz('src/components/pantalla-de-entrada.tsx'), 'utf8');
 const PAGINA = readFileSync(raiz('src/app/(user)/page.tsx'), 'utf8');
 
@@ -42,29 +41,6 @@ describe('la página de entrada no depende del reparto para pintarse', () => {
         }
     });
 
-    it('la descarga se pregunta desde el navegador a nuestra propia api', () => {
-        expect(DESCARGA).toContain("'use client'");
-        expect(DESCARGA).toContain("fetch('/api/reparto/descarga'");
-        // A la nuestra, no a la del reparto: el navegador no puede llamar a otro
-        // origen sin que aquella conteste con CORS para este dominio.
-        expect(DESCARGA).not.toContain('reparto.procovar.cloud');
-    });
-
-    it('si nuestra propia api falla, tampoco se pinta nada', () => {
-        expect(DESCARGA).toContain('.catch(');
-        expect(DESCARGA).toContain('if (!sale) return null;');
-    });
-
-    /**
-     * Ni botón apagado, ni «ahora mismo no se puede», ni hueco reservado. Nadie
-     * llegó a esta pantalla a descargarse nada, llegó a entrar a trabajar.
-     */
-    it('no hay botón muerto ni cartel de disculpa cuando no hay anuncio', () => {
-        const pintado = sinComentarios(DESCARGA);
-
-        expect(pintado).not.toMatch(/disabled|isDisabled|aria-disabled/);
-        expect(pintado).not.toMatch(/no se puede|no disponible|inténtalo|Skeleton|animate-pulse/i);
-    });
 });
 
 describe('el enlace del portal no depende de nadie', () => {
@@ -84,17 +60,33 @@ describe('el enlace del portal no depende de nadie', () => {
     });
 });
 
-describe('las salidas van debajo del formulario, sin estorbar', () => {
-    it('se pintan después del formulario de entrar', () => {
+describe('la salida va debajo del formulario, sin estorbar', () => {
+    it('se pinta después del formulario de entrar', () => {
         expect(PANTALLA).toContain('<SalidasDeLaPuerta />');
         expect(PANTALLA.indexOf('<SignInForm')).toBeLessThan(PANTALLA.indexOf('<SalidasDeLaPuerta'));
     });
 
-    // El único botón relleno de la pantalla es «Entrar». Estos van perfilado y de
-    // texto para que se lean como lo segundo que son.
-    it('ninguna de las dos se pinta como el botón principal', () => {
+    // El único botón relleno de la pantalla es «Entrar». El del portal va de
+    // texto para que se lea como lo segundo que es.
+    it('no se pinta como el botón principal', () => {
         expect(SALIDAS).not.toContain('bg-pv-azul ');
-        expect(DESCARGA).not.toContain('bg-pv-azul ');
+    });
+
+    // LA APK DEL REPARTO NO SE OFRECE AQUÍ, y esto lo sujeta.
+    //
+    // Por esta puerta entra toda la casa —PEDIDO, Analitics, Rutas, Delivery,
+    // Entrega, Caja, Traslado y Parranda—, así que la aplicación de los
+    // repartidores no pinta nada delante de quien viene a abrir Caja. Se puso el
+    // 24/09/2026 y se quitó el 25/09; sin esta prueba vuelve sola la próxima vez
+    // que alguien lea el encargo viejo.
+    it('no ofrece la aplicación del reparto', () => {
+        // Se mira lo que se PINTA, no lo que se explica: el comentario de
+        // `salidas-de-la-puerta.tsx` nombra la APK justamente para contar por
+        // qué no está, y esa explicación tiene que poder seguir escrita.
+        const sinComentarios = SALIDAS.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        expect(sinComentarios).not.toContain('DescargaDelApk');
+        expect(sinComentarios.toLowerCase()).not.toContain('apk');
+        expect(PANTALLA).not.toContain('DescargaDelApk');
     });
 });
 
