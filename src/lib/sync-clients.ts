@@ -59,6 +59,33 @@ export const CLIENTES: ClienteRegistrado[] = [
         scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
     },
     {
+        clientId: 'aft',
+        name: 'AFT Camagüey',
+        description: 'Inventario de activos fijos y de útiles y herramientas de la sucursal de Camagüey.',
+        // La vuelta la atiende el BACKEND (Express), no la pantalla: es él quien canjea
+        // el código y graba la cookie. Poner aquí la URL de la pantalla hace que el hub
+        // rechace la petición y la persona acabe en /login?sso=no-disponible sin saber
+        // por qué — ya pasó con Avisos.
+        allowedCallbackUrls: [
+            'https://aft.procovar.cloud/api/auth/sso/callback',
+            'http://localhost:8080/api/auth/sso/callback',
+        ],
+        // El puerto forma parte del host: `localhost` no casa con `localhost:8080`.
+        allowedDomains: ['aft.procovar.cloud', 'localhost:8080', 'localhost:5173'],
+        scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
+    },
+    {
+        clientId: 'asignacion',
+        name: 'Asignación de vendedores',
+        description: 'Reparto de productos entre vendedores y control de cobros (Camagüey).',
+        allowedCallbackUrls: [
+            'https://asignacion.procovar.cloud/api/auth/sso/callback',
+            'http://localhost:4000/api/auth/sso/callback',
+        ],
+        allowedDomains: ['asignacion.procovar.cloud', 'localhost:4000', 'localhost:5173'],
+        scopes: ['callback:create', 'session:verify', 'session:revoke', 'auth:exchange'],
+    },
+    {
         clientId: 'procovar-sync',
         name: 'Procovar Sync',
         description: 'Servicio de sincronizacion de la fuerza de ventas: ingesta de Axis/Ventra, sync de las tablets Android y salidas a los sistemas externos.',
